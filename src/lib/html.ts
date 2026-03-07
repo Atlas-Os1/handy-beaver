@@ -252,7 +252,10 @@ export const layout = (title: string, content: string, activeNav?: string) => `
   <!-- Promo Popup -->
   <div id="promo-popup" class="promo-popup">
     <button class="close" onclick="closePromo()">&times;</button>
-    <h4>🦫 New Customer Special!</h4>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <img src="/api/assets/icons/new-badge.png" alt="New" style="width: 40px; height: 40px;">
+      <h4 style="margin: 0;">New Customer Special!</h4>
+    </div>
     <p><strong>FREE consultation</strong> + <strong>10% off</strong> your first job!</p>
     <a href="/contact?promo=new10" class="btn btn-secondary" style="width: 100%; text-align: center">Claim Offer</a>
   </div>

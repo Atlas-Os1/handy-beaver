@@ -71,7 +71,7 @@ const api = new Hono<{ Bindings: Bindings }>();
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {
-  const key = `assets/${c.req.param('key')}`;
+  const key = c.req.param('key');
   const object = await c.env.IMAGES.get(key);
   
   if (!object) {

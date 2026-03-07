@@ -43,22 +43,22 @@ export const homePage = (c: Context) => {
       
       <div class="grid grid-4">
         <div class="card" style="text-align: center;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">🪵</div>
+          <img src="/api/assets/icons/carpentry.png" alt="Carpentry" style="width: 80px; height: 80px; margin-bottom: 1rem;">
           <h3>Trim Carpentry</h3>
           <p style="color: #666; margin-top: 0.5rem;">Crown molding, baseboards, door frames, and custom woodwork</p>
         </div>
         <div class="card" style="text-align: center;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">🏠</div>
+          <img src="/api/assets/icons/flooring.png" alt="Flooring" style="width: 80px; height: 80px; margin-bottom: 1rem;">
           <h3>Flooring</h3>
           <p style="color: #666; margin-top: 0.5rem;">Installation, repair, and refinishing for all floor types</p>
         </div>
         <div class="card" style="text-align: center;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">🛠️</div>
+          <img src="/api/assets/icons/deck.png" alt="Deck Repair" style="width: 80px; height: 80px; margin-bottom: 1rem;">
           <h3>Deck Repair</h3>
           <p style="color: #666; margin-top: 0.5rem;">Restoration, board replacement, and sealing</p>
         </div>
         <div class="card" style="text-align: center;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">🔧</div>
+          <img src="/api/assets/icons/maintenance.png" alt="Maintenance" style="width: 80px; height: 80px; margin-bottom: 1rem;">
           <h3>Maintenance</h3>
           <p style="color: #666; margin-top: 0.5rem;">General repairs and home improvement projects</p>
         </div>

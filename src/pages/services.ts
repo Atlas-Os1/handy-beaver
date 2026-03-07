@@ -6,7 +6,7 @@ const { pricing } = siteConfig;
 
 const services = [
   {
-    icon: '🪵',
+    icon: '/api/assets/icons/carpentry.png',
     name: 'Trim Carpentry',
     description: 'Expert woodwork that adds character and value to your home.',
     items: [
@@ -19,7 +19,7 @@ const services = [
     ]
   },
   {
-    icon: '🏠',
+    icon: '/api/assets/icons/flooring.png',
     name: 'Flooring Services',
     description: 'From installation to repair, we handle all your flooring needs.',
     items: [
@@ -32,7 +32,7 @@ const services = [
     ]
   },
   {
-    icon: '🛠️',
+    icon: '/api/assets/icons/deck.png',
     name: 'Deck Repair & Restoration',
     description: 'Bring your outdoor space back to life.',
     items: [
@@ -45,7 +45,7 @@ const services = [
     ]
   },
   {
-    icon: '🔧',
+    icon: '/api/assets/icons/maintenance.png',
     name: 'General Maintenance',
     description: 'Handyman services for all your home repair needs.',
     items: [
@@ -70,7 +70,7 @@ export const servicesPage = (c: Context) => {
       <div class="grid grid-2">
         ${services.map(service => `
           <div class="card">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">${service.icon}</div>
+            <img src="${service.icon}" alt="${service.name}" style="width: 80px; height: 80px; margin-bottom: 1rem;">
             <h3 style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">${service.name}</h3>
             <p style="color: #666; margin-bottom: 1.5rem;">${service.description}</p>
             <ul style="list-style: none; padding: 0;">
@@ -127,7 +127,8 @@ export const servicesPage = (c: Context) => {
       
       <div class="grid grid-3">
         <div class="card" style="border: 2px solid var(--secondary); text-align: center;">
-          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0;">
+          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <img src="/api/assets/icons/new-badge.png" alt="New" style="width: 24px; height: 24px;">
             NEW CUSTOMERS
           </div>
           <h3 style="color: var(--primary); font-size: 1.75rem;">10% OFF</h3>
@@ -136,7 +137,8 @@ export const servicesPage = (c: Context) => {
         </div>
         
         <div class="card" style="border: 2px solid var(--secondary); text-align: center;">
-          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0;">
+          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <img src="/api/assets/icons/schedule.png" alt="Schedule" style="width: 24px; height: 24px;">
             FLEXIBLE SCHEDULING
           </div>
           <h3 style="color: var(--primary); font-size: 1.75rem;">5% OFF</h3>
@@ -145,7 +147,8 @@ export const servicesPage = (c: Context) => {
         </div>
         
         <div class="card" style="border: 2px solid var(--secondary); text-align: center;">
-          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0;">
+          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <img src="/api/assets/icons/discount.png" alt="Discount" style="width: 24px; height: 24px;">
             REFERRAL BONUS
           </div>
           <h3 style="color: var(--primary); font-size: 1.75rem;">$25 OFF</h3>
