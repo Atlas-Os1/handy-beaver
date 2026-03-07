@@ -13,6 +13,7 @@ import { blogPage, blogPostPage } from './pages/blog';
 import { visualizePage } from './pages/visualize';
 import { agentPage } from './pages/agent';
 import { portalPage, loginPage, adminLoginPage } from './pages/portal';
+import { adminDashboard, adminCustomers, adminQuotes, adminMessages } from './pages/admin';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -71,25 +72,23 @@ app.get('/portal', async (c) => {
   return portalPage(c);
 });
 
-// Admin dashboard placeholder
-app.get('/admin', requireAdmin, (c) => {
-  const admin = c.get('admin');
-  return c.html(`
-    <!DOCTYPE html>
-    <html><head><title>Admin - ${siteConfig.business.name}</title></head>
-    <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #2C1810;">
-      <div style="background: white; padding: 2rem; border-radius: 12px; text-align: center; max-width: 500px;">
-        <img src="${admin.avatar_url || '/api/assets/beaver-avatar.png'}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem;">
-        <h1 style="color: #8B4513;">Welcome, ${admin.name || admin.github_username}!</h1>
-        <p style="color: #666;">Admin dashboard coming soon. For now, manage via Discord.</p>
-        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;">
-          <a href="/" style="color: #8B4513;">← Back to Site</a>
-          <a href="/api/auth/logout" style="color: #666;">Logout</a>
-        </div>
-      </div>
-    </body>
-    </html>
-  `);
+// Admin routes (protected)
+app.get('/admin', requireAdmin, adminDashboard);
+app.get('/admin/customers', requireAdmin, adminCustomers);
+app.get('/admin/quotes', requireAdmin, adminQuotes);
+app.get('/admin/messages', requireAdmin, adminMessages);
+app.get('/admin/jobs', requireAdmin, async (c) => {
+  // Placeholder - will implement full job management
+  return c.redirect('/admin');
+});
+app.get('/admin/invoices', requireAdmin, async (c) => {
+  return c.redirect('/admin');
+});
+app.get('/admin/payments', requireAdmin, async (c) => {
+  return c.redirect('/admin');
+});
+app.get('/admin/settings', requireAdmin, async (c) => {
+  return c.redirect('/admin');
 });
 
 // Health check
