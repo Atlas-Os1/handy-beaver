@@ -71,6 +71,13 @@ export const siteConfig = {
     channelId: "1479281060222337034", // This thread
   },
 
+  // AI Image Generation (Gemini Pro)
+  imageGeneration: {
+    provider: "google",
+    model: "gemini-pro", // For visualizing project outcomes
+    useCase: "Upload photo → AI shows finished project (siding, paint, repairs)",
+  },
+
   // Design Theme
   theme: {
     style: "barnwood",
