@@ -3,6 +3,14 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { siteConfig } from '../config/site.config';
 
+// Pages
+import { homePage } from './pages/home';
+import { servicesPage } from './pages/services';
+import { aboutPage } from './pages/about';
+import { contactPage } from './pages/contact';
+import { blogPage, blogPostPage } from './pages/blog';
+import { visualizePage } from './pages/visualize';
+
 type Bindings = {
   DB: D1Database;
   IMAGES: R2Bucket;
@@ -17,6 +25,34 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', logger());
 app.use('/api/*', cors());
 
+// ============ PUBLIC PAGES ============
+
+app.get('/', homePage);
+app.get('/services', servicesPage);
+app.get('/about', aboutPage);
+app.get('/contact', contactPage);
+app.get('/blog', blogPage);
+app.get('/blog/:slug', blogPostPage);
+app.get('/visualize', visualizePage);
+
+// Placeholder pages (TODO: implement)
+app.get('/portal', (c) => c.redirect('/login'));
+app.get('/login', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html><head><title>Login - ${siteConfig.business.name}</title></head>
+    <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #2C1810;">
+      <div style="background: white; padding: 2rem; border-radius: 12px; text-align: center; max-width: 400px;">
+        <h1 style="color: #8B4513;">Customer Portal</h1>
+        <p style="color: #666;">Portal coming soon! For now, <a href="/contact" style="color: #8B4513;">contact us</a> directly.</p>
+        <a href="/" style="display: inline-block; margin-top: 1rem; color: #8B4513;">← Back to Home</a>
+      </div>
+    </body>
+    </html>
+  `);
+});
+app.get('/chat', (c) => c.redirect('/contact'));
+
 // Health check
 app.get('/health', (c) => {
   return c.json({ 
@@ -26,112 +62,95 @@ app.get('/health', (c) => {
   });
 });
 
-// Landing page
-app.get('/', (c) => {
-  const { business, pricing, theme } = siteConfig;
+// ============ API ROUTES ============
+
+const api = new Hono<{ Bindings: Bindings }>();
+
+// Serve assets from R2
+api.get('/assets/:key{.+}', async (c) => {
+  const key = `assets/${c.req.param('key')}`;
+  const object = await c.env.IMAGES.get(key);
   
-  return c.html(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${business.name} - ${business.tagline}</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: 'Georgia', serif;
-          background: ${theme.colors.background};
-          color: ${theme.colors.card};
-          min-height: 100vh;
-        }
-        .hero {
-          text-align: center;
-          padding: 4rem 2rem;
-          background: linear-gradient(180deg, ${theme.colors.primary} 0%, ${theme.colors.background} 100%);
-        }
-        .mascot { font-size: 5rem; }
-        h1 { font-size: 3rem; color: ${theme.colors.accent}; margin: 1rem 0; }
-        .tagline { font-size: 1.25rem; color: ${theme.colors.secondary}; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-        .card {
-          background: ${theme.colors.card};
-          color: ${theme.colors.background};
-          border-radius: 12px;
-          padding: 2rem;
-          margin: 1rem 0;
-          box-shadow: 0 0 30px ${theme.cardGlow};
-        }
-        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        .price { font-size: 2rem; color: ${theme.colors.primary}; font-weight: bold; }
-        .cta {
-          display: inline-block;
-          background: ${theme.colors.primary};
-          color: ${theme.colors.card};
-          padding: 1rem 2rem;
-          border-radius: 8px;
-          text-decoration: none;
-          font-size: 1.25rem;
-          margin: 1rem 0;
-        }
-        .cta:hover { opacity: 0.9; }
-      </style>
-    </head>
-    <body>
-      <div class="hero">
-        <div class="mascot">${business.mascot}</div>
-        <h1>${business.name}</h1>
-        <p class="tagline">${business.tagline}</p>
-        <a href="/portal" class="cta">Schedule Service</a>
-      </div>
-      
-      <div class="container">
-        <div class="card">
-          <h2>Our Services</h2>
-          <p>${business.description}</p>
-          <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-            <li>Carpentry & Wood Work</li>
-            <li>Flooring Installation & Repair</li>
-            <li>Deck Building & Restoration</li>
-            <li>General Home Maintenance</li>
-          </ul>
-        </div>
-        
-        <div class="card">
-          <h2>Pricing</h2>
-          <div class="pricing-grid">
-            <div>
-              <h3>Labor (≤6 hrs)</h3>
-              <p class="price">$${pricing.labor.underSixHours}</p>
-            </div>
-            <div>
-              <h3>Labor (Full Day)</h3>
-              <p class="price">$${pricing.labor.overSixHours}/day</p>
-            </div>
-            <div>
-              <h3>Helper (≤6 hrs)</h3>
-              <p class="price">$${pricing.helper.underSixHours}</p>
-            </div>
-            <div>
-              <h3>Helper (Full Day)</h3>
-              <p class="price">$${pricing.helper.overSixHours}/day</p>
-            </div>
-          </div>
-          <p style="margin-top: 1rem; font-style: italic;">${pricing.notes}</p>
-        </div>
-        
-        <div class="card">
-          <h2>Service Area</h2>
-          <p>Proudly serving ${business.serviceArea}</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `);
+  if (!object) {
+    return c.notFound();
+  }
+  
+  const headers = new Headers();
+  headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
+  headers.set('Cache-Control', 'public, max-age=86400');
+  
+  return new Response(object.body, { headers });
 });
 
-// API Routes
-const api = new Hono<{ Bindings: Bindings }>();
+// Contact form submission
+api.post('/contact', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const service_type = formData.get('service_type') as string;
+    const description = formData.get('description') as string;
+    const address = formData.get('address') as string;
+    const promo = formData.get('promo') as string;
+    
+    // Save to D1
+    const result = await c.env.DB.prepare(`
+      INSERT INTO customers (email, name, phone, address, created_at, updated_at)
+      VALUES (?, ?, ?, ?, unixepoch(), unixepoch())
+      ON CONFLICT(email) DO UPDATE SET 
+        name = excluded.name,
+        phone = excluded.phone,
+        address = COALESCE(excluded.address, customers.address),
+        updated_at = unixepoch()
+    `).bind(email, name, phone, address).run();
+    
+    // Get customer ID
+    const customer = await c.env.DB.prepare(
+      'SELECT id FROM customers WHERE email = ?'
+    ).bind(email).first<{ id: number }>();
+    
+    if (customer) {
+      // Create booking/inquiry
+      await c.env.DB.prepare(`
+        INSERT INTO bookings (customer_id, title, description, service_type, status, notes, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'pending', ?, unixepoch(), unixepoch())
+      `).bind(
+        customer.id,
+        `Quote Request - ${service_type}`,
+        description,
+        service_type,
+        promo ? `Promo: ${promo}` : null
+      ).run();
+    }
+    
+    // TODO: Upload photos to R2
+    // TODO: Send Discord notification
+    // TODO: Send confirmation email
+    
+    return c.html(`
+      <!DOCTYPE html>
+      <html><head><title>Thank You - ${siteConfig.business.name}</title></head>
+      <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #2C1810;">
+        <div style="background: white; padding: 2rem; border-radius: 12px; text-align: center; max-width: 500px;">
+          <div style="font-size: 4rem; margin-bottom: 1rem;">🦫</div>
+          <h1 style="color: #8B4513;">Thank You, ${name}!</h1>
+          <p style="color: #666; margin: 1rem 0;">
+            We've received your quote request and will get back to you within 24 hours.
+          </p>
+          ${promo ? '<p style="color: #D2691E; font-weight: bold;">✓ Your discount has been applied!</p>' : ''}
+          <a href="/" style="display: inline-block; margin-top: 1rem; background: #8B4513; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none;">
+            Back to Home
+          </a>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Contact form error:', error);
+    return c.json({ error: 'Failed to submit form' }, 500);
+  }
+});
 
 // Auth: Send magic link
 api.post('/auth/login', async (c) => {
@@ -149,7 +168,6 @@ api.get('/auth/verify', async (c) => {
 
 // Bookings
 api.get('/bookings', async (c) => {
-  // TODO: Auth middleware, get customer bookings
   const bookings = await c.env.DB.prepare(
     'SELECT * FROM bookings ORDER BY created_at DESC LIMIT 50'
   ).all();
