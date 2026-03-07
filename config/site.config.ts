@@ -17,10 +17,10 @@ export const siteConfig = {
     serviceArea: "Southeast Oklahoma",
   },
 
-  // URLs (will be updated with custom domain later)
+  // URLs (Workers dev links, custom domain later)
   urls: {
-    site: "https://handy-beaver.pages.dev", // Cloudflare Pages dev URL
-    api: "https://handy-beaver-api.workers.dev", // Workers dev URL
+    site: "https://handy-beaver.srvcflo.workers.dev", // Workers dev URL
+    api: "https://handy-beaver.srvcflo.workers.dev/api", // Same worker, /api routes
   },
 
   // Social Media (to be configured)
