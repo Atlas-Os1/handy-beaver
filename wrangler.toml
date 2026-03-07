@@ -1,0 +1,21 @@
+name = "handy-beaver"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "handy-beaver-db"
+database_id = "20a0e8d8-37eb-4445-af1a-3e295d724abd"
+
+# R2 Storage (images)
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "handy-beaver-images"
+
+# Environment Variables (secrets via wrangler secret)
+[vars]
+ENVIRONMENT = "development"
+
+# Custom domain (later)
+# routes = [{ pattern = "thehandybeaver.com", custom_domain = true }]
