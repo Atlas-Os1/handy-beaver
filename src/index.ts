@@ -26,6 +26,7 @@ import { facebookSession } from './routes/facebook-session';
 import { facebookScraper } from './routes/facebook-scraper';
 import { portfolioApi } from './routes/portfolio';
 import { paymentsApi } from './routes/payments';
+import { voiceApi } from './routes/voice-api';
 import { paymentPage } from './pages/payment';
 
 // Auth
@@ -147,6 +148,7 @@ api.route('/facebook', facebookScraper);
 api.route('/images/portfolio', portfolioApi);
 api.route('/portfolio', portfolioApi);
 api.route('/payments', paymentsApi);
+api.route('/voice', voiceApi);
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {
