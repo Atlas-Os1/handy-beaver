@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { siteConfig } from '../../config/site.config';
-import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, type PortfolioCategory } from '../../config/portfolio-manifest';
+import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
 
 const { business } = siteConfig;
 
@@ -9,10 +9,11 @@ const { business } = siteConfig;
 const categories: Array<{ slug: PortfolioCategory; name: string; icon: string; description: string }> = [
   { slug: 'bathroom-remodels', name: 'Bathroom Remodels', icon: '🛁', description: 'Full bathroom transformations with tile, shiplap, and custom woodwork' },
   { slug: 'specialty-wood', name: 'Specialty Wood', icon: '🪵', description: 'Blue pine, beetle kill, live-edge, and premium woodwork' },
-  { slug: 'trim-carpentry', name: 'Trim & Carpentry', icon: '🔨', description: 'Crown molding, door trim, T&G accent walls' },
-  { slug: 'flooring', name: 'Flooring', icon: '🏠', description: 'Hardwood installation, repair, and refinishing' },
   { slug: 'stairs-railings', name: 'Stairs & Railings', icon: '🪜', description: 'Custom stairs, modern metal railings' },
-  { slug: 'decks-outdoor', name: 'Decks & Outdoor', icon: '🏡', description: 'Deck builds, repairs, staining, and outdoor living' },
+  { slug: 'flooring', name: 'Flooring', icon: '🏠', description: 'Hardwood installation, repair, and refinishing' },
+  { slug: 'tiny-home', name: 'Tiny Home Build', icon: '🏠', description: 'Complete tiny home construction with premium finishes' },
+  { slug: 'kitchen-bar', name: 'Kitchen & Bar', icon: '🍺', description: 'Custom bars, epoxy counters, and kitchen renovations' },
+  { slug: 'trim-carpentry', name: 'Trim & Carpentry', icon: '🔨', description: 'Crown molding, door trim, T&G accent walls' },
   { slug: 'doors', name: 'Door Installation', icon: '🚪', description: 'Entry doors, French doors, and custom trim work' },
 ];
 
@@ -38,11 +39,11 @@ export const galleryPage = (c: Context) => {
               <div class="ba-card">
                 <div class="ba-images">
                   <div class="ba-before">
-                    <img src="/api/images/portfolio/${before.category}/${before.filename}" alt="${before.title}" loading="lazy">
+                    <img src="${getImageUrl(before)}" alt="${before.title}" loading="lazy">
                     <span class="ba-label">Before</span>
                   </div>
                   <div class="ba-after">
-                    <img src="/api/images/portfolio/${after.category}/${after.filename}" alt="${after.title}" loading="lazy">
+                    <img src="${getImageUrl(after)}" alt="${after.title}" loading="lazy">
                     <span class="ba-label">After</span>
                   </div>
                 </div>
@@ -92,7 +93,7 @@ export const galleryPage = (c: Context) => {
         ${featured.map(img => `
           <div class="gallery-item ${img.featured ? 'featured' : ''}" data-category="${img.category}">
             <img 
-              src="/api/images/portfolio/${img.category}/${img.filename}" 
+              src="${getImageUrl(img)}" 
               alt="${img.title}"
               loading="lazy"
               onclick="openLightbox(this)"
@@ -337,7 +338,7 @@ export const galleryCategoryPage = async (c: Context) => {
           ${images.map(img => `
             <div class="gallery-item ${img.featured ? 'featured' : ''}" data-type="${img.type}">
               <img 
-                src="/api/images/portfolio/${img.category}/${img.filename}" 
+                src="${getImageUrl(img)}" 
                 alt="${img.title}"
                 loading="lazy"
                 onclick="openLightbox(this)"

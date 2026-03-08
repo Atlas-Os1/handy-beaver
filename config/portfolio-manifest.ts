@@ -1,14 +1,13 @@
 /**
  * Portfolio Image Manifest
  * 
- * Organized from Flo's photo analysis in Discord thread.
- * Images will be uploaded to R2 bucket: handy-beaver-images
- * 
- * Structure: /portfolio/{category}/{filename}
+ * Images are stored in public/portfolio/ (static files)
+ * Organized by Flo's photo analysis in Discord thread.
  */
 
 export interface PortfolioImage {
   filename: string;
+  folder: string; // Folder in public/portfolio/
   title: string;
   description: string;
   category: PortfolioCategory;
@@ -16,7 +15,7 @@ export interface PortfolioImage {
   tags: string[];
   featured?: boolean;
   pairedWith?: string; // filename of paired before/after image
-  notes?: string; // Internal notes from Flo's analysis
+  notes?: string;
 }
 
 export type PortfolioCategory = 
@@ -27,54 +26,88 @@ export type PortfolioCategory =
   | 'stairs-railings'
   | 'decks-outdoor'
   | 'doors'
+  | 'tiny-home'
+  | 'kitchen-bar'
   | 'about';
 
 /**
- * Images from thread analysis - TO BE UPLOADED
- * 
- * Minte needs to share actual image files. These are placeholders
- * based on Flo's descriptions.
+ * Actual images from public/portfolio/
  */
 export const portfolioManifest: PortfolioImage[] = [
   // ============================================
-  // BATHROOM REMODELS - Stone Tile Bathroom
+  // HERO IMAGES (Homepage feature)
   // ============================================
   {
-    filename: 'bathroom-stone-before.jpg',
+    filename: 'blue-pine-room.jpg',
+    folder: 'hero',
+    title: 'Blue Pine Interior',
+    description: 'Beetle kill pine walls AND ceiling with distinctive blue-grey mineral streaking',
+    category: 'specialty-wood',
+    type: 'hero',
+    tags: ['blue-pine', 'beetle-kill', 'specialty', 'premium'],
+    featured: true,
+    notes: 'SIGNATURE SHOT - Premium material differentiator'
+  },
+  {
+    filename: 'live-edge-vanity.jpg',
+    folder: 'hero',
+    title: 'Live-Edge Walnut Vanity',
+    description: 'Custom vanity with live-edge walnut countertop, pine shiplap, brushed nickel fixtures',
+    category: 'bathroom-remodels',
+    type: 'hero',
+    tags: ['bathroom', 'vanity', 'live-edge', 'walnut', 'custom'],
+    featured: true,
+    notes: 'HERO MATERIAL - craftsman-level work'
+  },
+  {
+    filename: 'bar-epoxy-counter.jpg',
+    folder: 'hero',
+    title: 'Epoxy Bar Counter',
+    description: 'Custom bar with epoxy river counter, blue pine walls, professional finish',
+    category: 'kitchen-bar',
+    type: 'hero',
+    tags: ['bar', 'epoxy', 'custom', 'blue-pine'],
+    featured: true,
+    notes: 'Shows custom finish work capability'
+  },
+
+  // ============================================
+  // BATHROOM REMODELS
+  // ============================================
+  {
+    filename: 'stone-tile-before.jpg',
+    folder: 'bathroom',
     title: 'Bathroom Remodel - Before',
     description: 'Tub framed in, insulation up, cement board starting',
     category: 'bathroom-remodels',
     type: 'before',
     tags: ['bathroom', 'remodel', 'before-after', 'framing'],
-    pairedWith: 'bathroom-stone-after.jpg',
-    notes: 'Shows work from the studs - builds trust'
+    pairedWith: 'stone-tile-after.jpg'
   },
   {
-    filename: 'bathroom-stone-after.jpg',
+    filename: 'stone-tile-after.jpg',
+    folder: 'bathroom',
     title: 'Stone Tile Bathroom',
     description: 'Stone-look tile surround, shiplap walls, T&G wood ceiling, rustic flooring',
     category: 'bathroom-remodels',
     type: 'after',
     tags: ['bathroom', 'remodel', 'tile', 'shiplap', 'T&G'],
     featured: true,
-    pairedWith: 'bathroom-stone-before.jpg',
-    notes: 'HERO MATERIAL - before/after pair that sells jobs'
+    pairedWith: 'stone-tile-before.jpg'
   },
-
-  // ============================================
-  // BATHROOM REMODELS - Shiplap Bathroom
-  // ============================================
   {
-    filename: 'bathroom-shiplap-gut.jpg',
+    filename: 'shiplap-gut.jpg',
+    folder: 'bathroom',
     title: 'Bathroom Gut Phase',
     description: 'Stripped to studs, popcorn ceiling removed, demo debris',
     category: 'bathroom-remodels',
     type: 'before',
     tags: ['bathroom', 'demo', 'gut-job'],
-    pairedWith: 'bathroom-shiplap-finished.jpg'
+    pairedWith: 'shiplap-finished.jpg'
   },
   {
-    filename: 'bathroom-shiplap-midwork.jpg',
+    filename: 'shiplap-mid.jpg',
+    folder: 'bathroom',
     title: 'Shiplap Installation',
     description: 'Shiplap going up, ceiling joists exposed, exhaust fan install',
     category: 'bathroom-remodels',
@@ -82,164 +115,94 @@ export const portfolioManifest: PortfolioImage[] = [
     tags: ['bathroom', 'shiplap', 'process']
   },
   {
-    filename: 'bathroom-shiplap-ceiling.jpg',
+    filename: 'shiplap-finished.jpg',
+    folder: 'bathroom',
     title: 'Pine Shiplap Bathroom',
     description: 'Pine shiplap walls AND ceiling, modern lighting, clean finish',
     category: 'bathroom-remodels',
     type: 'after',
     tags: ['bathroom', 'shiplap', 'pine', 'ceiling'],
-    featured: true,
-    notes: 'Shows full shiplap treatment'
+    pairedWith: 'shiplap-gut.jpg'
   },
   {
-    filename: 'bathroom-liveedge-vanity.jpg',
-    title: 'Live-Edge Walnut Vanity',
-    description: 'Custom vanity with live-edge walnut countertop, pine shiplap, brushed nickel fixtures',
+    filename: 'vanity-detail.jpg',
+    folder: 'bathroom',
+    title: 'Vanity Detail',
+    description: 'Close-up of custom vanity craftsmanship',
     category: 'bathroom-remodels',
-    type: 'hero',
-    tags: ['bathroom', 'vanity', 'live-edge', 'walnut', 'custom'],
-    featured: true,
-    notes: 'HERO MATERIAL - craftsman-level work, shows custom woodwork capability'
-  },
-  {
-    filename: 'bathroom-shiplap-finished.jpg',
-    title: 'Completed Shiplap Bathroom',
-    description: 'Grey slate-look tile floor, white fixtures, pine throughout',
-    category: 'bathroom-remodels',
-    type: 'after',
-    tags: ['bathroom', 'shiplap', 'tile', 'finished'],
-    pairedWith: 'bathroom-shiplap-gut.jpg'
+    type: 'gallery',
+    tags: ['bathroom', 'vanity', 'detail']
   },
 
   // ============================================
-  // SPECIALTY WOOD - Blue Pine / Beetle Kill
+  // SPECIALTY WOOD - Blue Pine
   // ============================================
   {
-    filename: 'blue-pine-room.jpg',
-    title: 'Blue Pine Interior',
-    description: 'Beetle kill pine walls AND ceiling with distinctive blue-grey mineral streaking',
+    filename: 'full-room.jpg',
+    folder: 'blue-pine',
+    title: 'Blue Pine Full Room',
+    description: 'Complete room with beetle kill pine walls and ceiling',
     category: 'specialty-wood',
-    type: 'hero',
-    tags: ['blue-pine', 'beetle-kill', 'specialty', 'premium'],
-    featured: true,
-    notes: 'SIGNATURE SHOT - Premium, expensive, hard to source. Differentiates from big-box basics.'
-  },
-
-  // ============================================
-  // STAIRS & RAILINGS
-  // ============================================
-  {
-    filename: 'stairs-construction.jpg',
-    title: 'Custom Stair Construction',
-    description: 'Custom stringer work showing build process',
-    category: 'stairs-railings',
-    type: 'before',
-    tags: ['stairs', 'construction', 'process'],
-    notes: 'Good for "How We Build" section'
+    type: 'gallery',
+    tags: ['blue-pine', 'beetle-kill', 'specialty'],
+    featured: true
   },
   {
-    filename: 'stairs-metal-railing.jpg',
+    filename: 'stairs-railing.jpg',
+    folder: 'blue-pine',
     title: 'Modern Metal Railing',
     description: 'Custom stair trim with zigzag detail, black horizontal bar railing, buggy pine accent wall',
     category: 'stairs-railings',
     type: 'hero',
     tags: ['stairs', 'railing', 'metal', 'modern-rustic'],
-    featured: true,
-    notes: 'Modern-rustic perfected. Reshoot when scaffolding removed.'
+    featured: true
+  },
+  {
+    filename: 'stair-build.jpg',
+    folder: 'blue-pine',
+    title: 'Custom Stair Construction',
+    description: 'Custom stringer work showing build process',
+    category: 'stairs-railings',
+    type: 'before',
+    tags: ['stairs', 'construction', 'process']
   },
 
   // ============================================
-  // DECKS & OUTDOOR
+  // FLOORING
   // ============================================
   {
-    filename: 'deck-timber-sunset.jpg',
-    title: 'Timber Frame Deck',
-    description: 'Dramatic timber trusses, covered deck with horizontal railing, golden hour shot',
-    category: 'decks-outdoor',
-    type: 'gallery',
-    tags: ['deck', 'timber', 'outdoor', 'architecture'],
-    notes: 'Beautiful golden hour shot. Reshoot when siding complete.'
-  },
-
-  // ============================================
-  // TRIM & CARPENTRY - T&G Accent Walls
-  // ============================================
-  {
-    filename: 'tg-accent-wall.jpg',
-    title: 'T&G Accent Wall',
-    description: 'Knotty pine tongue-and-groove wrapping around corner partition, dark stained baseboard',
-    category: 'trim-carpentry',
-    type: 'hero',
-    tags: ['T&G', 'pine', 'accent-wall', 'trim'],
-    featured: true,
-    notes: 'Portfolio-ready NOW. Shows precision - horizontal lines tight, corners wrap seamlessly.'
-  },
-  {
-    filename: 'french-doors-tg.jpg',
-    title: 'French Doors with T&G Surround',
-    description: 'French doors framed with pine T&G, shows integration of woodwork with door installation',
-    category: 'trim-carpentry',
-    type: 'gallery',
-    tags: ['french-doors', 'T&G', 'doors', 'trim'],
-    notes: 'Reshoot when finished for best version'
-  },
-
-  // ============================================
-  // DOORS
-  // ============================================
-  {
-    filename: 'door-exterior-mahogany.jpg',
-    title: 'Exterior Door Installation',
-    description: 'Mahogany-style exterior door with 3/4 glass panel, cedar trim',
-    category: 'doors',
-    type: 'gallery',
-    tags: ['door', 'exterior', 'mahogany', 'glass'],
-    notes: 'Hold until stickers removed and trim stained/painted'
-  },
-
-  // ============================================
-  // FLOORING - Hardwood Repair
-  // ============================================
-  {
-    filename: 'flooring-damage.jpg',
+    filename: 'hardwood-damage.jpg',
+    folder: 'flooring',
     title: 'Water Damaged Hardwood',
     description: 'Oak hardwood with water damage - buckling, gaps, boards lifting',
     category: 'flooring',
     type: 'before',
     tags: ['flooring', 'hardwood', 'damage', 'repair'],
-    pairedWith: 'flooring-repair-bar.jpg'
+    pairedWith: 'hardwood-finished-bar.jpg'
   },
   {
-    filename: 'flooring-subfloor.jpg',
+    filename: 'hardwood-subfloor.jpg',
+    folder: 'flooring',
     title: 'Subfloor Repair',
     description: 'Subfloor exposed, old underlayment visible, significant repair scope',
     category: 'flooring',
     type: 'gallery',
-    tags: ['flooring', 'subfloor', 'repair', 'process'],
-    notes: 'Good for "Our Process" page'
+    tags: ['flooring', 'subfloor', 'repair', 'process']
   },
   {
-    filename: 'flooring-repair-bar.jpg',
+    filename: 'hardwood-finished-bar.jpg',
+    folder: 'flooring',
     title: 'Seamless Hardwood Repair',
-    description: 'Repaired floor with stone bar base, blue pine walls, granite counters - seamless match',
+    description: 'Repaired floor with stone bar base - seamless invisible patch',
     category: 'flooring',
     type: 'after',
     tags: ['flooring', 'hardwood', 'repair', 'seamless'],
     featured: true,
-    pairedWith: 'flooring-damage.jpg',
-    notes: 'MONEY SHOT - Can\'t tell where repair was. Proves invisible patch capability.'
+    pairedWith: 'hardwood-damage.jpg'
   },
   {
-    filename: 'flooring-repair-lifestyle.jpg',
-    title: 'Restored Hardwood',
-    description: 'Warm, lived-in space showing floor in use with Christmas tree',
-    category: 'flooring',
-    type: 'gallery',
-    tags: ['flooring', 'hardwood', 'lifestyle'],
-    notes: 'Great lifestyle shot for social/homepage'
-  },
-  {
-    filename: 'flooring-kitchen.jpg',
+    filename: 'hardwood-finished-kitchen.jpg',
+    folder: 'flooring',
     title: 'Kitchen Floor Continuity',
     description: 'Floor continuity throughout kitchen, around island, professional finish',
     category: 'flooring',
@@ -248,40 +211,118 @@ export const portfolioManifest: PortfolioImage[] = [
   },
 
   // ============================================
-  // ABOUT - Owner/Team
+  // TINY HOME
   // ============================================
   {
-    filename: 'owner-headshot.jpg',
-    title: 'Owner Photo',
-    description: 'Casual headshot with personality - blue mirror shades and beard',
-    category: 'about',
-    type: 'about',
-    tags: ['owner', 'headshot', 'about'],
-    featured: true,
-    notes: 'Good for About page, social profiles, Meet the Team'
+    filename: 'exterior.jpg',
+    folder: 'tiny-home',
+    title: 'Tiny Home Exterior',
+    description: 'Tiny home build exterior with timber framing',
+    category: 'tiny-home',
+    type: 'gallery',
+    tags: ['tiny-home', 'exterior', 'build']
   },
   {
-    filename: 'owner-working.mp4',
-    title: 'Craftsman at Work',
-    description: 'Precision trim work with nail gun, shows attention to detail',
-    category: 'about',
-    type: 'social',
-    tags: ['owner', 'working', 'video', 'social'],
-    notes: 'GOLD for social media - Instagram/TikTok/Facebook. Shows real skill.'
+    filename: 'exterior-sunset.jpg',
+    folder: 'tiny-home',
+    title: 'Tiny Home at Sunset',
+    description: 'Golden hour shot with dramatic timber trusses and covered deck',
+    category: 'tiny-home',
+    type: 'gallery',
+    tags: ['tiny-home', 'exterior', 'sunset'],
+    featured: true
+  },
+  {
+    filename: 'flooring-main.jpg',
+    folder: 'tiny-home',
+    title: 'Tiny Home Flooring',
+    description: 'Interior flooring installation',
+    category: 'tiny-home',
+    type: 'gallery',
+    tags: ['tiny-home', 'flooring', 'interior']
+  },
+  {
+    filename: 'kitchen.jpg',
+    folder: 'tiny-home',
+    title: 'Tiny Home Kitchen',
+    description: 'Compact kitchen with custom woodwork',
+    category: 'tiny-home',
+    type: 'gallery',
+    tags: ['tiny-home', 'kitchen', 'interior']
   },
 
   // ============================================
-  // VIDEO CONTENT
+  // KITCHEN/BAR
   // ============================================
   {
-    filename: 'transformation-compilation.mp4',
+    filename: 'bar-main.jpg',
+    folder: 'kitchen-bar',
+    title: 'Custom Bar',
+    description: 'Full custom bar with blue pine and epoxy finishes',
+    category: 'kitchen-bar',
+    type: 'gallery',
+    tags: ['bar', 'kitchen', 'custom', 'blue-pine']
+  },
+
+  // ============================================
+  // DOORS & TRIM
+  // ============================================
+  {
+    filename: 'tg-accent-wall.jpg',
+    folder: 'doors-trim',
+    title: 'T&G Accent Wall',
+    description: 'Knotty pine tongue-and-groove wrapping around corner partition',
+    category: 'trim-carpentry',
+    type: 'hero',
+    tags: ['T&G', 'pine', 'accent-wall', 'trim'],
+    featured: true
+  },
+  {
+    filename: 'french-doors-tg.jpg',
+    folder: 'doors-trim',
+    title: 'French Doors with T&G',
+    description: 'French doors framed with pine T&G surround',
+    category: 'doors',
+    type: 'gallery',
+    tags: ['french-doors', 'T&G', 'doors', 'trim']
+  },
+
+  // ============================================
+  // ABOUT
+  // ============================================
+  {
+    filename: 'headshot.jpg',
+    folder: 'about',
+    title: 'Owner Photo',
+    description: 'Casual headshot with personality',
+    category: 'about',
+    type: 'about',
+    tags: ['owner', 'headshot', 'about'],
+    featured: true
+  },
+];
+
+/**
+ * Video content (separate from images)
+ */
+export const portfolioVideos = [
+  {
+    filename: 'transformation.mov',
+    folder: 'videos',
     title: 'Full Project Transformation',
     description: 'Video compilation: construction → finished bar, bathroom, interiors',
     category: 'specialty-wood',
-    type: 'social',
-    tags: ['video', 'transformation', 'social', 'compilation'],
-    featured: true,
-    notes: 'Perfect for Instagram Reels, TikTok, Facebook. Homepage background video potential.'
+    tags: ['video', 'transformation', 'social'],
+    notes: 'Perfect for Instagram Reels, TikTok, Facebook'
+  },
+  {
+    filename: 'working.mov',
+    folder: 'about',
+    title: 'Craftsman at Work',
+    description: 'Precision trim work with nail gun, shows attention to detail',
+    category: 'about',
+    tags: ['owner', 'working', 'video', 'social'],
+    notes: 'GOLD for social media'
   },
 ];
 
@@ -307,7 +348,7 @@ export function getBeforeAfterPairs(): Array<{ before: PortfolioImage; after: Po
   const beforeImages = portfolioManifest.filter(img => img.type === 'before' && img.pairedWith);
   
   for (const before of beforeImages) {
-    const after = portfolioManifest.find(img => img.filename === before.pairedWith);
+    const after = portfolioManifest.find(img => img.filename === before.pairedWith && img.folder === before.folder);
     if (after) {
       pairs.push({ before, after });
     }
@@ -317,15 +358,15 @@ export function getBeforeAfterPairs(): Array<{ before: PortfolioImage; after: Po
 }
 
 /**
- * Get hero images for each category
+ * Get hero images
  */
 export function getHeroImages(): PortfolioImage[] {
   return portfolioManifest.filter(img => img.type === 'hero');
 }
 
 /**
- * R2 URL builder
+ * URL builder (images served from R2 via /api/assets/)
  */
-export function getR2Url(filename: string, category: PortfolioCategory): string {
-  return `/api/images/portfolio/${category}/${filename}`;
+export function getImageUrl(image: PortfolioImage): string {
+  return `/api/assets/portfolio/${image.folder}/${image.filename}`;
 }
