@@ -107,10 +107,13 @@ voiceApi.post('/lead', async (c) => {
   
   // Create customer if new
   if (!customer) {
+    // Email is required, generate placeholder if not provided
+    const customerEmail = email || `${phone.replace(/\D/g, '')}@phone.handybeaver.co`;
+    
     await c.env.DB.prepare(`
       INSERT INTO customers (name, phone, email, address, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, 'lead', ?, ?)
-    `).bind(name, phone, email || null, address || null, now, now).run();
+    `).bind(name, phone, customerEmail, address || null, now, now).run();
     
     customer = await c.env.DB.prepare(
       'SELECT * FROM customers WHERE phone = ?'
@@ -217,10 +220,12 @@ voiceApi.post('/schedule', async (c) => {
   ).bind(phone).first<any>();
   
   if (!customer) {
+    const customerEmail = `${phone.replace(/\D/g, '')}@phone.handybeaver.co`;
+    
     await c.env.DB.prepare(`
-      INSERT INTO customers (name, phone, address, status, created_at, updated_at)
-      VALUES (?, ?, ?, 'prospect', ?, ?)
-    `).bind(customer_name, phone, address || null, now, now).run();
+      INSERT INTO customers (name, phone, email, address, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'prospect', ?, ?)
+    `).bind(customer_name, phone, customerEmail, address || null, now, now).run();
     
     customer = await c.env.DB.prepare(
       'SELECT * FROM customers WHERE phone = ?'
