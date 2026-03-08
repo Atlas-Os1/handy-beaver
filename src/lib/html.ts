@@ -279,6 +279,10 @@ export const layout = (title: string, content: string, activeNav?: string) => `
       document.getElementById('promo-popup').classList.remove('active');
     }
   </script>
+  
+  <!-- Lil Beaver Voice Agent Widget -->
+  <elevenlabs-convai agent-id="agent_6401kk7jr6ngey2ancnk6nf7kpwy"></elevenlabs-convai>
+  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
 </body>
 </html>
 `;

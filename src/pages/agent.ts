@@ -120,6 +120,26 @@ export const agentPage = (c: Context) => {
           </div>
         </div>
         
+        <!-- Voice Call Option -->
+        <div class="card" style="margin-top: 2rem; text-align: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📞</div>
+          <h2 style="margin-bottom: 0.5rem;">Talk to Lil Beaver</h2>
+          <p style="opacity: 0.9; margin-bottom: 1.5rem;">
+            Click the chat bubble in the bottom-right corner to start a voice conversation with our AI assistant!
+          </p>
+          <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <div style="background: rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; border-radius: 8px;">
+              🎤 Voice or Text
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; border-radius: 8px;">
+              ⚡ Instant Answers
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; border-radius: 8px;">
+              📋 Get Quotes
+            </div>
+          </div>
+        </div>
+        
         <!-- Info Cards -->
         <div class="grid grid-3" style="margin-top: 2rem;">
           <div class="card" style="text-align: center;">
