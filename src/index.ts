@@ -18,6 +18,7 @@ import { adminDashboard, adminCustomers, adminQuotes, adminMessages } from './pa
 // Routes
 import { authRoutes } from './routes/auth';
 import { adminApi } from './routes/admin-api';
+import { facebookMonitor } from './routes/facebook-monitor';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -110,6 +111,9 @@ api.route('/auth', authRoutes);
 
 // Mount admin API routes
 api.route('/admin', adminApi);
+
+// Mount Facebook monitoring routes
+api.route('/facebook', facebookMonitor);
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {

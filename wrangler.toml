@@ -13,6 +13,10 @@ database_id = "20a0e8d8-37eb-4445-af1a-3e295d724abd"
 binding = "IMAGES"
 bucket_name = "handy-beaver-images"
 
+# Browser Rendering (for Facebook group scraping)
+[browser]
+binding = "BROWSER"
+
 # Environment Variables
 [vars]
 ENVIRONMENT = "development"
