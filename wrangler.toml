@@ -1,6 +1,7 @@
 name = "handy-beaver"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
 
 # D1 Database
 [[d1_databases]]
@@ -37,8 +38,15 @@ ENVIRONMENT = "development"
 #   { name = "EMAIL_HANDLER" }
 # ]
 
-# Custom domain
-routes = [
-  { pattern = "handybeaver.co", custom_domain = true },
-  { pattern = "www.handybeaver.co", custom_domain = true }
-]
+# Cron triggers - Facebook group scan every 30 minutes
+[triggers]
+crons = ["*/30 * * * *"]
+
+# Custom domain (separate from triggers)
+[[routes]]
+pattern = "handybeaver.co"
+custom_domain = true
+
+[[routes]]
+pattern = "www.handybeaver.co"
+custom_domain = true
