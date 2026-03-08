@@ -77,21 +77,7 @@ function getResponseTemplate(keywords: string[]): string {
   return "Hey! I do this kind of work in SE Oklahoma — flooring, trim, deck repair, maintenance. $175/half day or $300/full day. Check out handybeaver.co for a free quote! 🦫";
 }
 
-// Manually trigger a group scan (for testing)
-facebookMonitor.post('/scan', async (c) => {
-  const { group_url } = await c.req.json();
-  
-  if (!group_url) {
-    return c.json({ error: 'group_url required' }, 400);
-  }
-  
-  // For now, just acknowledge - full implementation needs session management
-  return c.json({
-    message: 'Scan queued',
-    group_url,
-    note: 'Full implementation requires Facebook session cookies stored in KV/D1',
-  });
-});
+// Note: /scan route moved to facebook-scraper.ts with full implementation
 
 // Get all detected leads
 facebookMonitor.get('/leads', async (c) => {
