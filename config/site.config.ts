@@ -9,12 +9,36 @@ export const siteConfig = {
   // Business Identity
   business: {
     name: "The Handy Beaver",
-    tagline: "Your Traveling Craftsman & Maintenance Service",
-    description: "Professional carpentry, flooring, deck repair, and residential maintenance for Southeast Oklahoma",
+    tagline: "Cabin Maintenance & Repair for Hochatown & Broken Bow",
+    description: "Professional deck repair, siding, trim, and cabin maintenance for vacation rental owners in Hochatown, Broken Bow, and Southeast Oklahoma. Trusted by out-of-state investors and property managers.",
     mascot: "🦫",
     email: "contact@thehandybeaver.com",
     phone: "", // TBD
-    serviceArea: "Southeast Oklahoma",
+    serviceArea: "Hochatown, Broken Bow & Southeast Oklahoma",
+  },
+
+  // Service Area Details (for SEO and targeting)
+  serviceAreas: {
+    primary: ["Hochatown", "Broken Bow", "Beavers Bend"],
+    secondary: ["McCurtain County", "Idabel", "Wright City", "Valliant"],
+    marketingFocus: {
+      region: "Dallas-Fort Worth metro",
+      reason: "Primary investor base for vacation rentals",
+      distance: "170 miles / 2.5 hours",
+    },
+  },
+
+  // Target Market
+  targetMarket: {
+    primary: "Out-of-state vacation rental investors (DFW)",
+    secondary: "Property management companies",
+    tertiary: "Local homeowners",
+    painPoints: [
+      "Need reliable local vendors",
+      "Remote management challenges",
+      "Quick turnaround between bookings",
+      "Photo documentation of work",
+    ],
   },
 
   // URLs
