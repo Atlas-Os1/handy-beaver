@@ -29,9 +29,9 @@ import { authRoutes } from './routes/auth';
 import { adminApi } from './routes/admin-api';
 import { facebookMonitor } from './routes/facebook-monitor';
 import { facebookPosts } from './routes/facebook-posts';
-// Temporarily disabled - puppeteer build issue
-// import { facebookSession } from './routes/facebook-session';
-// import { facebookScraper } from './routes/facebook-scraper';
+// Facebook scraping via Browser Rendering
+import { facebookSession } from './routes/facebook-session';
+import { facebookScraper } from './routes/facebook-scraper';
 import { portfolioApi } from './routes/portfolio';
 import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
@@ -298,9 +298,9 @@ api.route('/admin', adminApi);
 // Mount Facebook monitoring routes
 api.route('/facebook', facebookMonitor);
 api.route('/facebook', facebookPosts);
-// Temporarily disabled - puppeteer build issue
-// api.route('/facebook', facebookSession);
-// api.route('/facebook', facebookScraper);
+// Facebook scraping via Browser Rendering
+api.route('/facebook', facebookSession);
+api.route('/facebook', facebookScraper);
 
 // Mount portfolio/gallery API routes
 api.route('/images/portfolio', portfolioApi);
