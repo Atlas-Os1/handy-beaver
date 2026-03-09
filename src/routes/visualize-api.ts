@@ -5,6 +5,7 @@ type Bindings = {
   DB: D1Database;
   IMAGES: R2Bucket;
   GEMINI_API_KEY?: string;
+  AI?: any; // Cloudflare Workers AI binding
 };
 
 type CustomerSession = {
@@ -223,7 +224,53 @@ visualizeApi.post('/generate', async (c) => {
       });
     }
     
-    // Call Gemini API for image editing
+    // Step 1: Enhance prompt via Lil Beaver (Gemini Flash)
+    let enhancedPrompt = prompt;
+    try {
+      const enhanceUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${c.env.GEMINI_API_KEY}`;
+      
+      const enhanceResponse = await fetch(enhanceUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are Lil Beaver, a friendly home improvement expert assistant for The Handy Beaver handyman service. 
+
+Your task: Enhance this customer's visualization request into a detailed, professional prompt for AI image generation. Add specific details about:
+- Wood types (cedar, pine, oak, mahogany, etc.)
+- Stain/paint terminology (semi-transparent, solid, satin, semi-gloss, matte)
+- Color accuracy (use descriptive color names like "dark walnut", "honey oak", "weathered gray")
+- Construction details where relevant (board width, railing style, trim profiles)
+
+Keep the customer's intent but make it more specific and detailed. Output ONLY the enhanced prompt, no explanations.
+
+Customer's request: "${prompt}"
+
+Enhanced prompt:`
+            }]
+          }],
+          generationConfig: {
+            maxOutputTokens: 200,
+            temperature: 0.7,
+          },
+        }),
+      });
+      
+      if (enhanceResponse.ok) {
+        const enhanceResult = await enhanceResponse.json() as any;
+        const enhancedText = enhanceResult.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (enhancedText) {
+          enhancedPrompt = enhancedText.trim();
+          console.log('Prompt enhanced:', enhancedPrompt);
+        }
+      }
+    } catch (e) {
+      console.error('Prompt enhancement failed, using original:', e);
+      // Continue with original prompt
+    }
+    
+    // Step 2: Call Gemini API for image editing
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${c.env.GEMINI_API_KEY}`;
     
     const response = await fetch(geminiUrl, {
@@ -232,7 +279,7 @@ visualizeApi.post('/generate', async (c) => {
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: `You are a home improvement visualization assistant. Edit this image according to the following request. Keep the original perspective and lighting as much as possible. Request: ${prompt}` },
+            { text: `You are a professional home improvement visualization assistant for The Handy Beaver handyman service. Edit this image according to the following detailed request. Keep the original perspective, lighting, and composition as much as possible while applying the requested changes realistically. Request: ${enhancedPrompt}` },
             {
               inline_data: {
                 mime_type: imageFile.type,
@@ -247,20 +294,48 @@ visualizeApi.post('/generate', async (c) => {
       }),
     });
     
+    let generatedImageBase64: string | null = null;
+    let generationMethod = 'gemini';
+    
     if (!response.ok) {
       const error = await response.text();
       console.error('Gemini API error:', error);
-      throw new Error('AI generation failed');
-    }
-    
-    const result = await response.json() as any;
-    
-    // Extract generated image
-    let generatedImageBase64: string | null = null;
-    for (const part of result.candidates?.[0]?.content?.parts || []) {
-      if (part.inline_data?.data) {
-        generatedImageBase64 = part.inline_data.data;
-        break;
+      
+      // Fallback to Cloudflare Workers AI
+      if (c.env.AI) {
+        console.log('Falling back to CF Workers AI');
+        generationMethod = 'workers-ai';
+        
+        try {
+          const cfResult = await c.env.AI.run(
+            '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+            {
+              prompt: `Home improvement visualization: ${enhancedPrompt}. Professional photo, realistic lighting, high quality.`,
+              // Note: Workers AI SD doesn't support image-to-image, so this is text-to-image only
+            }
+          );
+          
+          if (cfResult) {
+            // CF Workers AI returns ArrayBuffer
+            const buffer = new Uint8Array(cfResult);
+            generatedImageBase64 = btoa(String.fromCharCode(...buffer));
+          }
+        } catch (cfError) {
+          console.error('CF Workers AI fallback failed:', cfError);
+          throw new Error('AI generation failed (both Gemini and fallback)');
+        }
+      } else {
+        throw new Error('AI generation failed');
+      }
+    } else {
+      const result = await response.json() as any;
+      
+      // Extract generated image from Gemini response
+      for (const part of result.candidates?.[0]?.content?.parts || []) {
+        if (part.inline_data?.data) {
+          generatedImageBase64 = part.inline_data.data;
+          break;
+        }
       }
     }
     
@@ -283,12 +358,12 @@ visualizeApi.post('/generate', async (c) => {
       },
     });
     
-    // Log usage
+    // Log usage with enhanced prompt
     const now = Math.floor(Date.now() / 1000);
     await c.env.DB.prepare(`
       INSERT INTO visualizer_usage (customer_id, image_key, prompt, result_key, result_url, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(customerId, inputKey, prompt, resultKey, `/api/assets/${resultKey}`, now).run();
+    `).bind(customerId, inputKey, `[${generationMethod}] ${enhancedPrompt}`, resultKey, `/api/assets/${resultKey}`, now).run();
     
     return c.json({
       success: true,
