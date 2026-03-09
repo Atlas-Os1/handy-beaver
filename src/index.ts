@@ -20,7 +20,7 @@ import { adminCustomersPage } from './pages/admin-customers';
 import { adminQuotesPage } from './pages/admin-quotes';
 import { adminJobsPage } from './pages/admin-jobs';
 import { adminInvoicesPage } from './pages/admin-invoices';
-import { portalLoginPage, portalDashboard, portalQuotes, portalInvoices, portalJobs, requirePortalAuth } from './pages/portal';
+import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 
 // Routes
@@ -177,8 +177,48 @@ app.get('/portal/logout', (c) => {
 
 app.get('/portal', requirePortalAuth, portalDashboard);
 app.get('/portal/quotes', requirePortalAuth, portalQuotes);
+app.get('/portal/quotes/:id', requirePortalAuth, portalQuoteDetail);
+app.post('/portal/quotes/:id/accept', requirePortalAuth, async (c) => {
+  const quoteId = c.req.param('id');
+  const customer = c.get('customer');
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Verify quote belongs to customer and update status
+  await c.env.DB.prepare(`
+    UPDATE quotes SET status = 'accepted', updated_at = ? 
+    WHERE id = ? AND customer_id = ? AND status = 'sent'
+  `).bind(now, quoteId, customer.customer_id).run();
+  
+  return c.redirect('/portal/quotes/' + quoteId);
+});
+app.post('/portal/quotes/:id/decline', requirePortalAuth, async (c) => {
+  const quoteId = c.req.param('id');
+  const customer = c.get('customer');
+  const now = Math.floor(Date.now() / 1000);
+  
+  await c.env.DB.prepare(`
+    UPDATE quotes SET status = 'declined', updated_at = ? 
+    WHERE id = ? AND customer_id = ? AND status = 'sent'
+  `).bind(now, quoteId, customer.customer_id).run();
+  
+  return c.redirect('/portal/quotes');
+});
 app.get('/portal/invoices', requirePortalAuth, portalInvoices);
+app.get('/portal/invoices/:id', requirePortalAuth, portalInvoiceDetail);
 app.get('/portal/jobs', requirePortalAuth, portalJobs);
+app.get('/portal/messages', requirePortalAuth, portalMessages);
+app.post('/portal/messages', requirePortalAuth, async (c) => {
+  const customer = c.get('customer');
+  const { message } = await c.req.parseBody();
+  const now = Math.floor(Date.now() / 1000);
+  
+  await c.env.DB.prepare(`
+    INSERT INTO messages (customer_id, sender, content, source, created_at)
+    VALUES (?, 'customer', ?, 'portal', ?)
+  `).bind(customer.customer_id, message, now).run();
+  
+  return c.redirect('/portal/messages');
+});
 
 // Health check
 app.get('/health', (c) => {

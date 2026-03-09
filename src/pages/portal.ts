@@ -427,6 +427,262 @@ export const portalInvoices = async (c: Context) => {
   return c.html(portalLayout('My Invoices', content, customer));
 };
 
+// Quote detail view
+export const portalQuoteDetail = async (c: Context) => {
+  const customer = c.get('customer');
+  const quoteId = c.req.param('id');
+  
+  const quote = await c.env.DB.prepare(`
+    SELECT * FROM quotes WHERE id = ? AND customer_id = ?
+  `).bind(quoteId, customer.customer_id).first<any>();
+  
+  if (!quote) {
+    return c.redirect('/portal/quotes');
+  }
+  
+  const laborTotal = (quote.labor_rate || 0) * (quote.estimated_hours || 1);
+  const helperTotal = quote.helper_needed ? (quote.helper_rate || 0) : 0;
+  const validDate = quote.valid_until ? new Date(quote.valid_until * 1000).toLocaleDateString() : 'N/A';
+  
+  const content = `
+    <div style="max-width: 800px;">
+      <a href="/portal/quotes" style="color: var(--secondary); text-decoration: none;">← Back to Quotes</a>
+      
+      <div class="card" style="margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+          <div>
+            <h1 style="margin: 0;">Quote</h1>
+            <p style="color: #666; margin: 0.25rem 0 0;">Valid until: ${validDate}</p>
+          </div>
+          <span class="badge badge-${quote.status}" style="font-size: 1rem;">${quote.status}</span>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;">
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Labor (${quote.labor_type || 'Standard'})</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${laborTotal.toFixed(2)}</td>
+          </tr>
+          ${quote.helper_needed ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Helper</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${helperTotal.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${quote.materials_estimate ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Materials (estimate)</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${quote.materials_estimate.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${quote.equipment_estimate ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Equipment</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${quote.equipment_estimate.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${quote.discount_percent ? `
+          <tr style="border-bottom: 1px solid #eee; color: #059669;">
+            <td style="padding: 0.75rem 0;">Discount (${quote.discount_percent}%)</td>
+            <td style="padding: 0.75rem 0; text-align: right;">-$${((quote.subtotal || 0) * quote.discount_percent / 100).toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          <tr style="font-size: 1.25rem; font-weight: 600;">
+            <td style="padding: 1rem 0;">Total</td>
+            <td style="padding: 1rem 0; text-align: right; color: var(--primary);">$${quote.total?.toFixed(2) || '0.00'}</td>
+          </tr>
+        </table>
+        
+        ${quote.notes ? `
+        <div style="background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <strong>Notes:</strong>
+          <p style="margin: 0.5rem 0 0; white-space: pre-wrap;">${quote.notes}</p>
+        </div>
+        ` : ''}
+        
+        ${quote.status === 'sent' ? `
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+          <form action="/portal/quotes/${quote.id}/accept" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+              ✓ Accept Quote
+            </button>
+          </form>
+          <form action="/portal/quotes/${quote.id}/decline" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">
+              Decline
+            </button>
+          </form>
+        </div>
+        ` : quote.status === 'accepted' ? `
+        <div style="text-align: center; padding: 1rem; background: #d1fae5; border-radius: 8px;">
+          ✅ You accepted this quote. We'll be in touch to schedule the work!
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+  
+  return c.html(portalLayout('Quote Details', content, customer));
+};
+
+// Invoice detail view
+export const portalInvoiceDetail = async (c: Context) => {
+  const customer = c.get('customer');
+  const invoiceId = c.req.param('id');
+  
+  const invoice = await c.env.DB.prepare(`
+    SELECT * FROM invoices WHERE id = ? AND customer_id = ?
+  `).bind(invoiceId, customer.customer_id).first<any>();
+  
+  if (!invoice) {
+    return c.redirect('/portal/invoices');
+  }
+  
+  const dueDate = invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'N/A';
+  const balance = (invoice.total || 0) - (invoice.amount_paid || 0);
+  
+  const content = `
+    <div style="max-width: 800px;">
+      <a href="/portal/invoices" style="color: var(--secondary); text-decoration: none;">← Back to Invoices</a>
+      
+      <div class="card" style="margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+          <div>
+            <h1 style="margin: 0;">Invoice ${invoice.invoice_number || ''}</h1>
+            <p style="color: #666; margin: 0.25rem 0 0;">Due: ${dueDate}</p>
+          </div>
+          <span class="badge badge-${invoice.status}" style="font-size: 1rem;">${invoice.status}</span>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;">
+          ${invoice.labor_amount ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Labor</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${invoice.labor_amount.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${invoice.helper_amount ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Helper</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${invoice.helper_amount.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${invoice.materials_amount ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Materials</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${invoice.materials_amount.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${invoice.equipment_amount ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Equipment</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${invoice.equipment_amount.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${invoice.discount_amount ? `
+          <tr style="border-bottom: 1px solid #eee; color: #059669;">
+            <td style="padding: 0.75rem 0;">Discount</td>
+            <td style="padding: 0.75rem 0; text-align: right;">-$${invoice.discount_amount.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${invoice.tax_amount ? `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.75rem 0;">Tax (${invoice.tax_rate}%)</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${invoice.tax_amount.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          <tr style="font-weight: 600;">
+            <td style="padding: 0.75rem 0;">Total</td>
+            <td style="padding: 0.75rem 0; text-align: right;">$${invoice.total?.toFixed(2) || '0.00'}</td>
+          </tr>
+          ${invoice.amount_paid ? `
+          <tr style="color: #059669;">
+            <td style="padding: 0.75rem 0;">Amount Paid</td>
+            <td style="padding: 0.75rem 0; text-align: right;">-$${invoice.amount_paid.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          ${balance > 0 ? `
+          <tr style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">
+            <td style="padding: 1rem 0;">Balance Due</td>
+            <td style="padding: 1rem 0; text-align: right;">$${balance.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+        </table>
+        
+        ${invoice.notes ? `
+        <div style="background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <strong>Notes:</strong>
+          <p style="margin: 0.5rem 0 0; white-space: pre-wrap;">${invoice.notes}</p>
+        </div>
+        ` : ''}
+        
+        ${balance > 0 ? `
+        <div style="text-align: center;">
+          <a href="/pay/${invoice.id}" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+            💳 Pay $${balance.toFixed(2)} Now
+          </a>
+          <p style="color: #666; font-size: 0.85rem; margin-top: 1rem;">Secure payment via credit/debit card</p>
+        </div>
+        ` : `
+        <div style="text-align: center; padding: 1rem; background: #d1fae5; border-radius: 8px;">
+          ✅ This invoice has been paid in full. Thank you!
+        </div>
+        `}
+      </div>
+    </div>
+  `;
+  
+  return c.html(portalLayout('Invoice Details', content, customer));
+};
+
+// Messages
+export const portalMessages = async (c: Context) => {
+  const customer = c.get('customer');
+  
+  const messages = await c.env.DB.prepare(`
+    SELECT * FROM messages WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50
+  `).bind(customer.customer_id).all<any>();
+  
+  const content = `
+    <h1 style="margin-bottom: 1.5rem;">Messages</h1>
+    
+    <div class="card">
+      <form action="/portal/messages" method="POST" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" name="message" placeholder="Type a message..." required
+            style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+          <button type="submit" class="btn btn-primary">Send</button>
+        </div>
+      </form>
+      
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        ${messages.results?.length ? messages.results.map((m: any) => `
+          <div style="
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            max-width: 80%;
+            ${m.sender === 'customer' 
+              ? 'background: #dbeafe; align-self: flex-end; border-bottom-right-radius: 4px;' 
+              : 'background: #f3f4f6; align-self: flex-start; border-bottom-left-radius: 4px;'}
+          ">
+            <p style="margin: 0;">${m.content}</p>
+            <small style="color: #666; font-size: 0.75rem;">
+              ${new Date(m.created_at * 1000).toLocaleString()}
+            </small>
+          </div>
+        `).join('') : '<p style="text-align: center; color: #666;">No messages yet. Send one above!</p>'}
+      </div>
+    </div>
+    
+    <div class="card" style="margin-top: 1.5rem;">
+      <h3>Other ways to reach us:</h3>
+      <p>📧 Email: ${business.email}</p>
+      <p>📱 Phone: ${business.phone}</p>
+    </div>
+  `;
+  
+  return c.html(portalLayout('Messages', content, customer));
+};
+
 // Jobs list
 export const portalJobs = async (c: Context) => {
   const customer = c.get('customer');
