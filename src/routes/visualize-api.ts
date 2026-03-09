@@ -277,7 +277,8 @@ Enhanced prompt:`
     }
     
     // Step 2: Call Gemini API for image editing
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${c.env.GEMINI_API_KEY}`;
+    // Use gemini-2.0-flash-exp-image-generation for image output
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${c.env.GEMINI_API_KEY}`;
     
     const response = await fetch(geminiUrl, {
       method: 'POST',
@@ -295,7 +296,7 @@ Enhanced prompt:`
           ],
         }],
         generationConfig: {
-          response_mime_type: 'image/jpeg',
+          responseModalities: ['IMAGE'],
         },
       }),
     });
