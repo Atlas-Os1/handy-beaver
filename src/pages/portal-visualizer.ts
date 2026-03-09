@@ -215,7 +215,7 @@ const portalVisualizerLayout = (title: string, content: string, customer?: any) 
 </html>
 `;
 
-export const portalGalleryPage = async (c: Context) => {
+export const portalVisualizerPage = async (c: Context) => {
   const customer = c.get('customer');
   const customerId = customer?.customer_id;
   

@@ -25,7 +25,6 @@ import { adminQuotesPage } from './pages/admin-quotes';
 import { adminJobsPage } from './pages/admin-jobs';
 import { adminInvoicesPage } from './pages/admin-invoices';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
-import { portalVisualizerPage } from './pages/portal-visualizer';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 
 // Routes
@@ -272,7 +271,7 @@ app.post('/portal/messages', requirePortalAuth, async (c) => {
   
   return c.redirect('/portal/messages');
 });
-app.get('/portal/visualizer', requirePortalAuth, portalVisualizerPage);
+app.get('/portal/visualizer', requirePortalAuth, portalGalleryPage);
 
 // Health check
 app.get('/health', (c) => {
