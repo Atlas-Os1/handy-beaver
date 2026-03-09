@@ -162,7 +162,8 @@ visualizeApi.post('/generate', async (c) => {
     }
   }
   
-  if (customerId === null) {
+  // Require auth (admin OR customer)
+  if (!isAdmin && customerId === null) {
     return c.json({
       success: false,
       error: 'Please sign in or request a quote to use the AI Visualizer',
