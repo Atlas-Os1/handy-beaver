@@ -154,22 +154,30 @@ app.post('/portal/login', async (c) => {
       </div>
     `;
     
-    // Send via MailChannels (free for Cloudflare Workers)
-    const emailRes = await fetch('https://api.mailchannels.net/tx/v1/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email: email as string, name: customer.name }] }],
-        from: { email: 'noreply@handybeaver.co', name: 'The Handy Beaver' },
-        subject: 'Your Login Link 🦫',
-        content: [{ type: 'text/html', value: htmlContent }],
-      }),
-    });
-    
-    if (emailRes.ok) {
-      console.log('Magic link email sent to', email);
+    // Send via Resend (3k emails free/month)
+    if (c.env.RESEND_API_KEY) {
+      const emailRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'The Handy Beaver <noreply@handybeaver.co>',
+          to: [email as string],
+          subject: 'Your Login Link 🦫',
+          html: htmlContent,
+        }),
+      });
+      
+      if (emailRes.ok) {
+        console.log('Magic link email sent via Resend to', email);
+      } else {
+        console.error('Resend failed:', await emailRes.text());
+      }
     } else {
-      console.error('Email send failed:', await emailRes.text());
+      // No API key - log magic link for testing
+      console.log('RESEND_API_KEY not set. Magic link:', magicLink);
     }
   } catch (e) {
     console.error('Email error:', e);
