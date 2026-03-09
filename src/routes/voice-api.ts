@@ -92,7 +92,24 @@ voiceApi.post('/project', async (c) => {
 
 // ============ TOOL: create_lead ============
 voiceApi.post('/lead', async (c) => {
-  const { name, phone, email, project_type, description, address } = await c.req.json();
+  // Handle both query params (ElevenLabs) and body params
+  const url = new URL(c.req.url);
+  const queryParams = Object.fromEntries(url.searchParams);
+  
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    // No body, use query params only
+  }
+  
+  // Merge query params + body, handle ElevenLabs field name variations
+  const name = body.name || queryParams.name || queryParams.caller_name || queryParams.customer_name;
+  const phone = body.phone || queryParams.phone || queryParams.Phone;
+  const email = body.email || queryParams.email;
+  const project_type = body.project_type || queryParams.project_type;
+  const description = body.description || queryParams.description;
+  const address = body.address || queryParams.address;
   
   if (!name || !phone || !project_type) {
     return c.json({ error: 'name, phone, and project_type required' }, 400);
@@ -206,7 +223,24 @@ voiceApi.post('/availability', async (c) => {
 
 // ============ TOOL: schedule_consultation ============
 voiceApi.post('/schedule', async (c) => {
-  const { customer_name, phone, date, time, project_type, address } = await c.req.json();
+  // Handle both query params (ElevenLabs) and body params
+  const url = new URL(c.req.url);
+  const queryParams = Object.fromEntries(url.searchParams);
+  
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    // No body, use query params only
+  }
+  
+  // Merge query params + body
+  const customer_name = body.customer_name || queryParams.customer_name || queryParams.name || queryParams.caller_name;
+  const phone = body.phone || queryParams.phone || queryParams.Phone;
+  const date = body.date || queryParams.date;
+  const time = body.time || queryParams.time;
+  const project_type = body.project_type || queryParams.project_type;
+  const address = body.address || queryParams.address;
   
   if (!customer_name || !phone || !date || !project_type) {
     return c.json({ error: 'customer_name, phone, date, and project_type required' }, 400);
@@ -319,18 +353,74 @@ voiceApi.post('/notify', async (c) => {
   return c.json({ success: true, notified: ['discord'] });
 });
 
+// ============ LOG CONVERSATION ============
+voiceApi.post('/log', async (c) => {
+  const { customer_id, customer_phone, messages, source } = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Find or create customer
+  let custId = customer_id;
+  if (!custId && customer_phone) {
+    const customer = await c.env.DB.prepare(
+      'SELECT id FROM customers WHERE phone = ?'
+    ).bind(customer_phone).first<{ id: number }>();
+    custId = customer?.id;
+  }
+  
+  if (!custId) {
+    return c.json({ error: 'Customer not found' }, 404);
+  }
+  
+  // Log each message
+  for (const msg of messages || []) {
+    await c.env.DB.prepare(`
+      INSERT INTO messages (customer_id, sender, content, source, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      custId,
+      msg.role === 'assistant' ? 'business' : 'customer',
+      msg.content,
+      source || 'voice',
+      now
+    ).run();
+  }
+  
+  return c.json({ success: true, logged: messages?.length || 0 });
+});
+
 // ============ WEBHOOK: ElevenLabs events ============
 voiceApi.post('/webhook', async (c) => {
   const event = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
   
-  // Log all events for debugging
   console.log('ElevenLabs webhook:', JSON.stringify(event));
   
-  // Handle different event types
-  if (event.type === 'call.started') {
-    // Call started
-  } else if (event.type === 'call.ended') {
-    // Call ended - could log call duration, etc.
+  // Handle conversation end - log the transcript
+  if (event.type === 'conversation.ended' || event.type === 'call.ended') {
+    const transcript = event.data?.transcript || event.transcript;
+    const phoneNumber = event.data?.phone_number || event.phone_number;
+    
+    if (transcript && phoneNumber) {
+      // Find customer by phone
+      const customer = await c.env.DB.prepare(
+        'SELECT id FROM customers WHERE phone LIKE ?'
+      ).bind(`%${phoneNumber.slice(-10)}%`).first<{ id: number }>();
+      
+      if (customer) {
+        // Log each message in transcript
+        for (const msg of transcript) {
+          await c.env.DB.prepare(`
+            INSERT INTO messages (customer_id, sender, content, source, created_at)
+            VALUES (?, ?, ?, 'voice', ?)
+          `).bind(
+            customer.id,
+            msg.role === 'agent' ? 'business' : 'customer',
+            msg.text || msg.content,
+            now
+          ).run();
+        }
+      }
+    }
   }
   
   return c.json({ received: true });

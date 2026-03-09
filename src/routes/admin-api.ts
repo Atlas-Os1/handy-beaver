@@ -67,6 +67,73 @@ adminApi.get('/customers/search', async (c) => {
   return c.json(customers);
 });
 
+// Create customer manually
+adminApi.post('/customers', async (c) => {
+  const data = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
+  
+  if (!data.name || !data.email) {
+    return c.json({ error: 'Name and email required' }, 400);
+  }
+  
+  // Check if customer exists
+  const existing = await c.env.DB.prepare(
+    'SELECT id FROM customers WHERE email = ?'
+  ).bind(data.email).first();
+  
+  if (existing) {
+    return c.json({ error: 'Customer with this email already exists', id: existing.id }, 409);
+  }
+  
+  const result = await c.env.DB.prepare(`
+    INSERT INTO customers (name, email, phone, address, status, notes, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    data.name,
+    data.email,
+    data.phone || null,
+    data.address || null,
+    data.status || 'lead',
+    data.notes || null,
+    now,
+    now
+  ).run();
+  
+  return c.json({ success: true, id: result.meta.last_row_id });
+});
+
+// Update customer
+adminApi.patch('/customers/:id', async (c) => {
+  const id = c.req.param('id');
+  const data = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
+  
+  const updates: string[] = [];
+  const values: any[] = [];
+  
+  const fields = ['name', 'email', 'phone', 'address', 'status', 'notes'];
+  for (const field of fields) {
+    if (data[field] !== undefined) {
+      updates.push(`${field} = ?`);
+      values.push(data[field]);
+    }
+  }
+  
+  if (updates.length === 0) {
+    return c.json({ error: 'No fields to update' }, 400);
+  }
+  
+  updates.push('updated_at = ?');
+  values.push(now);
+  values.push(id);
+  
+  await c.env.DB.prepare(
+    `UPDATE customers SET ${updates.join(', ')} WHERE id = ?`
+  ).bind(...values).run();
+  
+  return c.json({ success: true });
+});
+
 adminApi.get('/customers/:id', async (c) => {
   const id = c.req.param('id');
   
@@ -348,6 +415,84 @@ adminApi.get('/schedule', async (c) => {
 });
 
 // ============ MESSAGES ============
+
+// Get all messages/conversations
+adminApi.get('/messages', async (c) => {
+  const source = c.req.query('source'); // 'customer', 'agent', 'webhook', 'whatsapp'
+  const customerId = c.req.query('customer_id');
+  const unreadOnly = c.req.query('unread') === 'true';
+  
+  let query = `
+    SELECT m.*, c.name as customer_name, c.email as customer_email
+    FROM messages m
+    LEFT JOIN customers c ON m.customer_id = c.id
+    WHERE 1=1
+  `;
+  const params: any[] = [];
+  
+  if (source) {
+    query += ` AND m.source = ?`;
+    params.push(source);
+  }
+  if (customerId) {
+    query += ` AND m.customer_id = ?`;
+    params.push(customerId);
+  }
+  if (unreadOnly) {
+    query += ` AND m.read_at IS NULL AND m.sender != 'business'`;
+  }
+  
+  query += ` ORDER BY m.created_at DESC LIMIT 100`;
+  
+  const messages = await c.env.DB.prepare(query).bind(...params).all();
+  return c.json(messages);
+});
+
+// Get conversation threads (grouped by customer)
+adminApi.get('/messages/threads', async (c) => {
+  const threads = await c.env.DB.prepare(`
+    SELECT 
+      c.id as customer_id,
+      c.name as customer_name,
+      c.email as customer_email,
+      c.phone as customer_phone,
+      COUNT(m.id) as message_count,
+      SUM(CASE WHEN m.read_at IS NULL AND m.sender != 'business' THEN 1 ELSE 0 END) as unread_count,
+      MAX(m.created_at) as last_message_at,
+      (SELECT content FROM messages WHERE customer_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
+    FROM customers c
+    JOIN messages m ON m.customer_id = c.id
+    GROUP BY c.id
+    ORDER BY last_message_at DESC
+    LIMIT 50
+  `).all();
+  
+  return c.json(threads);
+});
+
+// Mark messages as read
+adminApi.patch('/messages/:id/read', async (c) => {
+  const id = c.req.param('id');
+  const now = Math.floor(Date.now() / 1000);
+  
+  await c.env.DB.prepare(
+    'UPDATE messages SET read_at = ? WHERE id = ?'
+  ).bind(now, id).run();
+  
+  return c.json({ success: true });
+});
+
+// Mark all messages from customer as read
+adminApi.patch('/messages/customer/:customerId/read-all', async (c) => {
+  const customerId = c.req.param('customerId');
+  const now = Math.floor(Date.now() / 1000);
+  
+  await c.env.DB.prepare(
+    'UPDATE messages SET read_at = ? WHERE customer_id = ? AND read_at IS NULL'
+  ).bind(now, customerId).run();
+  
+  return c.json({ success: true });
+});
 
 adminApi.post('/messages', async (c) => {
   const data = await c.req.json();
