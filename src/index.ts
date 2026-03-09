@@ -15,6 +15,7 @@ import { visualizePage } from './pages/visualize';
 import { agentPage } from './pages/agent';
 // Old portal imports removed - using new portal pages
 import { adminDashboard, adminCustomers, adminQuotes, adminMessages } from './pages/admin';
+import { adminVisualizerPage } from './pages/admin-visualizer';
 import { adminGalleryPage } from './pages/admin-gallery';
 import { adminMessagesPage } from './pages/admin-messages';
 import { adminCustomersPage } from './pages/admin-customers';
@@ -37,6 +38,7 @@ import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
 import { calendarApi } from './routes/calendar-api';
 import { paymentPage } from './pages/payment';
+import { visualizeApi } from './routes/visualize-api';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -95,6 +97,7 @@ app.get('/admin/payments', requireAdmin, async (c) => {
   return c.redirect('/admin');
 });
 app.get('/admin/gallery', requireAdmin, adminGalleryPage);
+app.get('/admin/visualizer', requireAdmin, adminVisualizerPage);
 app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
@@ -307,6 +310,7 @@ api.route('/portfolio', portfolioApi);
 api.route('/payments', paymentsApi);
 api.route('/voice', voiceApi);
 api.route('/calendar', calendarApi);
+api.route('/visualize', visualizeApi);
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {
