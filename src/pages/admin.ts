@@ -4,7 +4,7 @@ import { Admin } from '../lib/auth';
 import { siteConfig } from '../../config/site.config';
 
 // Admin dashboard layout (different from public site)
-const adminLayout = (title: string, content: string, admin: Admin) => `
+export const adminLayout = (title: string, content: string, activePage: string = 'dashboard', admin?: Admin) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,24 +147,24 @@ const adminLayout = (title: string, content: string, admin: Admin) => `
       <span>${siteConfig.business.name} Admin</span>
     </div>
     <div class="user">
-      <span>${admin.name || admin.github_username}</span>
-      <img src="${admin.avatar_url || '/api/assets/beaver-avatar.png'}" alt="Avatar">
+      <span>${admin?.name || admin?.github_username || 'Admin'}</span>
+      <img src="${admin?.avatar_url || '/api/assets/beaver-avatar.png'}" alt="Avatar">
       <a href="/api/auth/logout" style="color: #ccc; margin-left: 1rem;">Logout</a>
     </div>
   </nav>
   
   <div class="admin-layout">
     <aside class="sidebar">
-      <a href="/admin" class="active">📊 Dashboard</a>
-      <a href="/admin/quotes">💰 Quotes</a>
-      <a href="/admin/jobs">🛠️ Jobs</a>
-      <a href="/admin/customers">👥 Customers</a>
-      <a href="/admin/messages">💬 Messages</a>
+      <a href="/admin" class="${activePage === 'dashboard' ? 'active' : ''}">📊 Dashboard</a>
+      <a href="/admin/quotes" class="${activePage === 'quotes' ? 'active' : ''}">💰 Quotes</a>
+      <a href="/admin/jobs" class="${activePage === 'jobs' ? 'active' : ''}">🛠️ Jobs</a>
+      <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}">👥 Customers</a>
+      <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}">💬 Messages</a>
       <div class="divider"></div>
-      <a href="/admin/invoices">📄 Invoices</a>
-      <a href="/admin/payments">💳 Payments</a>
+      <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}">📄 Invoices</a>
+      <a href="/admin/gallery" class="${activePage === 'gallery' ? 'active' : ''}">🖼️ Gallery</a>
       <div class="divider"></div>
-      <a href="/admin/settings">⚙️ Settings</a>
+      <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}">⚙️ Settings</a>
       <a href="/" target="_blank">🌐 View Site</a>
     </aside>
     

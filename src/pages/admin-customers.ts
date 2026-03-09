@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { adminLayout } from './admin';
 
 export const adminCustomersPage = async (c: Context) => {
+  const admin = c.get('admin');
   const content = `
     <div class="admin-customers">
       <div class="page-header">
@@ -249,5 +250,5 @@ export const adminCustomersPage = async (c: Context) => {
     </script>
   `;
   
-  return c.html(adminLayout('Customers', content, 'customers'));
+  return c.html(adminLayout('Customers', content, 'customers', admin));
 };

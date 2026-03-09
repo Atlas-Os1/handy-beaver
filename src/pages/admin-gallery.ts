@@ -1,7 +1,8 @@
 import { Context } from 'hono';
-import { layout } from '../lib/html';
+import { adminLayout } from './admin';
 
 export async function adminGalleryPage(c: Context) {
+  const admin = c.get('admin');
   // Get existing categories and images
   const categories = await c.env.DB.prepare(`
     SELECT pc.*, COUNT(pi.id) as image_count
@@ -266,5 +267,5 @@ export async function adminGalleryPage(c: Context) {
     </script>
   `;
   
-  return c.html(layout('Gallery Management - Admin', content));
+  return c.html(adminLayout('Gallery Management', content, 'gallery', admin));
 }
