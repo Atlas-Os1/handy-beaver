@@ -58,11 +58,33 @@ CREATE TABLE IF NOT EXISTS visualizer_usage (
 CREATE INDEX idx_usage_email_date ON visualizer_usage(email, used_at);
 ```
 
-### 5. API Endpoints
+### 5. Prompt Enhancement (Lil Beaver)
+
+Before image generation, run user prompt through Lil Beaver to enhance with:
+- Proper wood types (cedar, pine, oak, mahogany)
+- Stain/paint terminology (semi-transparent, solid, satin, semi-gloss)
+- Construction details (board width, railing style, trim profiles)
+- Color accuracy (hex codes or standard paint names)
+
+**Example:**
+```
+User: "make the deck darker"
+Lil Beaver: "Apply a dark walnut semi-transparent deck stain to the 
+horizontal deck boards, preserving natural wood grain texture. The existing 
+white railings should remain crisp white with semi-gloss finish. Maintain 
+the current board spacing and railing post positions."
+```
+
+Use Gemini Flash for prompt enhancement (fast + cheap).
+
+### 6. API Endpoints
 
 - `POST /api/images/visualize` — Generate visualization
   - Requires auth token OR valid lead email
   - Checks usage limits before generating
+  - **Step 1:** Enhance prompt via Lil Beaver (Gemini Flash)
+  - **Step 2:** Generate image (Gemini primary → CF Workers AI fallback)
+  - **Step 3:** Watermark result
   - Returns watermarked image URL
   - Stores in R2
 
@@ -90,16 +112,28 @@ CREATE INDEX idx_usage_email_date ON visualizer_usage(email, used_at);
 
 ---
 
+## Image Generation Models
+
+**Primary:** Gemini (already configured via `GEMINI_API_KEY`)
+- Use `gemini-2.0-flash-exp` for image generation
+- Prompt enhancement uses `gemini-1.5-flash` (text only, fast)
+
+**Fallback:** Cloudflare Workers AI
+- `@cf/stabilityai/stable-diffusion-xl-base-1.0` or similar
+- Triggered if Gemini fails/times out
+
 ## Implementation Order
 
 1. [ ] Database schema update (add `visualizer_usage` table)
-2. [ ] API endpoint `/api/visualizer/usage` 
-3. [ ] API endpoint `/api/images/visualize` with limits
-4. [ ] Watermark processing (canvas or sharp)
-5. [ ] Update visualize page to check auth/usage
-6. [ ] Add to client portal
-7. [ ] Add to admin panel
-8. [ ] Remove from public nav / add redirect
+2. [ ] API endpoint `/api/visualizer/usage`
+3. [ ] Prompt enhancement function (Lil Beaver via Gemini Flash)
+4. [ ] Image generation with Gemini → CF fallback
+5. [ ] Watermark processing (canvas or sharp)
+6. [ ] Wire up `/api/images/visualize` with full pipeline
+7. [ ] Update visualize page to check auth/usage
+8. [ ] Add to client portal
+9. [ ] Add to admin panel
+10. [ ] Remove from public nav / add redirect
 
 ---
 
