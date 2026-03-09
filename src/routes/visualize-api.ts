@@ -135,8 +135,8 @@ visualizeApi.post('/generate', async (c) => {
     const admin = await getAdmin(c.env.DB, adminToken);
     if (admin) {
       isAdmin = true;
-      // Admin uses ID 0 for tracking
-      customerId = 0;
+      // Admin uses null for tracking (no FK constraint)
+      customerId = null;
     }
   }
   
