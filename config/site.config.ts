@@ -13,7 +13,7 @@ export const siteConfig = {
     description: "Professional carpentry, flooring, deck repair, and residential maintenance for Southeast Oklahoma",
     mascot: "🦫",
     email: "contact@handybeaver.co",
-    phone: "", // TBD
+    phone: "+1 (555) 797-2503", // Lil Beaver WhatsApp
     serviceArea: "Southeast Oklahoma",
   },
 

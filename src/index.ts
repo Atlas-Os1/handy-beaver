@@ -15,6 +15,8 @@ import { agentPage } from './pages/agent';
 import { portalPage, loginPage, adminLoginPage } from './pages/portal';
 import { adminDashboard, adminCustomers, adminQuotes, adminMessages } from './pages/admin';
 import { adminGalleryPage } from './pages/admin-gallery';
+import { adminMessagesPage } from './pages/admin-messages';
+import { adminCustomersPage } from './pages/admin-customers';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 
 // Routes
@@ -104,6 +106,8 @@ app.get('/admin/payments', requireAdmin, async (c) => {
   return c.redirect('/admin');
 });
 app.get('/admin/gallery', requireAdmin, adminGalleryPage);
+app.get('/admin/messages', requireAdmin, adminMessagesPage);
+app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/settings', requireAdmin, async (c) => {
   return c.redirect('/admin');
 });

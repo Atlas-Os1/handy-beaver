@@ -4,7 +4,7 @@
 
 - **Business:** The Handy Beaver
 - **Owner:** Minte (colt)
-- **Phone:** (pending)
+- **Phone:** +1 (555) 797-2503
 - **Email:** contact@handybeaver.co
 - **Website:** https://handybeaver.co
 - **Facebook:** Handy Beaver Co (Page ID: 1040910635768535)
@@ -51,6 +51,13 @@ GET  /api/admin/leads              — List Facebook leads
 - **Agent ID:** agent_6401kk7jr6ngey2ancnk6nf7kpwy
 - **Branch ID:** agtbrch_0001kk7m1ss5frqbjb5rnegzyw7z
 - **Voice:** (select warm, friendly voice)
+
+## WhatsApp Business
+
+- **Business ID:** 913321228338423
+- **Phone Number ID:** 1016449968218067
+- **Phone Number:** +1 (555) 797-2503
+- **Account Name:** The Handy Beaver Co (Colt Cogburn)
 
 ## Service Categories
 
