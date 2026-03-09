@@ -304,8 +304,8 @@ Enhanced prompt:`
     let generationMethod = 'gemini';
     
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Gemini API error:', error);
+      const errorText = await response.text();
+      console.error('Gemini API error:', response.status, errorText);
       
       // Fallback to Cloudflare Workers AI
       if (c.env.AI) {
@@ -339,6 +339,12 @@ Enhanced prompt:`
       }
     } else {
       const result = await response.json() as any;
+      console.log('Gemini response structure:', JSON.stringify({
+        hasCandidate: !!result.candidates?.[0],
+        partsCount: result.candidates?.[0]?.content?.parts?.length || 0,
+        partTypes: result.candidates?.[0]?.content?.parts?.map((p: any) => p.text ? 'text' : p.inline_data ? 'image' : 'unknown') || [],
+        finishReason: result.candidates?.[0]?.finishReason,
+      }));
       
       // Extract generated image from Gemini response
       for (const part of result.candidates?.[0]?.content?.parts || []) {
@@ -350,7 +356,7 @@ Enhanced prompt:`
     }
     
     if (!generatedImageBase64) {
-      throw new Error('No image generated');
+      throw new Error('No image generated - Gemini may not support image editing for this request');
     }
     
     // Convert base64 to buffer
