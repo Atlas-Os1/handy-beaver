@@ -263,6 +263,7 @@ app.post('/portal/messages', requirePortalAuth, async (c) => {
   
   return c.redirect('/portal/messages');
 });
+app.get('/portal/visualizer', requirePortalAuth, portalVisualizerPage);
 
 // Health check
 app.get('/health', (c) => {
