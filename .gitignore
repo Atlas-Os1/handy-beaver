@@ -36,3 +36,4 @@ coverage/
 credentials/
 config/*-secret.json
 *.secret.json
+credentials/*.json
