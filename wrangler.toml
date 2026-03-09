@@ -3,6 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Observability - logs and traces
+[observability]
+enabled = true
+head_sampling_rate = 1  # 100% of requests logged
+
 # D1 Database
 [[d1_databases]]
 binding = "DB"

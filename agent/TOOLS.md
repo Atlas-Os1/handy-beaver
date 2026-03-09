@@ -3,7 +3,7 @@
 ## Business Info
 
 - **Business:** The Handy Beaver
-- **Owner:** Minte
+- **Owner:** Minte (colt)
 - **Phone:** (pending)
 - **Email:** contact@handybeaver.co
 - **Website:** https://handybeaver.co

@@ -12,7 +12,7 @@ export const siteConfig = {
     tagline: "Your Traveling Craftsman & Maintenance Service",
     description: "Professional carpentry, flooring, deck repair, and residential maintenance for Southeast Oklahoma",
     mascot: "🦫",
-    email: "contact@thehandybeaver.com",
+    email: "contact@handybeaver.co",
     phone: "", // TBD
     serviceArea: "Southeast Oklahoma",
   },
@@ -61,8 +61,8 @@ export const siteConfig = {
       email: "serviceflowagi@gmail.com",
     },
     email: {
-      from: "noreply@thehandybeaver.com",
-      support: "support@thehandybeaver.com",
+      from: "noreply@handybeaver.co",
+      support: "support@handybeaver.co",
     },
   },
 
