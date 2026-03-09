@@ -18,6 +18,7 @@ import { adminGalleryPage } from './pages/admin-gallery';
 import { adminMessagesPage } from './pages/admin-messages';
 import { adminCustomersPage } from './pages/admin-customers';
 import { adminQuotesPage } from './pages/admin-quotes';
+import { adminJobsPage } from './pages/admin-jobs';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 
 // Routes
@@ -110,6 +111,7 @@ app.get('/admin/gallery', requireAdmin, adminGalleryPage);
 app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
+app.get('/admin/jobs', requireAdmin, adminJobsPage);
 app.get('/admin/settings', requireAdmin, async (c) => {
   return c.redirect('/admin');
 });

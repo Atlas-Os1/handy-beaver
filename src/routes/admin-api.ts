@@ -500,6 +500,23 @@ adminApi.get('/bookings', async (c) => {
   return c.json(bookings);
 });
 
+adminApi.get('/bookings/:id', async (c) => {
+  const id = c.req.param('id');
+  
+  const booking = await c.env.DB.prepare(`
+    SELECT b.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone, c.address
+    FROM bookings b
+    JOIN customers c ON b.customer_id = c.id
+    WHERE b.id = ?
+  `).bind(id).first();
+  
+  if (!booking) {
+    return c.json({ error: 'Job not found' }, 404);
+  }
+  
+  return c.json(booking);
+});
+
 adminApi.patch('/bookings/:id', async (c) => {
   const id = c.req.param('id');
   const data = await c.req.json();
