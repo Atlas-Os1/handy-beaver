@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { Admin } from '../lib/auth';
 import { siteConfig } from '../../config/site.config';
+import { chatWidgetStyles, chatWidgetHTML } from '../components/chat-widget';
 
 // Admin dashboard layout (different from public site)
 export const adminLayout = (title: string, content: string, activePage: string = 'dashboard', admin?: Admin) => `
@@ -143,6 +144,9 @@ export const adminLayout = (title: string, content: string, activePage: string =
     .btn-primary { background: #8B4513; color: white; }
     .btn-secondary { background: #e5e7eb; color: #374151; }
     .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+    
+    /* Chat Widget */
+    ${chatWidgetStyles}
   </style>
 </head>
 <body>
@@ -178,6 +182,8 @@ export const adminLayout = (title: string, content: string, activePage: string =
       ${content}
     </main>
   </div>
+  
+  ${chatWidgetHTML('admin', {})}
 </body>
 </html>
 `;

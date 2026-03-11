@@ -39,10 +39,12 @@ import { portfolioApi } from './routes/portfolio';
 import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
 import { whatsappApi } from './routes/whatsapp-api';
+import { chatApi } from './routes/chat-api';
 import { calendarApi } from './routes/calendar-api';
 import { paymentPage } from './pages/payment';
 import { visualizeApi } from './routes/visualize-api';
 import { squareInvoicesApi } from './routes/square-invoices';
+import { lilBeaverChatApi } from './routes/lil-beaver-chat';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -324,9 +326,11 @@ api.route('/portfolio', portfolioApi);
 api.route('/payments', paymentsApi);
 api.route('/voice', voiceApi);
 api.route('/whatsapp', whatsappApi);
+api.route('/chat', chatApi);
 api.route('/calendar', calendarApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
+api.route('/lilbeaver', lilBeaverChatApi);
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {

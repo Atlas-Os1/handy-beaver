@@ -1,11 +1,12 @@
 import { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import { siteConfig } from '../../config/site.config';
+import { chatWidgetStyles, chatWidgetHTML } from '../components/chat-widget';
 
 const { business, theme } = siteConfig;
 
 // Portal layout (customer-facing, different from admin)
-const portalLayout = (title: string, content: string, customer?: any) => `
+const portalLayout = (title: string, content: string, customer?: any, showChat: boolean = true) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -265,6 +266,9 @@ const portalLayout = (title: string, content: string, customer?: any) => `
       .table th { font-weight: 600; color: #666; font-size: 0.85rem; }
       .mobile-cards { display: none; }
     }
+    
+    /* Chat Widget */
+    ${chatWidgetStyles}
   </style>
 </head>
 <body>
@@ -303,6 +307,8 @@ const portalLayout = (title: string, content: string, customer?: any) => `
       ${content}
     </main>
   </div>
+  
+  ${showChat ? chatWidgetHTML('customer', { customerId: customer?.id, customerName: customer?.name }) : ''}
 </body>
 </html>
 `;
