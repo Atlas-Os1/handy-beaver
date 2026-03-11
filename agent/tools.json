@@ -1,0 +1,210 @@
+{
+  "tools": [
+    {
+      "name": "list_customers",
+      "description": "Get a list of all customers. Optionally filter by status (lead, active, inactive).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["lead", "active", "inactive"],
+            "description": "Filter by customer status"
+          },
+          "search": {
+            "type": "string",
+            "description": "Search by name, email, or phone"
+          }
+        }
+      },
+      "endpoint": "GET /api/admin/customers"
+    },
+    {
+      "name": "create_customer",
+      "description": "Create a new customer record.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Customer full name" },
+          "email": { "type": "string", "description": "Email address" },
+          "phone": { "type": "string", "description": "Phone number" },
+          "address": { "type": "string", "description": "Full address" }
+        },
+        "required": ["name", "email"]
+      },
+      "endpoint": "POST /api/admin/customers"
+    },
+    {
+      "name": "update_customer",
+      "description": "Update an existing customer's information.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": { "type": "number", "description": "Customer ID to update" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "status": { "type": "string", "enum": ["lead", "active", "inactive"] },
+          "notes": { "type": "string" }
+        },
+        "required": ["customer_id"]
+      },
+      "endpoint": "PATCH /api/admin/customers/{customer_id}"
+    },
+    {
+      "name": "create_quote",
+      "description": "Create a quote for a customer. Use labor_type 'half-day' ($175) or 'full-day' ($300).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": { "type": "number", "description": "Customer ID" },
+          "labor_type": { "type": "string", "enum": ["half-day", "full-day", "hourly"], "description": "Type of labor pricing" },
+          "labor_rate": { "type": "number", "description": "Rate per unit (175 for half-day, 300 for full-day)" },
+          "estimated_hours": { "type": "number", "description": "Estimated hours for the job" },
+          "helper_needed": { "type": "boolean", "description": "Whether a helper is needed" },
+          "helper_rate": { "type": "number", "description": "Helper rate (100 half-day, 225 full-day)" },
+          "materials_estimate": { "type": "number", "description": "Estimated materials cost" },
+          "equipment_estimate": { "type": "number", "description": "Equipment rental estimate" },
+          "discount_percent": { "type": "number", "description": "Discount percentage (0-100)" },
+          "notes": { "type": "string", "description": "Job description and notes" },
+          "valid_days": { "type": "number", "description": "Days until quote expires (default 14)" }
+        },
+        "required": ["customer_id", "labor_type", "labor_rate"]
+      },
+      "endpoint": "POST /api/admin/quotes"
+    },
+    {
+      "name": "send_quote",
+      "description": "Send a quote to the customer via email.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "quote_id": { "type": "number", "description": "Quote ID to send" }
+        },
+        "required": ["quote_id"]
+      },
+      "endpoint": "POST /api/admin/quotes/{quote_id}/send"
+    },
+    {
+      "name": "list_jobs",
+      "description": "Get a list of all jobs/bookings. Filter by status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "in_progress", "completed", "cancelled"]
+          }
+        }
+      },
+      "endpoint": "GET /api/admin/bookings"
+    },
+    {
+      "name": "update_job_status",
+      "description": "Update a job's status (pending → confirmed → in_progress → completed).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "number", "description": "Job/booking ID" },
+          "status": { 
+            "type": "string", 
+            "enum": ["pending", "confirmed", "in_progress", "completed", "cancelled"],
+            "description": "New status"
+          }
+        },
+        "required": ["job_id", "status"]
+      },
+      "endpoint": "PATCH /api/admin/bookings/{job_id}"
+    },
+    {
+      "name": "add_job_note",
+      "description": "Add a note to a job for progress tracking.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "number", "description": "Job/booking ID" },
+          "content": { "type": "string", "description": "Note content" }
+        },
+        "required": ["job_id", "content"]
+      },
+      "endpoint": "POST /api/admin/bookings/{job_id}/notes"
+    },
+    {
+      "name": "create_invoice",
+      "description": "Create an invoice for completed work.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": { "type": "number", "description": "Customer ID" },
+          "booking_id": { "type": "number", "description": "Related job/booking ID" },
+          "labor_amount": { "type": "number", "description": "Labor charge" },
+          "helper_amount": { "type": "number", "description": "Helper charge" },
+          "materials_amount": { "type": "number", "description": "Materials cost" },
+          "equipment_amount": { "type": "number", "description": "Equipment rental" },
+          "notes": { "type": "string", "description": "Invoice notes" }
+        },
+        "required": ["customer_id", "labor_amount"]
+      },
+      "endpoint": "POST /api/admin/invoices"
+    },
+    {
+      "name": "send_invoice",
+      "description": "Create a Square invoice and send it to the customer for payment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "invoice_id": { "type": "number", "description": "Our invoice ID" }
+        },
+        "required": ["invoice_id"]
+      },
+      "endpoint": "POST /api/square/create/{invoice_id}"
+    },
+    {
+      "name": "check_payment_status",
+      "description": "Check if a Square invoice has been paid.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "square_invoice_id": { "type": "string", "description": "Square invoice ID" }
+        },
+        "required": ["square_invoice_id"]
+      },
+      "endpoint": "GET /api/square/status/{square_invoice_id}"
+    },
+    {
+      "name": "list_messages",
+      "description": "Get recent customer messages.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": { "type": "number", "description": "Filter by customer" },
+          "unread_only": { "type": "boolean", "description": "Only show unread" }
+        }
+      },
+      "endpoint": "GET /api/admin/messages"
+    },
+    {
+      "name": "send_message",
+      "description": "Send a message to a customer.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": { "type": "number", "description": "Customer ID" },
+          "content": { "type": "string", "description": "Message content" }
+        },
+        "required": ["customer_id", "content"]
+      },
+      "endpoint": "POST /api/admin/messages"
+    },
+    {
+      "name": "get_dashboard_stats",
+      "description": "Get overview stats: pending quotes, unpaid invoices, today's jobs, unread messages.",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "endpoint": "GET /api/admin/stats"
+    }
+  ]
+}
