@@ -920,3 +920,115 @@ ${data.notes || notes.map((n: any) => n.content).join('\n\n')}
   
   return c.json({ draft: blogDraft });
 });
+
+// ============ SQUARE INVOICES ============
+
+import { createSquareInvoice, publishSquareInvoice, getSquareInvoiceStatus } from '../utils/square';
+
+// Create Square invoice from our invoice
+adminApi.post('/invoices/:id/square', async (c) => {
+  const invoiceId = c.req.param('id');
+  
+  // Get invoice with customer info
+  const invoice = await c.env.DB.prepare(`
+    SELECT i.*, c.name as customer_name, c.email as customer_email
+    FROM invoices i
+    JOIN customers c ON i.customer_id = c.id
+    WHERE i.id = ?
+  `).bind(invoiceId).first<any>();
+  
+  if (!invoice) {
+    return c.json({ success: false, error: 'Invoice not found' }, 404);
+  }
+  
+  // Build line items
+  const lineItems = [];
+  if (invoice.labor_amount) lineItems.push({ description: 'Labor', amount: invoice.labor_amount });
+  if (invoice.helper_amount) lineItems.push({ description: 'Helper', amount: invoice.helper_amount });
+  if (invoice.materials_amount) lineItems.push({ description: 'Materials', amount: invoice.materials_amount });
+  if (invoice.equipment_amount) lineItems.push({ description: 'Equipment', amount: invoice.equipment_amount });
+  
+  // Create Square invoice
+  const result = await createSquareInvoice(c.env, {
+    id: invoice.id,
+    customer_email: invoice.customer_email,
+    customer_name: invoice.customer_name,
+    total: invoice.total,
+    due_date: invoice.due_date,
+    description: invoice.notes,
+    line_items: lineItems.length > 0 ? lineItems : undefined,
+  });
+  
+  if (result.success && result.invoiceId) {
+    // Store Square invoice ID
+    await c.env.DB.prepare(`
+      UPDATE invoices SET square_invoice_id = ?, updated_at = unixepoch() WHERE id = ?
+    `).bind(result.invoiceId, invoiceId).run();
+    
+    return c.json({ success: true, squareInvoiceId: result.invoiceId });
+  }
+  
+  return c.json({ success: false, error: result.error }, 400);
+});
+
+// Send Square invoice (publish)
+adminApi.post('/invoices/:id/square/send', async (c) => {
+  const invoiceId = c.req.param('id');
+  
+  const invoice = await c.env.DB.prepare(
+    'SELECT square_invoice_id FROM invoices WHERE id = ?'
+  ).bind(invoiceId).first<any>();
+  
+  if (!invoice?.square_invoice_id) {
+    return c.json({ success: false, error: 'No Square invoice linked' }, 400);
+  }
+  
+  const result = await publishSquareInvoice(c.env, invoice.square_invoice_id);
+  
+  if (result.success) {
+    await c.env.DB.prepare(`
+      UPDATE invoices SET status = 'sent', sent_at = unixepoch(), updated_at = unixepoch() WHERE id = ?
+    `).bind(invoiceId).run();
+    
+    return c.json({ success: true });
+  }
+  
+  return c.json({ success: false, error: result.error }, 400);
+});
+
+// Sync Square invoice status
+adminApi.post('/invoices/:id/square/sync', async (c) => {
+  const invoiceId = c.req.param('id');
+  
+  const invoice = await c.env.DB.prepare(
+    'SELECT square_invoice_id, total FROM invoices WHERE id = ?'
+  ).bind(invoiceId).first<any>();
+  
+  if (!invoice?.square_invoice_id) {
+    return c.json({ success: false, error: 'No Square invoice linked' }, 400);
+  }
+  
+  const result = await getSquareInvoiceStatus(c.env, invoice.square_invoice_id);
+  
+  if (result.error) {
+    return c.json({ success: false, error: result.error }, 400);
+  }
+  
+  // Update our invoice based on Square status
+  let status = 'sent';
+  if (result.status === 'PAID') status = 'paid';
+  else if (result.status === 'PARTIALLY_PAID') status = 'partial';
+  else if (result.status === 'CANCELED') status = 'cancelled';
+  
+  await c.env.DB.prepare(`
+    UPDATE invoices 
+    SET status = ?, amount_paid = ?, updated_at = unixepoch() 
+    WHERE id = ?
+  `).bind(status, result.amountPaid || 0, invoiceId).run();
+  
+  return c.json({ 
+    success: true, 
+    squareStatus: result.status,
+    amountPaid: result.amountPaid,
+  });
+});

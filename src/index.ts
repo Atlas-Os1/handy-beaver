@@ -41,6 +41,7 @@ import { voiceApi } from './routes/voice-api';
 import { calendarApi } from './routes/calendar-api';
 import { paymentPage } from './pages/payment';
 import { visualizeApi } from './routes/visualize-api';
+import { squareInvoicesApi } from './routes/square-invoices';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -323,6 +324,7 @@ api.route('/payments', paymentsApi);
 api.route('/voice', voiceApi);
 api.route('/calendar', calendarApi);
 api.route('/visualize', visualizeApi);
+api.route('/square', squareInvoicesApi);
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {
