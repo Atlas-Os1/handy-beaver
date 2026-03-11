@@ -293,20 +293,64 @@ Enhanced prompt:`
       '@cf/stabilityai/stable-diffusion-xl-base-1.0',
     ];
     
-    let cfResult: ArrayBuffer | null = null;
+    let imageData: Uint8Array | null = null;
     let lastError: Error | null = null;
     
     for (const model of models) {
       try {
         console.log(`Trying CF Workers AI model: ${model}`);
-        cfResult = await c.env.AI.run(model, {
+        const result = await c.env.AI.run(model, {
           prompt: `Professional home improvement visualization: ${enhancedPrompt}. Photorealistic, high quality, natural lighting, detailed textures.`,
-        }) as ArrayBuffer;
+        });
         
-        if (cfResult && cfResult.byteLength > 0) {
-          console.log(`Success with model: ${model}, size: ${cfResult.byteLength} bytes`);
+        // CF Workers AI returns different formats depending on the model
+        // - ReadableStream for most image models
+        // - Object with image property for some models
+        let buffer: ArrayBuffer | null = null;
+        
+        if (result instanceof ReadableStream) {
+          // Read the stream to ArrayBuffer
+          const reader = result.getReader();
+          const chunks: Uint8Array[] = [];
+          let totalLength = 0;
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            totalLength += value.length;
+          }
+          
+          // Combine chunks
+          const combined = new Uint8Array(totalLength);
+          let offset = 0;
+          for (const chunk of chunks) {
+            combined.set(chunk, offset);
+            offset += chunk.length;
+          }
+          buffer = combined.buffer;
+        } else if (result instanceof ArrayBuffer) {
+          buffer = result;
+        } else if (result && typeof result === 'object') {
+          // Some models return { image: base64string } or similar
+          if ('image' in result && typeof result.image === 'string') {
+            // Base64 encoded
+            const binaryString = atob(result.image);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            buffer = bytes.buffer;
+          }
+        }
+        
+        if (buffer && buffer.byteLength > 100) {  // At least 100 bytes for a valid image
+          imageData = new Uint8Array(buffer);
+          console.log(`Success with model: ${model}, size: ${imageData.length} bytes`);
           generationMethod = model.split('/').pop() || 'workers-ai';
           break;
+        } else {
+          console.log(`Model ${model} returned empty or invalid data`);
         }
       } catch (modelErr) {
         console.error(`Model ${model} failed:`, modelErr);
@@ -314,20 +358,12 @@ Enhanced prompt:`
       }
     }
     
-    if (!cfResult || cfResult.byteLength === 0) {
-      throw new Error(`All AI models failed. Last error: ${lastError?.message || 'unknown'}`);
+    if (!imageData || imageData.length < 100) {
+      throw new Error(`All AI models failed. Last error: ${lastError?.message || 'No valid image generated'}`);
     }
     
-    // Convert ArrayBuffer to base64 (chunked to avoid stack overflow)
-    const outputBuffer = new Uint8Array(cfResult);
-    let outputBinary = '';
-    for (let i = 0; i < outputBuffer.length; i += 8192) {
-      outputBinary += String.fromCharCode(...outputBuffer.slice(i, i + 8192));
-    }
-    generatedImageBase64 = btoa(outputBinary);
-    
-    // Convert base64 to buffer
-    const generatedBuffer = Uint8Array.from(atob(generatedImageBase64), c => c.charCodeAt(0));
+    // Use the image data directly (no unnecessary base64 conversion)
+    const generatedBuffer = imageData;
     
     // Add watermark (composite beaver avatar in corner)
     // For now, store without watermark - will add in separate PR
