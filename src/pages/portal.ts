@@ -14,103 +14,256 @@ const portalLayout = (title: string, content: string, customer?: any) => `
   <title>${title} | ${business.name} Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ===== MOBILE-FIRST BASE STYLES ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     :root {
       --primary: ${theme.colors.primary};
       --secondary: ${theme.colors.secondary};
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
+    html { font-size: 16px; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f5f5f5;
-      min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: calc(70px + var(--safe-bottom)); /* Space for bottom nav */
     }
+    
+    /* ===== TOP NAV (Minimal on mobile) ===== */
     .portal-nav {
       background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: white;
-      padding: 1rem 2rem;
+      padding: 0.75rem 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
     .portal-nav .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
       font-family: 'Playfair Display', serif;
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-weight: 600;
     }
-    .portal-nav .brand img { width: 40px; height: 40px; border-radius: 50%; }
-    .portal-nav .user {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .portal-layout {
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      min-height: calc(100vh - 60px);
-    }
-    .sidebar {
+    .portal-nav .brand img { width: 36px; height: 36px; border-radius: 50%; }
+    .portal-nav .user { font-size: 0.9rem; }
+    .portal-nav .user a { color: rgba(255,255,255,0.9); margin-left: 0.75rem; }
+    
+    /* ===== BOTTOM NAVIGATION (Mobile default) ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: white;
-      border-right: 1px solid #e5e5e5;
-      padding: 1.5rem 0;
-    }
-    .sidebar a {
+      border-top: 1px solid #e5e5e5;
       display: flex;
+      justify-content: space-around;
+      padding: 0.5rem 0;
+      padding-bottom: calc(0.5rem + var(--safe-bottom));
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    .bottom-nav a {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1.5rem;
-      color: #333;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      color: #666;
       text-decoration: none;
-      border-left: 3px solid transparent;
-      transition: all 0.2s;
+      font-size: 0.7rem;
+      min-width: 60px;
+      min-height: 48px; /* Touch target */
+      justify-content: center;
     }
-    .sidebar a:hover { background: #f9f9f9; }
-    .sidebar a.active {
-      background: #fff5f0;
-      border-left-color: var(--primary);
-      color: var(--primary);
-      font-weight: 600;
-    }
-    .sidebar .nav-icon {
-      width: 18px;
-      height: 18px;
-      object-fit: contain;
-    }
+    .bottom-nav a.active { color: var(--primary); }
+    .bottom-nav .nav-icon { width: 24px; height: 24px; }
+    
+    /* ===== SIDEBAR (Hidden on mobile) ===== */
+    .sidebar { display: none; }
+    
+    /* ===== MAIN CONTENT ===== */
+    .portal-layout { display: block; }
     .main-content {
-      padding: 2rem;
-      max-width: 1200px;
+      padding: 1rem;
+      max-width: 100%;
     }
+    
+    /* ===== CARDS (Full width mobile) ===== */
     .card {
       background: white;
       border-radius: 12px;
-      padding: 1.5rem;
+      padding: 1.25rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
-    .card h2 { color: var(--primary); margin-bottom: 1rem; }
-    .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; border: none; }
+    .card h2 { color: var(--primary); margin-bottom: 0.75rem; font-size: 1.25rem; }
+    
+    /* ===== BUTTONS (Large touch targets) ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.875rem 1.5rem;
+      min-height: 48px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.1s, opacity 0.2s;
+      touch-action: manipulation;
+    }
+    .btn:active { transform: scale(0.97); }
     .btn-primary { background: var(--primary); color: white; }
     .btn-secondary { background: #e5e7eb; color: #333; }
-    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+    .btn-block { width: 100%; margin-bottom: 0.75rem; }
+    
+    /* ===== BADGES ===== */
+    .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: capitalize; }
     .badge-pending { background: #fef3c7; color: #92400e; }
     .badge-sent { background: #dbeafe; color: #1e40af; }
-    .badge-accepted { background: #d1fae5; color: #065f46; }
-    .badge-paid { background: #d1fae5; color: #065f46; }
+    .badge-accepted, .badge-paid, .badge-completed { background: #d1fae5; color: #065f46; }
     .badge-confirmed { background: #dbeafe; color: #1e40af; }
     .badge-in_progress { background: #ede9fe; color: #6b21a8; }
-    .badge-completed { background: #d1fae5; color: #065f46; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
-    .table th { font-weight: 600; color: #666; font-size: 0.85rem; }
-    .empty { text-align: center; padding: 3rem; color: #666; }
+    .badge-overdue { background: #fee2e2; color: #991b1b; }
     
-    @media (max-width: 768px) {
-      .portal-layout { grid-template-columns: 1fr; }
-      .sidebar { display: flex; overflow-x: auto; padding: 0.5rem; border-right: none; border-bottom: 1px solid #e5e5e5; }
-      .sidebar a { padding: 0.5rem 1rem; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
-      .sidebar a.active { border-bottom-color: var(--primary); }
+    /* ===== TABLES → CARDS ON MOBILE ===== */
+    .table { display: none; }
+    .mobile-cards { display: block; }
+    .mobile-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .mobile-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .mobile-card-title { font-weight: 600; font-size: 1rem; }
+    .mobile-card-meta { color: #666; font-size: 0.85rem; }
+    .mobile-card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .mobile-card-actions .btn { flex: 1; padding: 0.75rem; min-height: 44px; }
+    
+    /* ===== FORMS ===== */
+    input, textarea, select {
+      width: 100%;
+      padding: 0.875rem;
+      font-size: 16px; /* Prevents zoom on iOS */
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      -webkit-appearance: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+    }
+    label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333; }
+    
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 0.8rem; color: #666; margin-top: 0.25rem; }
+    
+    /* ===== QUICK ACTIONS ===== */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .quick-action {
+      background: white;
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      text-decoration: none;
+      color: #333;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.1s;
+    }
+    .quick-action:active { transform: scale(0.97); }
+    .quick-action img { width: 28px; height: 28px; }
+    
+    .empty { text-align: center; padding: 2rem 1rem; color: #666; }
+    
+    /* ===== DESKTOP STYLES (640px+) ===== */
+    @media (min-width: 640px) {
+      body { padding-bottom: 0; }
+      .portal-nav { padding: 1rem 2rem; }
+      .portal-nav .brand { font-size: 1.25rem; }
+      .bottom-nav { display: none; }
+      .sidebar {
+        display: block;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        padding: 1.5rem 0;
+      }
+      .sidebar a {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        color: #333;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
+      }
+      .sidebar a:hover { background: #f9f9f9; }
+      .sidebar a.active {
+        background: #fff5f0;
+        border-left-color: var(--primary);
+        color: var(--primary);
+        font-weight: 600;
+      }
+      .sidebar .nav-icon { width: 20px; height: 20px; }
+      .portal-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: calc(100vh - 60px);
+      }
+      .main-content { padding: 2rem; max-width: 1200px; }
+      .card { padding: 1.5rem; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+      .table { display: table; width: 100%; border-collapse: collapse; }
+      .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
+      .table th { font-weight: 600; color: #666; font-size: 0.85rem; }
+      .mobile-cards { display: none; }
     }
   </style>
 </head>
@@ -136,6 +289,15 @@ const portalLayout = (title: string, content: string, customer?: any) => `
       <a href="/portal/visualizer">✨ AI Visualizer</a>
       <a href="/portal/gallery">🖼️ My Gallery</a>
     </aside>
+  
+  <!-- Mobile Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="/portal"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon">Home</a>
+    <a href="/portal/quotes"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon">Quotes</a>
+    <a href="/portal/invoices"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon">Pay</a>
+    <a href="/portal/messages"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon">Chat</a>
+    <a href="/portal/jobs"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon">Jobs</a>
+  </nav>
     
     <main class="main-content">
       ${content}
