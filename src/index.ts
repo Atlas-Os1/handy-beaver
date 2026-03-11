@@ -20,7 +20,7 @@ import { adminLoginPage } from './pages/admin-login';
 import { portalVisualizerPage, portalGalleryPage } from './pages/portal-visualizer';
 import { adminGalleryPage } from './pages/admin-gallery';
 import { adminMessagesPage } from './pages/admin-messages';
-import { adminCustomersPage } from './pages/admin-customers';
+import { adminCustomersPage, adminCustomerDetail } from './pages/admin-customers';
 import { adminQuotesPage } from './pages/admin-quotes';
 import { adminJobsPage } from './pages/admin-jobs';
 import { adminInvoicesPage } from './pages/admin-invoices';
@@ -106,6 +106,7 @@ app.get('/admin/visualizer', requireAdmin, adminVisualizerPage);
 app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/messages/:customerId', requireAdmin, adminMessagesPage); // Handle direct links
 app.get('/admin/customers', requireAdmin, adminCustomersPage);
+app.get('/admin/customers/:id', requireAdmin, adminCustomerDetail);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
 app.get('/admin/jobs', requireAdmin, adminJobsPage);
 app.get('/admin/invoices', requireAdmin, adminInvoicesPage);
