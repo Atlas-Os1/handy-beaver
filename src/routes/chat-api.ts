@@ -171,9 +171,12 @@ Service area: Southeast Oklahoma.`;
     });
     
     if (!response.ok) {
-      console.error('Gateway error:', response.status, await response.text());
+      const errorText = await response.text();
+      console.error('Gateway error:', response.status, errorText);
+      console.error('Gateway URL:', gatewayUrl);
       return c.json({ 
-        response: "I'm having trouble connecting. Try again in a moment!" 
+        response: `Connection error (${response.status}). Please try again!`,
+        debug: { status: response.status, error: errorText.substring(0, 200), url: gatewayUrl }
       });
     }
     
@@ -183,10 +186,12 @@ Service area: Southeast Oklahoma.`;
     return c.json({ 
       response: assistantText || "I understood, but I'm not sure how to respond. Can you rephrase?" 
     });
-  } catch (error) {
-    console.error('Chat API error:', error);
+  } catch (error: any) {
+    console.error('Chat API error:', error?.message || error);
+    console.error('Gateway URL was:', gatewayUrl);
     return c.json({ 
-      response: "Connection error. Please try again or call us directly!" 
+      response: "Connection error. Please try again or call us directly!",
+      debug: { error: error?.message || String(error), url: gatewayUrl } 
     });
   }
 });
