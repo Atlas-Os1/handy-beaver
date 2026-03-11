@@ -161,11 +161,6 @@ Service area: Southeast Oklahoma.`;
         model,
         input,
         user: mode === 'admin' ? 'admin-chat' : `customer-${context?.customerId || 'guest'}`,
-        metadata: {
-          mode,
-          customerId: context?.customerId || null,
-          portalScoped: mode !== 'admin',
-        },
         max_output_tokens: 500,
       }),
     });
