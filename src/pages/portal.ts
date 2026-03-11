@@ -73,6 +73,11 @@ const portalLayout = (title: string, content: string, customer?: any) => `
       color: var(--primary);
       font-weight: 600;
     }
+    .sidebar .nav-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
     .main-content {
       padding: 2rem;
       max-width: 1200px;
@@ -123,11 +128,11 @@ const portalLayout = (title: string, content: string, customer?: any) => `
   
   <div class="portal-layout">
     <aside class="sidebar">
-      <a href="/portal">🏠 Dashboard</a>
-      <a href="/portal/quotes">💰 My Quotes</a>
-      <a href="/portal/invoices">📄 Invoices</a>
-      <a href="/portal/jobs">🛠️ Job History</a>
-      <a href="/portal/messages">💬 Messages</a>
+      <a href="/portal"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
+      <a href="/portal/quotes"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon"> My Quotes</a>
+      <a href="/portal/invoices"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
+      <a href="/portal/jobs"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon"> Job History</a>
+      <a href="/portal/messages"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
       <a href="/portal/visualizer">✨ AI Visualizer</a>
       <a href="/portal/gallery">🖼️ My Gallery</a>
     </aside>

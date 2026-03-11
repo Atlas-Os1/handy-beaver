@@ -66,6 +66,11 @@ export const adminLayout = (title: string, content: string, activePage: string =
       color: #8B4513;
       font-weight: 600;
     }
+    .sidebar .nav-icon {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
     .sidebar .divider {
       height: 1px;
       background: #e5e5e5;
@@ -155,17 +160,17 @@ export const adminLayout = (title: string, content: string, activePage: string =
   
   <div class="admin-layout">
     <aside class="sidebar">
-      <a href="/admin" class="${activePage === 'dashboard' ? 'active' : ''}">📊 Dashboard</a>
-      <a href="/admin/quotes" class="${activePage === 'quotes' ? 'active' : ''}">💰 Quotes</a>
-      <a href="/admin/jobs" class="${activePage === 'jobs' ? 'active' : ''}">🛠️ Jobs</a>
-      <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}">👥 Customers</a>
-      <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}">💬 Messages</a>
+      <a href="/admin" class="${activePage === 'dashboard' ? 'active' : ''}"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
+      <a href="/admin/quotes" class="${activePage === 'quotes' ? 'active' : ''}"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon"> Quotes</a>
+      <a href="/admin/jobs" class="${activePage === 'jobs' ? 'active' : ''}"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon"> Jobs</a>
+      <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}"><img src="/api/assets/icons/customers.png" alt="" class="nav-icon"> Customers</a>
+      <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
       <div class="divider"></div>
       <a href="/admin/visualizer" class="${activePage === 'visualizer' ? 'active' : ''}">✨ AI Visualizer</a>
-      <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}">📄 Invoices</a>
+      <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
       <a href="/admin/gallery" class="${activePage === 'gallery' ? 'active' : ''}">🖼️ Gallery</a>
       <div class="divider"></div>
-      <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}">⚙️ Settings</a>
+      <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}"><img src="/api/assets/icons/settings.png" alt="" class="nav-icon"> Settings</a>
       <a href="/" target="_blank">🌐 View Site</a>
     </aside>
     
