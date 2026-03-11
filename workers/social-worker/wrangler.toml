@@ -1,0 +1,37 @@
+name = "handy-beaver-social-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-09"
+compatibility_flags = ["nodejs_compat"]
+
+# R2 bucket for generated images
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "atlas-collab-pub"
+
+# KV for state/tracking posted content
+[[kv_namespaces]]
+binding = "STATE"
+id = "0c407b5de5e84cce90f2da02b2c3a31b"
+
+# Workers AI for image generation
+[ai]
+binding = "AI"
+
+# Environment variables
+[vars]
+PAGE_ID = "1040910635768535"
+INSTAGRAM_ID = "17841443253800030"
+BRAND_NAME = "Handy Beaver Co"
+BRAND_VOICE = "Lil Beaver - friendly Oklahoma handyman, y'all welcome, no corporate jargon, 1-2 emojis max"
+
+# Cron triggers - Mon/Wed/Fri at 10 AM, 2 PM, 6 PM CST (4 PM, 8 PM, 12 AM UTC)
+[triggers]
+crons = ["0 16 * * 1,3,5", "0 20 * * 1,3,5", "0 0 * * 2,4,6"]
+
+# Secrets to configure:
+# wrangler secret put FB_PAGE_TOKEN
+# wrangler secret put FB_APP_ID
+# wrangler secret put FB_APP_SECRET
+
+[observability]
+enabled = true
