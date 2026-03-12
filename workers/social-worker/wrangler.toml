@@ -30,6 +30,8 @@ crons = ["0 16 * * 1,3,5", "0 20 * * 1,3,5", "0 0 * * 2,4,6"]
 
 # Secrets to configure:
 # wrangler secret put FB_PAGE_TOKEN
+# wrangler secret put FB_APP_ID
+# wrangler secret put FB_APP_SECRET
 # wrangler secret put IG_TOKEN
 # wrangler secret put AUTH_TOKEN  # Optional: protects /post endpoint
 
