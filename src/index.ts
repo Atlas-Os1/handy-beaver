@@ -23,6 +23,7 @@ import { adminMessagesPage } from './pages/admin-messages';
 import { adminCustomersPage, adminCustomerDetail } from './pages/admin-customers';
 import { adminQuotesPage, adminQuoteDetail } from './pages/admin-quotes';
 import { adminJobsPage, adminJobDetail } from './pages/admin-jobs';
+import { adminCalendarPage } from './pages/admin-calendar';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
@@ -40,7 +41,7 @@ import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
 import { whatsappApi } from './routes/whatsapp-api';
 import { chatApi } from './routes/chat-api';
-import { calendarApi } from './routes/calendar-api';
+import { calendarApi, backSyncGoogleCalendarToBookings } from './routes/calendar-api';
 import { paymentPage } from './pages/payment';
 import { visualizeApi } from './routes/visualize-api';
 import { squareInvoicesApi } from './routes/square-invoices';
@@ -58,6 +59,12 @@ type Bindings = {
   RESEND_API_KEY?: string;
   SQUARE_ACCESS_TOKEN?: string;
   GEMINI_API_KEY?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REFRESH_TOKEN?: string;
+  GOOGLE_ACCESS_TOKEN?: string;
+  GOOGLE_CALENDAR_ID?: string;
+  CALENDAR_WEBHOOK_SECRET?: string;
   SEND_EMAIL?: any; // Cloudflare Email binding
 };
 
@@ -102,6 +109,7 @@ app.get('/admin/quotes', requireAdmin, adminQuotesPage);
 app.get('/admin/quotes/:id', requireAdmin, adminQuoteDetail);
 app.get('/admin/jobs', requireAdmin, adminJobsPage);
 app.get('/admin/jobs/:id', requireAdmin, adminJobDetail);
+app.get('/admin/calendar', requireAdmin, adminCalendarPage);
 app.get('/admin/invoices', requireAdmin, adminInvoicesPage);
 app.get('/admin/invoices/:id', requireAdmin, adminInvoiceDetail);
 app.get('/admin/settings', requireAdmin, async (c) => {
@@ -480,22 +488,25 @@ app.route('/api', api);
 
 // Scheduled handler for cron triggers (Facebook group scanning)
 async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-  console.log('Cron triggered: Facebook group scan');
-  
-  // Get stored session
+  console.log('Cron triggered: periodic background jobs');
+
+  // Keep existing placeholder Facebook session check
   const session = await env.DB.prepare(
     'SELECT cookies FROM facebook_sessions WHERE id = 1'
   ).first<{ cookies: string }>();
-  
+
   if (!session?.cookies) {
-    console.log('No Facebook session stored, skipping scan');
-    return;
+    console.log('No Facebook session stored, skipping Facebook scan');
   }
-  
-  // Run scan silently - no Discord notification needed
-  // The scan results will be logged and stored, but we don't spam Discord
-  // TODO: Add daily summary instead of per-scan notifications
-  
+
+  // Calendar back-sync: pull Google changes and apply to bookings
+  const calendarSync = await backSyncGoogleCalendarToBookings(env);
+  if (calendarSync.success) {
+    console.log(`Calendar sync complete. Synced ${calendarSync.synced} booking(s).`);
+  } else {
+    console.log(`Calendar sync failed: ${calendarSync.error}`);
+  }
+
   console.log('Cron completed');
 }
 
