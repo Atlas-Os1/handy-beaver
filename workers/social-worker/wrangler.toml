@@ -1,5 +1,5 @@
 name = "handy-beaver-social-worker"
-main = "src/index.ts"
+main = "index.ts"
 compatibility_date = "2024-12-09"
 compatibility_flags = ["nodejs_compat"]
 
@@ -32,6 +32,8 @@ crons = ["0 16 * * 1,3,5", "0 20 * * 1,3,5", "0 0 * * 2,4,6"]
 # wrangler secret put FB_PAGE_TOKEN
 # wrangler secret put FB_APP_ID
 # wrangler secret put FB_APP_SECRET
+# wrangler secret put IG_TOKEN
+# wrangler secret put AUTH_TOKEN  # Optional: protects /post endpoint
 
 [observability]
 enabled = true

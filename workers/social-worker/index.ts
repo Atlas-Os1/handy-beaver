@@ -16,6 +16,7 @@ export interface Env {
   IG_TOKEN?: string;
   FB_APP_ID?: string;
   FB_APP_SECRET?: string;
+  AUTH_TOKEN?: string; // Bearer token for /post endpoint
 
   // Bindings
   MEDIA: R2Bucket;
@@ -182,9 +183,12 @@ async function postToInstagram(env: Env, imageUrl: string, caption: string): Pro
   return publishResponse.json();
 }
 
-async function createPost(env: Env, theme?: Theme): Promise<{ success: boolean; postId?: string; error?: string }> {
+async function createPost(env: Env, theme?: string): Promise<{ success: boolean; postId?: string; instagramId?: string; error?: string }> {
   try {
-    const selectedTheme = theme || randomItem([...THEMES]);
+    // Validate theme - fallback to random if invalid
+    const selectedTheme: Theme = (theme && THEMES.includes(theme as Theme)) 
+      ? (theme as Theme) 
+      : randomItem([...THEMES]);
     const caption = generateCaption(selectedTheme);
     
     // Generate image
@@ -263,7 +267,18 @@ export default {
     }
     
     if (path === '/post' && request.method === 'POST') {
-      const body = await request.json().catch(() => ({})) as { theme?: Theme };
+      // Auth check - require Bearer token if AUTH_TOKEN is configured
+      if (env.AUTH_TOKEN) {
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader !== `Bearer ${env.AUTH_TOKEN}`) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+      
+      const body = await request.json().catch(() => ({})) as { theme?: string };
       const result = await createPost(env, body.theme);
       return new Response(JSON.stringify(result), {
         status: result.success ? 200 : 500,
