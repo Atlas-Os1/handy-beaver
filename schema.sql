@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS bookings (
   deposit_paid REAL DEFAULT 0,
   total_paid REAL DEFAULT 0,
   notes TEXT,
+  google_event_id TEXT,
+  google_event_link TEXT,
+  calendar_sync_status TEXT DEFAULT 'not_synced',
+  calendar_last_synced_at INTEGER,
   created_at INTEGER DEFAULT (unixepoch()),
   updated_at INTEGER DEFAULT (unixepoch())
 );

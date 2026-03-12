@@ -34,6 +34,7 @@ binding = "AI"
 # Environment Variables
 [vars]
 ENVIRONMENT = "development"
+GOOGLE_CALENDAR_ID = "primary"
 
 # Secrets (set via wrangler secret put):
 # - GITHUB_CLIENT_ID ✓
@@ -43,6 +44,7 @@ ENVIRONMENT = "development"
 # - OWNER_EMAIL (forward emails to)
 # - SQUARE_ACCESS_TOKEN (for payments)
 # - GEMINI_API_KEY (for AI visualizer)
+# - CALENDAR_WEBHOOK_SECRET (for calendar sync webhook protection)
 # - FACEBOOK_PAGE_ID
 # - FACEBOOK_PAGE_ACCESS_TOKEN
 
