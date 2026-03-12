@@ -1,10 +1,16 @@
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
+import { detectSchedulingConflicts } from './calendar-api';
 
 type Bindings = {
   DB: D1Database;
   ADMIN_API_KEY?: string;
   DISCORD_WEBHOOK_NOTIFICATIONS?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REFRESH_TOKEN?: string;
+  GOOGLE_ACCESS_TOKEN?: string;
+  GOOGLE_CALENDAR_ID?: string;
 };
 
 export const adminApi = new Hono<{ Bindings: Bindings }>();
@@ -677,10 +683,38 @@ adminApi.patch('/bookings/:id', async (c) => {
   const id = c.req.param('id');
   const data = await c.req.json();
   const now = Math.floor(Date.now() / 1000);
-  
+
+  const existing = await c.env.DB.prepare(
+    'SELECT * FROM bookings WHERE id = ?'
+  ).bind(id).first<any>();
+
+  if (!existing) {
+    return c.json({ error: 'Job not found' }, 404);
+  }
+
+  const nextStatus = data.status || existing.status;
+  const nextDate = data.scheduled_date || existing.scheduled_date;
+
+  if (nextStatus === 'confirmed') {
+    if (!nextDate) {
+      return c.json({ error: 'scheduled_date is required before confirming a job' }, 400);
+    }
+
+    if (!data.force_conflict_override) {
+      const conflicts = await detectSchedulingConflicts(c.env, Number(id), nextDate);
+      if (conflicts.length > 0) {
+        return c.json({
+          error: 'Scheduling conflict detected',
+          conflicts,
+          allow_override: true,
+        }, 409);
+      }
+    }
+  }
+
   const updates: string[] = [];
   const values: any[] = [];
-  
+
   if (data.status) {
     updates.push('status = ?');
     values.push(data.status);
@@ -693,15 +727,15 @@ adminApi.patch('/bookings/:id', async (c) => {
     updates.push('notes = ?');
     values.push(data.notes);
   }
-  
+
   updates.push('updated_at = ?');
   values.push(now);
   values.push(id);
-  
+
   await c.env.DB.prepare(
     `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`
   ).bind(...values).run();
-  
+
   return c.json({ success: true });
 });
 
