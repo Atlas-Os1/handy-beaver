@@ -164,6 +164,37 @@ adminApi.get('/customers/:id', async (c) => {
 
 // ============ QUOTES ============
 
+// List all quotes
+adminApi.get('/quotes', async (c) => {
+  const quotes = await c.env.DB.prepare(`
+    SELECT q.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone
+    FROM quotes q
+    JOIN customers c ON q.customer_id = c.id
+    ORDER BY q.created_at DESC
+    LIMIT 100
+  `).all();
+  
+  return c.json(quotes);
+});
+
+// Get single quote
+adminApi.get('/quotes/:id', async (c) => {
+  const quoteId = c.req.param('id');
+  
+  const quote = await c.env.DB.prepare(`
+    SELECT q.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone
+    FROM quotes q
+    JOIN customers c ON q.customer_id = c.id
+    WHERE q.id = ?
+  `).bind(quoteId).first();
+  
+  if (!quote) {
+    return c.json({ error: 'Quote not found' }, 404);
+  }
+  
+  return c.json(quote);
+});
+
 adminApi.post('/quotes', async (c) => {
   const data = await c.req.json();
   const now = Math.floor(Date.now() / 1000);
