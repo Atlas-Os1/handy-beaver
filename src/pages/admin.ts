@@ -170,13 +170,16 @@ export const adminLayout = (title: string, content: string, activePage: string =
       .sidebar {
         position: fixed;
         top: 60px;
-        left: -100%;
-        width: 80%;
-        max-width: 280px;
+        left: -280px;
+        width: 280px;
         height: calc(100vh - 60px);
         z-index: 1000;
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+        background: #1a1a2e;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
       }
       .sidebar.open { left: 0; }
       .sidebar-overlay {
@@ -191,7 +194,11 @@ export const adminLayout = (title: string, content: string, activePage: string =
       }
       .sidebar-overlay.open { display: block; }
       
-      .main-content { padding: 1rem; }
+      .main-content { 
+        padding: 1rem; 
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
       .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
       .stat { padding: 1rem; }
       .stat .value { font-size: 1.5rem; }
@@ -220,46 +227,81 @@ export const adminLayout = (title: string, content: string, activePage: string =
       .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
+    /* Tablet/mobile: sidebar becomes slide-out menu */
     @media (max-width: 900px) {
       .admin-nav {
         padding: 0.75rem 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
       }
-      .admin-nav .user {
-        width: 100%;
-        justify-content: space-between;
-      }
+      .admin-nav .user span { display: none; }
+      .menu-toggle { display: block !important; }
+      
       .admin-layout {
         grid-template-columns: 1fr;
         min-height: auto;
       }
+      
+      /* Slide-out sidebar - hidden by default */
       .sidebar {
-        display: flex;
-        overflow-x: auto;
-        border-right: 0;
-        border-bottom: 1px solid #e5e5e5;
-        padding: 0.5rem;
-        gap: 0.5rem;
+        position: fixed !important;
+        top: 60px;
+        left: -260px;
+        width: 250px !important;
+        height: calc(100vh - 60px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        background: #1a1a2e !important;
+        flex-direction: column !important;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex !important;
+        border-right: 0 !important;
+        border-bottom: 0 !important;
+        padding: 1rem 0 !important;
+        gap: 0 !important;
       }
+      .sidebar.open { left: 0 !important; }
+      
       .sidebar a {
-        border-left: 0;
-        border-bottom: 3px solid transparent;
+        border-left: 3px solid transparent !important;
+        border-bottom: 0 !important;
         white-space: nowrap;
-        border-radius: 8px;
-        padding: 0.6rem 0.9rem;
+        padding: 0.75rem 1rem !important;
+        display: flex !important;
+        color: #ccc !important;
+      }
+      .sidebar a:hover {
+        background: rgba(255,255,255,0.1) !important;
       }
       .sidebar a.active {
-        border-left-color: transparent;
-        border-bottom-color: #8B4513;
+        border-left-color: #8B4513 !important;
+        background: rgba(139, 69, 19, 0.2) !important;
+        color: white !important;
       }
       .sidebar .divider {
-        width: 1px;
-        height: auto;
-        margin: 0 0.25rem;
+        width: 100% !important;
+        height: 1px !important;
+        margin: 0.5rem 0 !important;
+        background: rgba(255,255,255,0.1) !important;
       }
-      .main-content { padding: 1rem; }
+      
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+      }
+      .sidebar-overlay.open { display: block; }
+      
+      .main-content { 
+        padding: 1rem; 
+        width: 100% !important;
+        margin-left: 0 !important;
+      }
       .card { padding: 1rem; }
       .table {
         display: block;

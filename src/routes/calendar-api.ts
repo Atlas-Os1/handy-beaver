@@ -93,8 +93,8 @@ async function listGoogleEvents(env: Bindings, from: string, to: string) {
 
   if (!res.ok) {
     const error = await res.text();
-    console.error('Calendar API error:', error);
-    return { error: 'Failed to fetch events' as const };
+    console.error('Calendar API error:', res.status, error);
+    return { error: `Calendar error: ${res.status}` as const };
   }
 
   const data = (await res.json()) as { items?: any[] };
@@ -432,4 +432,56 @@ calendarApi.delete('/events/:event_id', async (c) => {
 
   if (!res.ok && res.status !== 404) return c.json({ error: 'Failed to delete event' }, 500);
   return c.json({ success: true });
+});
+
+// Debug endpoint to check calendar config
+calendarApi.get('/status', async (c) => {
+  const hasClientId = !!c.env.GOOGLE_CLIENT_ID;
+  const hasClientSecret = !!c.env.GOOGLE_CLIENT_SECRET;
+  const hasRefreshToken = !!c.env.GOOGLE_REFRESH_TOKEN;
+  const hasAccessToken = !!c.env.GOOGLE_ACCESS_TOKEN;
+  const calendarId = c.env.GOOGLE_CALENDAR_ID || 'primary';
+  
+  // Try to get access token
+  let tokenStatus = 'not_configured';
+  let tokenError = null;
+  
+  if (hasRefreshToken && hasClientId && hasClientSecret) {
+    try {
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: c.env.GOOGLE_CLIENT_ID!,
+          client_secret: c.env.GOOGLE_CLIENT_SECRET!,
+          refresh_token: c.env.GOOGLE_REFRESH_TOKEN!,
+          grant_type: 'refresh_token',
+        }),
+      });
+      const data = await res.json() as any;
+      if (data.access_token) {
+        tokenStatus = 'valid';
+      } else {
+        tokenStatus = 'invalid';
+        tokenError = data.error_description || data.error;
+      }
+    } catch (e: any) {
+      tokenStatus = 'error';
+      tokenError = e.message;
+    }
+  } else if (hasAccessToken) {
+    tokenStatus = 'static_token';
+  }
+  
+  return c.json({
+    config: {
+      hasClientId,
+      hasClientSecret,
+      hasRefreshToken,
+      hasAccessToken,
+      calendarId,
+    },
+    tokenStatus,
+    tokenError,
+  });
 });

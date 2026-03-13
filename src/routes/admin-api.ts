@@ -242,6 +242,54 @@ adminApi.post('/quotes', async (c) => {
   return c.json({ success: true, id: result.meta.last_row_id, total });
 });
 
+// Update quote
+adminApi.put('/quotes/:id', async (c) => {
+  const id = c.req.param('id');
+  const data = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
+  
+  const result = await c.env.DB.prepare(`
+    UPDATE quotes SET
+      customer_id = ?,
+      status = ?,
+      labor_type = ?,
+      labor_rate = ?,
+      estimated_hours = ?,
+      helper_needed = ?,
+      helper_type = ?,
+      helper_rate = ?,
+      materials_estimate = ?,
+      equipment_estimate = ?,
+      discount_percent = ?,
+      discount_reason = ?,
+      subtotal = ?,
+      total = ?,
+      notes = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).bind(
+    data.customer_id,
+    data.status,
+    data.labor_type,
+    data.labor_rate,
+    data.estimated_hours,
+    data.helper_needed ? 1 : 0,
+    data.helper_type,
+    data.helper_rate,
+    data.materials_estimate,
+    data.equipment_estimate,
+    data.discount_percent,
+    data.discount_reason,
+    data.subtotal,
+    data.total,
+    data.notes,
+    now,
+    id
+  ).run();
+  
+  return c.json({ success: true, id });
+});
+
 // Quote preview HTML (for viewing and printing)
 adminApi.get('/quotes/:id/preview', async (c) => {
   const id = c.req.param('id');

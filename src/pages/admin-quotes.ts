@@ -397,14 +397,16 @@ export const adminQuoteDetail = async (c: Context) => {
           <span style="background: ${statusColors[quote.status] || '#6b7280'}; color: white; padding: 4px 12px; border-radius: 4px;">${quote.status}</span>
         </div>
         <div style="display: flex; gap: 0.5rem;">
+          <button class="btn-secondary" onclick="editQuote()">✏️ Edit</button>
           ${quote.status === 'draft' ? `<button class="btn-primary" onclick="sendQuote()">Send to Customer</button>` : ''}
           ${quote.status === 'accepted' ? `<button class="btn-primary" onclick="createJob()">Create Job</button>` : ''}
           <button class="btn-secondary" onclick="downloadPdf()">Download PDF</button>
+          <button class="btn-secondary" onclick="copyShareLink()" title="Copy shareable link">🔗</button>
         </div>
       </div>
       
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
-        <div class="card" style="padding: 1.5rem; background: #fff; border-radius: 8px;">
+      <div class="quote-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+        <div class="card quote-main" style="padding: 1.5rem; background: #fff; border-radius: 8px; position: relative; z-index: 1;">
           <h3 style="margin-top: 0;">Quote Details</h3>
           
           <table style="width: 100%; border-collapse: collapse;">
@@ -455,8 +457,8 @@ export const adminQuoteDetail = async (c: Context) => {
           </div>
         </div>
         
-        <div>
-          <div class="card" style="padding: 1.5rem; background: #fff; border-radius: 8px;">
+        <div class="quote-sidebar">
+          <div class="card" style="padding: 1.5rem; background: #fff; border-radius: 8px; position: relative; z-index: 1;">
             <h3 style="margin-top: 0;">Customer</h3>
             <p><strong>${quote.customer_name}</strong></p>
             <p><a href="mailto:${quote.customer_email}">${quote.customer_email}</a></p>
@@ -466,6 +468,17 @@ export const adminQuoteDetail = async (c: Context) => {
         </div>
       </div>
     </div>
+    
+    <style>
+      .quote-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+      @media (max-width: 768px) {
+        .quote-grid { grid-template-columns: 1fr; }
+        .quote-sidebar { order: -1; }
+      }
+      .card { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .btn-primary { background: #8B4513; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
+      .btn-secondary { background: #e5e7eb; color: #374151; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; text-decoration: none; }
+    </style>
     
     <script>
       async function sendQuote() {
@@ -486,8 +499,237 @@ export const adminQuoteDetail = async (c: Context) => {
       function downloadPdf() {
         window.open('/api/admin/quotes/${quote.id}/pdf', '_blank');
       }
+      
+      function editQuote() {
+        window.location.href = '/admin/quotes/${quote.id}/edit';
+      }
+      
+      function copyShareLink() {
+        const link = window.location.origin + '/quote/${quote.id}';
+        navigator.clipboard.writeText(link).then(() => {
+          alert('Share link copied! Customer can view and accept quote at:\\n' + link);
+        });
+      }
     </script>
   `;
   
   return c.html(adminLayout(`Quote #${quote.id}`, content, 'quotes', admin));
+};
+
+// Edit quote page
+export const adminQuoteEdit = async (c: Context) => {
+  const admin = c.get('admin');
+  const quoteId = c.req.param('id');
+  const db = c.env.DB;
+  
+  const quote = await db.prepare(`
+    SELECT q.*, c.name as customer_name, c.email as customer_email
+    FROM quotes q
+    JOIN customers c ON q.customer_id = c.id
+    WHERE q.id = ?
+  `).bind(quoteId).first<any>();
+  
+  if (!quote) {
+    return c.notFound();
+  }
+  
+  const customers = await db.prepare(`
+    SELECT id, name, email, phone FROM customers ORDER BY name
+  `).all<any>();
+  
+  const content = `
+    <div class="quote-edit">
+      <div class="page-header">
+        <a href="/admin/quotes/${quoteId}" style="color: #666; text-decoration: none;">← Back to Quote</a>
+        <h1>Edit Quote #${quoteId}</h1>
+      </div>
+      
+      <form id="edit-quote-form" onsubmit="updateQuote(event)" class="card" style="max-width: 800px; padding: 1.5rem;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Customer *</label>
+            <select id="q-customer" required>
+              ${customers.results?.map((c: any) => `<option value="${c.id}" ${c.id === quote.customer_id ? 'selected' : ''}>${c.name} (${c.email})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="q-status">
+              <option value="draft" ${quote.status === 'draft' ? 'selected' : ''}>Draft</option>
+              <option value="sent" ${quote.status === 'sent' ? 'selected' : ''}>Sent</option>
+              <option value="accepted" ${quote.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+              <option value="declined" ${quote.status === 'declined' ? 'selected' : ''}>Declined</option>
+            </select>
+          </div>
+        </div>
+        
+        <h3 style="margin: 1.5rem 0 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Labor</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Labor Type</label>
+            <select id="q-labor-type">
+              <option value="half_day" ${quote.labor_type === 'half_day' ? 'selected' : ''}>Half Day (≤6 hrs)</option>
+              <option value="full_day" ${quote.labor_type === 'full_day' ? 'selected' : ''}>Full Day (6+ hrs)</option>
+              <option value="hourly" ${quote.labor_type === 'hourly' ? 'selected' : ''}>Hourly</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Rate ($)</label>
+            <input type="number" id="q-labor-rate" value="${quote.labor_rate || 175}" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Est. Hours/Days</label>
+            <input type="number" id="q-hours" value="${quote.estimated_hours || 1}" step="0.5">
+          </div>
+        </div>
+        
+        <h3 style="margin: 1.5rem 0 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Helper</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="q-helper" ${quote.helper_needed ? 'checked' : ''} onchange="toggleHelper()"> Add Helper
+            </label>
+          </div>
+          <div class="form-group helper-field" style="${quote.helper_needed ? '' : 'display:none;'}">
+            <label>Helper Type</label>
+            <select id="q-helper-type">
+              <option value="half_day" ${quote.helper_type === 'half_day' ? 'selected' : ''}>Half Day</option>
+              <option value="full_day" ${quote.helper_type === 'full_day' ? 'selected' : ''}>Full Day</option>
+            </select>
+          </div>
+          <div class="form-group helper-field" style="${quote.helper_needed ? '' : 'display:none;'}">
+            <label>Helper Rate ($)</label>
+            <input type="number" id="q-helper-rate" value="${quote.helper_rate || 100}" step="0.01">
+          </div>
+        </div>
+        
+        <h3 style="margin: 1.5rem 0 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Materials & Equipment</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Materials Estimate ($)</label>
+            <input type="number" id="q-materials" value="${quote.materials_estimate || 0}" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Equipment Rental ($)</label>
+            <input type="number" id="q-equipment" value="${quote.equipment_estimate || 0}" step="0.01">
+          </div>
+        </div>
+        
+        <h3 style="margin: 1.5rem 0 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Discount</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Discount (%)</label>
+            <input type="number" id="q-discount" value="${quote.discount_percent || 0}" min="0" max="100" onchange="calculateTotal()">
+          </div>
+          <div class="form-group">
+            <label>Discount Reason</label>
+            <input type="text" id="q-discount-reason" value="${quote.discount_reason || ''}">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="q-notes" rows="4">${quote.notes || ''}</textarea>
+        </div>
+        
+        <div class="quote-total" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin: 1rem 0;">
+          <span>Estimated Total:</span>
+          <strong id="q-total-display" style="color: #8B4513; font-size: 1.5rem;">$${(quote.total || 0).toFixed(2)}</strong>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <a href="/admin/quotes/${quoteId}" class="btn-secondary" style="padding: 0.75rem 1.5rem; text-decoration: none;">Cancel</a>
+          <button type="submit" class="btn-primary" style="padding: 0.75rem 1.5rem;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+    
+    <style>
+      .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+      .form-group { margin-bottom: 1rem; }
+      .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+      .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+      .btn-primary { background: #8B4513; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+      .btn-secondary { background: #e0e0e0; color: #333; border: none; border-radius: 6px; cursor: pointer; }
+    </style>
+    
+    <script>
+      function toggleHelper() {
+        const show = document.getElementById('q-helper').checked;
+        document.querySelectorAll('.helper-field').forEach(el => el.style.display = show ? 'block' : 'none');
+        calculateTotal();
+      }
+      
+      function calculateTotal() {
+        const laborRate = parseFloat(document.getElementById('q-labor-rate').value) || 0;
+        const hours = parseFloat(document.getElementById('q-hours').value) || 1;
+        const helperRate = document.getElementById('q-helper').checked ? (parseFloat(document.getElementById('q-helper-rate').value) || 0) : 0;
+        const materials = parseFloat(document.getElementById('q-materials').value) || 0;
+        const equipment = parseFloat(document.getElementById('q-equipment').value) || 0;
+        const discountPct = parseFloat(document.getElementById('q-discount').value) || 0;
+        
+        const subtotal = (laborRate * hours) + helperRate + materials + equipment;
+        const discount = subtotal * (discountPct / 100);
+        const total = subtotal - discount;
+        
+        document.getElementById('q-total-display').textContent = '$' + total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      }
+      
+      ['q-labor-rate', 'q-hours', 'q-helper-rate', 'q-materials', 'q-equipment', 'q-discount'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calculateTotal);
+      });
+      
+      async function updateQuote(e) {
+        e.preventDefault();
+        
+        const laborRate = parseFloat(document.getElementById('q-labor-rate').value) || 0;
+        const hours = parseFloat(document.getElementById('q-hours').value) || 1;
+        const helperNeeded = document.getElementById('q-helper').checked;
+        const helperRate = helperNeeded ? (parseFloat(document.getElementById('q-helper-rate').value) || 0) : 0;
+        const materials = parseFloat(document.getElementById('q-materials').value) || 0;
+        const equipment = parseFloat(document.getElementById('q-equipment').value) || 0;
+        const discountPct = parseFloat(document.getElementById('q-discount').value) || 0;
+        
+        const subtotal = (laborRate * hours) + helperRate + materials + equipment;
+        const total = subtotal - (subtotal * discountPct / 100);
+        
+        const data = {
+          customer_id: document.getElementById('q-customer').value,
+          status: document.getElementById('q-status').value,
+          labor_type: document.getElementById('q-labor-type').value,
+          labor_rate: laborRate,
+          estimated_hours: hours,
+          helper_needed: helperNeeded,
+          helper_type: document.getElementById('q-helper-type').value,
+          helper_rate: helperRate,
+          materials_estimate: materials,
+          equipment_estimate: equipment,
+          discount_percent: discountPct,
+          discount_reason: document.getElementById('q-discount-reason').value,
+          notes: document.getElementById('q-notes').value,
+          subtotal: subtotal,
+          total: total
+        };
+        
+        const res = await fetch('/api/admin/quotes/${quoteId}', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+          window.location.href = '/admin/quotes/${quoteId}';
+        } else {
+          alert(result.error || 'Failed to update quote');
+        }
+      }
+    </script>
+  `;
+  
+  return c.html(adminLayout(`Edit Quote #${quoteId}`, content, 'quotes', admin));
 };
