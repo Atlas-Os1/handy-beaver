@@ -21,7 +21,7 @@ import { portalVisualizerPage, portalGalleryPage } from './pages/portal-visualiz
 import { adminGalleryPage } from './pages/admin-gallery';
 import { adminMessagesPage } from './pages/admin-messages';
 import { adminCustomersPage, adminCustomerDetail } from './pages/admin-customers';
-import { adminQuotesPage, adminQuoteDetail } from './pages/admin-quotes';
+import { adminQuotesPage, adminQuoteDetail, adminQuoteEdit } from './pages/admin-quotes';
 import { adminJobsPage, adminJobDetail } from './pages/admin-jobs';
 import { adminCalendarPage } from './pages/admin-calendar';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
@@ -42,6 +42,7 @@ import { portfolioApi } from './routes/portfolio';
 import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
 import { whatsappApi } from './routes/whatsapp-api';
+import { metaWebhook } from './routes/meta-webhook';
 import { chatApi } from './routes/chat-api';
 import { calendarApi, backSyncGoogleCalendarToBookings } from './routes/calendar-api';
 import { paymentPage } from './pages/payment';
@@ -70,6 +71,8 @@ type Bindings = {
   SEND_EMAIL?: any; // Cloudflare Email binding
   FACEBOOK_PAGE_ACCESS_TOKEN?: string;
   FACEBOOK_PAGE_ID?: string;
+  ANTHROPIC_API_KEY?: string;
+  DISCORD_WEBHOOK_NOTIFICATIONS?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -117,6 +120,7 @@ app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/customers/:id', requireAdmin, adminCustomerDetail);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
 app.get('/admin/quotes/:id', requireAdmin, adminQuoteDetail);
+app.get('/admin/quotes/:id/edit', requireAdmin, adminQuoteEdit);
 app.get('/admin/jobs', requireAdmin, adminJobsPage);
 app.get('/admin/jobs/:id', requireAdmin, adminJobDetail);
 app.get('/admin/calendar', requireAdmin, adminCalendarPage);
@@ -331,11 +335,22 @@ api.route('/portfolio', portfolioApi);
 api.route('/payments', paymentsApi);
 api.route('/voice', voiceApi);
 api.route('/whatsapp', whatsappApi);
+api.route('/webhooks/meta', metaWebhook);
 api.route('/chat', chatApi);
 api.route('/calendar', calendarApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
+
+// Debug endpoint to check secrets
+api.get('/debug/secrets', async (c) => {
+  return c.json({
+    hasAnthropicKey: !!c.env.ANTHROPIC_API_KEY,
+    hasDiscordWebhook: !!c.env.DISCORD_WEBHOOK_NOTIFICATIONS,
+    hasFacebookToken: !!c.env.FACEBOOK_PAGE_ACCESS_TOKEN,
+    envKeys: Object.keys(c.env).filter(k => !k.includes('KEY') && !k.includes('TOKEN') && !k.includes('SECRET')),
+  });
+});
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {
