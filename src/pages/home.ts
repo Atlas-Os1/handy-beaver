@@ -144,6 +144,84 @@ export const homePage = (c: Context) => {
       </div>
     </section>
     
+    <!-- Social Feed Section -->
+    <section class="container" style="margin-top: 4rem;">
+      <h2 class="section-title">Follow Our Work</h2>
+      <p class="section-subtitle">See our latest projects and tips on social media</p>
+      
+      <div class="grid grid-2" style="max-width: 900px; margin: 0 auto; gap: 2rem;">
+        <!-- Instagram Feed -->
+        <div class="card" style="text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #E4405F;">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+            <h3 style="color: var(--primary); margin: 0;">@lilhandybeaver</h3>
+          </div>
+          <div id="instagram-feed" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            <p style="color: #666;">Loading latest posts...</p>
+          </div>
+          <a href="https://instagram.com/lilhandybeaver" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">
+            Follow on Instagram →
+          </a>
+        </div>
+        
+        <!-- Facebook Feed -->
+        <div class="card" style="text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#1877F2">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+            </svg>
+            <h3 style="color: var(--primary); margin: 0;">Handy Beaver Co</h3>
+          </div>
+          <div id="facebook-feed" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            <p style="color: #666;">Loading latest posts...</p>
+          </div>
+          <a href="https://facebook.com/handybeaverco" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">
+            Like on Facebook →
+          </a>
+        </div>
+      </div>
+    </section>
+    
+    <script>
+      // Load social feeds
+      async function loadSocialFeeds() {
+        try {
+          const response = await fetch('/api/social/feed');
+          const data = await response.json();
+          
+          if (data.instagram && data.instagram.length > 0) {
+            const igFeed = document.getElementById('instagram-feed');
+            igFeed.innerHTML = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">' +
+              data.instagram.slice(0, 6).map(post => 
+                '<a href="' + post.permalink + '" target="_blank" style="aspect-ratio: 1; overflow: hidden; border-radius: 4px;">' +
+                '<img src="' + post.media_url + '" alt="' + (post.caption || '').substring(0, 50) + '" style="width: 100%; height: 100%; object-fit: cover;">' +
+                '</a>'
+              ).join('') +
+            '</div>';
+          }
+          
+          if (data.facebook && data.facebook.length > 0) {
+            const fbFeed = document.getElementById('facebook-feed');
+            fbFeed.innerHTML = '<div style="text-align: left; max-height: 300px; overflow-y: auto;">' +
+              data.facebook.slice(0, 3).map(post => 
+                '<div style="padding: 0.75rem; border-bottom: 1px solid #eee;">' +
+                '<p style="color: #333; font-size: 0.9rem; margin: 0;">' + (post.message || '').substring(0, 150) + (post.message && post.message.length > 150 ? '...' : '') + '</p>' +
+                '<span style="color: #999; font-size: 0.75rem;">' + new Date(post.created_time).toLocaleDateString() + '</span>' +
+                '</div>'
+              ).join('') +
+            '</div>';
+          }
+        } catch (e) {
+          console.log('Social feeds not available');
+        }
+      }
+      loadSocialFeeds();
+    </script>
+
     <!-- CTA Section -->
     <section class="container" style="margin-top: 4rem; text-align: center;">
       <h2 class="section-title">Ready to Get Started?</h2>

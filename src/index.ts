@@ -27,6 +27,8 @@ import { adminCalendarPage } from './pages/admin-calendar';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
+import { socialPage } from './pages/social';
+import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -66,6 +68,8 @@ type Bindings = {
   GOOGLE_CALENDAR_ID?: string;
   CALENDAR_WEBHOOK_SECRET?: string;
   SEND_EMAIL?: any; // Cloudflare Email binding
+  FACEBOOK_PAGE_ACCESS_TOKEN?: string;
+  FACEBOOK_PAGE_ID?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -87,6 +91,12 @@ app.get('/agent', agentPage);
 app.get('/chat', agentPage); // Alias
 app.get('/gallery', galleryPage);
 app.get('/gallery/:slug', galleryCategoryPage);
+app.get('/social', socialPage);
+
+// Shareable quote page (public - customer can view and accept)
+app.get('/quote/:id', quoteSharePage);
+app.post('/quote/:id/accept', acceptQuote);
+app.post('/quote/:id/add-email', addEmailToQuote);
 
 // Payment page (public - anyone with link can pay)
 app.get('/pay/:invoice_id', paymentPage);
@@ -481,6 +491,55 @@ api.post('/images/upload', async (c) => {
 api.post('/images/visualize', async (c) => {
   // TODO: Send image + prompt to Gemini Pro, return visualization
   return c.json({ success: true, visualization_url: '' });
+});
+
+// Social feed API - fetches latest posts from Facebook/Instagram
+api.get('/social/feed', async (c) => {
+  try {
+    const fbToken = c.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+    const fbPageId = c.env.FACEBOOK_PAGE_ID || '1040910635768535';
+    const igAccountId = '17841443253800030'; // lilhandybeaver
+    
+    const response: { instagram: any[]; facebook: any[] } = {
+      instagram: [],
+      facebook: []
+    };
+    
+    if (fbToken) {
+      // Fetch Facebook posts
+      try {
+        const fbRes = await fetch(
+          `https://graph.facebook.com/v18.0/${fbPageId}/posts?fields=message,created_time,full_picture,permalink_url&limit=5&access_token=${fbToken}`
+        );
+        const fbData = await fbRes.json() as any;
+        if (fbData.data) {
+          response.facebook = fbData.data;
+        }
+      } catch (e) {
+        console.error('FB fetch error:', e);
+      }
+      
+      // Fetch Instagram posts (via Facebook API)
+      try {
+        const igRes = await fetch(
+          `https://graph.facebook.com/v18.0/${igAccountId}/media?fields=id,caption,media_type,media_url,permalink,timestamp&limit=6&access_token=${fbToken}`
+        );
+        const igData = await igRes.json() as any;
+        if (igData.data) {
+          response.instagram = igData.data;
+        }
+      } catch (e) {
+        console.error('IG fetch error:', e);
+      }
+    }
+    
+    // Cache header for 5 minutes
+    c.header('Cache-Control', 'public, max-age=300');
+    return c.json(response);
+  } catch (error) {
+    console.error('Social feed error:', error);
+    return c.json({ instagram: [], facebook: [] });
+  }
 });
 
 // Mount API
