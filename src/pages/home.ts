@@ -179,7 +179,7 @@ export const homePage = (c: Context) => {
           <div id="facebook-feed" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
             <p style="color: #666;">Loading latest posts...</p>
           </div>
-          <a href="https://facebook.com/handybeaverco" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">
+          <a href="https://www.facebook.com/1040910635768535" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">
             Like on Facebook →
           </a>
         </div>

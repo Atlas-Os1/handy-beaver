@@ -23,7 +23,7 @@ export const socialPage = (c: Context) => {
           </svg>
           @lilhandybeaver
         </a>
-        <a href="https://facebook.com/handybeaverco" target="_blank" rel="noopener"
+        <a href="https://www.facebook.com/1040910635768535" target="_blank" rel="noopener"
            style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem 2rem; background: #1877F2; color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: transform 0.2s;"
            onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
@@ -84,7 +84,7 @@ export const socialPage = (c: Context) => {
             </div>
           </div>
           
-          <a href="https://facebook.com/handybeaverco" target="_blank" rel="noopener"
+          <a href="https://www.facebook.com/1040910635768535" target="_blank" rel="noopener"
              class="btn btn-secondary" style="width: 100%; margin-top: 1.5rem; text-align: center;">
             View on Facebook →
           </a>

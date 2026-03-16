@@ -107,6 +107,7 @@ export const aboutPage = (c: Context) => {
           </div>
           <div class="about-media-item">
             <video controls preload="metadata" playsinline>
+              <source src="/api/assets/portfolio/about/working.mp4" type="video/mp4">
               <source src="/api/assets/portfolio/about/working.mov" type="video/quicktime">
               Your browser does not support embedded video.
             </video>
