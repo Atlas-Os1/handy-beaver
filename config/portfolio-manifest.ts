@@ -25,9 +25,11 @@ export type PortfolioCategory =
   | 'flooring'
   | 'stairs-railings'
   | 'decks-outdoor'
+  | 'siding'
   | 'doors'
   | 'tiny-home'
   | 'kitchen-bar'
+  | 'office'
   | 'about';
 
 /**
@@ -298,6 +300,217 @@ export const portfolioManifest: PortfolioImage[] = [
     category: 'about',
     type: 'about',
     tags: ['owner', 'headshot', 'about'],
+    featured: true
+  },
+
+  // ============================================
+  // NEW UPLOADS - March 2026
+  // ============================================
+  
+  // BARNDO (Barndominium)
+  {
+    filename: 'BluePine.png',
+    folder: 'Barndo',
+    title: 'Blue Pine Barndo Interior',
+    description: 'Beetle kill blue pine walls in barndominium',
+    category: 'specialty-wood',
+    type: 'gallery',
+    tags: ['barndo', 'blue-pine', 'specialty'],
+    featured: true
+  },
+  
+  // BURKE RESIDENCE
+  {
+    filename: 'door-update.png',
+    folder: 'Burke-residence',
+    title: 'Burke Residence Door Update',
+    description: 'Custom door installation and trim work',
+    category: 'doors',
+    type: 'gallery',
+    tags: ['doors', 'trim', 'residential']
+  },
+  
+  // DECKING
+  {
+    filename: '482003427_1010735694449371_4169029365611663006_n.jpg',
+    folder: 'Decking',
+    title: 'Deck Project',
+    description: 'Custom deck construction',
+    category: 'decks-outdoor',
+    type: 'gallery',
+    tags: ['deck', 'outdoor', 'construction'],
+    featured: true
+  },
+  
+  // FLOORING (new uploads)
+  {
+    filename: 'hardwood-pre-repair.png',
+    folder: 'Flooring',
+    title: 'Hardwood Floor Before',
+    description: 'Hardwood floor before repair',
+    category: 'flooring',
+    type: 'before',
+    tags: ['flooring', 'hardwood', 'repair'],
+    pairedWith: 'hardwood-repair.png'
+  },
+  {
+    filename: 'hardwood-repair.png',
+    folder: 'Flooring',
+    title: 'Hardwood Floor After',
+    description: 'Hardwood floor after professional repair',
+    category: 'flooring',
+    type: 'after',
+    tags: ['flooring', 'hardwood', 'repair'],
+    pairedWith: 'hardwood-pre-repair.png',
+    featured: true
+  },
+  
+  // RUSTIC CABIN
+  {
+    filename: 'kitchen.jpg',
+    folder: 'Rustic-Cabin',
+    title: 'Rustic Cabin Kitchen',
+    description: 'Custom cabin kitchen with wood finishes',
+    category: 'kitchen-bar',
+    type: 'gallery',
+    tags: ['cabin', 'kitchen', 'rustic'],
+    featured: true
+  },
+  {
+    filename: 'kitchen-island.jpg',
+    folder: 'Rustic-Cabin',
+    title: 'Kitchen Island',
+    description: 'Custom kitchen island with rustic finish',
+    category: 'kitchen-bar',
+    type: 'gallery',
+    tags: ['kitchen', 'island', 'custom']
+  },
+  {
+    filename: 'bath.jpg',
+    folder: 'Rustic-Cabin',
+    title: 'Cabin Bathroom',
+    description: 'Rustic cabin bathroom with custom tilework',
+    category: 'bathroom-remodels',
+    type: 'gallery',
+    tags: ['bathroom', 'cabin', 'tile']
+  },
+  {
+    filename: 'shower.jpg',
+    folder: 'Rustic-Cabin',
+    title: 'Cabin Shower',
+    description: 'Custom shower installation',
+    category: 'bathroom-remodels',
+    type: 'gallery',
+    tags: ['bathroom', 'shower', 'tile']
+  },
+  {
+    filename: 'barn-wood.jpg',
+    folder: 'Rustic-Cabin',
+    title: 'Barn Wood Accent',
+    description: 'Reclaimed barn wood accent wall',
+    category: 'specialty-wood',
+    type: 'gallery',
+    tags: ['barnwood', 'accent', 'reclaimed']
+  },
+  
+  // SIDING
+  {
+    filename: 'pine-siding.jpg',
+    folder: 'Siding',
+    title: 'Pine Siding Installation',
+    description: 'Exterior pine siding',
+    category: 'decks-outdoor',
+    type: 'gallery',
+    tags: ['siding', 'exterior', 'pine'],
+    featured: true
+  },
+  
+  // STAIRS-DECKING-RAILING
+  {
+    filename: 'cedar-railing.jpg',
+    folder: 'Stairs-Decking-Railing',
+    title: 'Cedar Railing',
+    description: 'Custom cedar railing installation',
+    category: 'stairs-railings',
+    type: 'gallery',
+    tags: ['railing', 'cedar', 'custom'],
+    featured: true
+  },
+  {
+    filename: 'deck-stairs-railing.jpg',
+    folder: 'Stairs-Decking-Railing',
+    title: 'Deck Stairs with Railing',
+    description: 'Complete deck stairs and railing system',
+    category: 'stairs-railings',
+    type: 'gallery',
+    tags: ['stairs', 'deck', 'railing']
+  },
+  
+  // T&G (Tongue and Groove)
+  {
+    filename: '482024590_1010727881116819_5765053499238016177_n.jpg',
+    folder: 'T-and-G',
+    title: 'T&G Ceiling',
+    description: 'Tongue and groove ceiling installation',
+    category: 'trim-carpentry',
+    type: 'gallery',
+    tags: ['T&G', 'ceiling', 'pine'],
+    featured: true
+  },
+  
+  // TINY HOME (new uploads)
+  {
+    filename: '474709192_933240365588379_2964908423868795235_n.jpg',
+    folder: 'Tiny-Home',
+    title: 'Tiny Home Build',
+    description: 'Custom tiny home construction',
+    category: 'tiny-home',
+    type: 'gallery',
+    tags: ['tiny-home', 'construction', 'custom'],
+    featured: true
+  },
+  
+  // BATH REMODEL (new)
+  {
+    filename: 'prebath.png',
+    folder: 'bath-remodel',
+    title: 'Bathroom Before',
+    description: 'Bathroom before remodel',
+    category: 'bathroom-remodels',
+    type: 'before',
+    tags: ['bathroom', 'remodel', 'before'],
+    pairedWith: 'afterbath.png'
+  },
+  {
+    filename: 'afterbath.png',
+    folder: 'bath-remodel',
+    title: 'Bathroom After',
+    description: 'Beautiful bathroom after complete remodel',
+    category: 'bathroom-remodels',
+    type: 'after',
+    tags: ['bathroom', 'remodel', 'after'],
+    pairedWith: 'prebath.png',
+    featured: true
+  },
+  {
+    filename: 'afterbath2.png',
+    folder: 'bath-remodel',
+    title: 'Bathroom Remodel Detail',
+    description: 'Bathroom remodel detail shot',
+    category: 'bathroom-remodels',
+    type: 'gallery',
+    tags: ['bathroom', 'remodel', 'detail']
+  },
+  
+  // OFFICE SPACE
+  {
+    filename: '476142526_941002844812131_5074573470816272368_n.jpg',
+    folder: 'office-space',
+    title: 'Office Space',
+    description: 'Custom office space woodwork',
+    category: 'trim-carpentry',
+    type: 'gallery',
+    tags: ['office', 'commercial', 'trim'],
     featured: true
   },
 ];
