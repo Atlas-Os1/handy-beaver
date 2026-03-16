@@ -405,8 +405,8 @@ export const adminQuoteDetail = async (c: Context) => {
         </div>
       </div>
       
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
-        <div class="card" style="padding: 1.5rem; background: #fff; border-radius: 8px;">
+      <div class="quote-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+        <div class="card quote-main" style="padding: 1.5rem; background: #fff; border-radius: 8px; position: relative; z-index: 1;">
           <h3 style="margin-top: 0;">Quote Details</h3>
           
           <table style="width: 100%; border-collapse: collapse;">
@@ -457,8 +457,8 @@ export const adminQuoteDetail = async (c: Context) => {
           </div>
         </div>
         
-        <div>
-          <div class="card" style="padding: 1.5rem; background: #fff; border-radius: 8px;">
+        <div class="quote-sidebar">
+          <div class="card" style="padding: 1.5rem; background: #fff; border-radius: 8px; position: relative; z-index: 1;">
             <h3 style="margin-top: 0;">Customer</h3>
             <p><strong>${quote.customer_name}</strong></p>
             <p><a href="mailto:${quote.customer_email}">${quote.customer_email}</a></p>
