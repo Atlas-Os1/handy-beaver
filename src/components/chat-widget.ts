@@ -4,7 +4,7 @@
 export const chatWidgetStyles = `
   .chat-fab {
     position: fixed;
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(240px + env(safe-area-inset-bottom, 0px));
     right: 1rem;
     width: 60px;
     height: 60px;
@@ -156,7 +156,7 @@ export const chatWidgetStyles = `
   .chat-overlay.open { opacity: 1; pointer-events: auto; }
 
   @media (min-width: 640px) {
-    .chat-fab { bottom: 2rem; right: 2rem; }
+    .chat-fab { bottom: 240px; right: 2rem; }
     .chat-panel {
       width: 400px;
       height: 600px;

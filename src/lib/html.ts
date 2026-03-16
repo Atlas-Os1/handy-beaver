@@ -337,10 +337,10 @@ export const baseStyles = `
     font-size: 1.5rem;
   }
 
-  /* Chat Trigger Button */
+  /* Chat Trigger Button - positioned to not overlap with ElevenLabs widget */
   .chat-trigger {
     position: fixed;
-    bottom: 90px;
+    bottom: 160px;
     right: 20px;
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     color: var(--card);
@@ -369,9 +369,14 @@ export const baseStyles = `
     50% { box-shadow: 0 4px 30px rgba(139, 69, 19, 0.7); }
   }
 
+  /* Hide the default ElevenLabs widget button, we use our own trigger */
+  elevenlabs-convai {
+    --elevenlabs-button-display: none;
+  }
+
   @media (max-width: 768px) {
     .chat-trigger {
-      bottom: 160px;
+      bottom: 220px;
       right: 12px;
       padding: 0.75rem 1rem;
       font-size: 0.9rem;

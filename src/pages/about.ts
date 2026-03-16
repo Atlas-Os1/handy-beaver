@@ -41,17 +41,13 @@ export const aboutPage = (c: Context) => {
             Our Story
           </h2>
           <p style="color: #444; line-height: 1.8; margin-bottom: 1rem;">
-            ${business.name} was born from a simple idea: quality craftsmanship shouldn't be hard to find 
-            or impossible to afford. Based in ${business.serviceArea}, we bring skilled trades 
-            directly to your door.
+            ${business.name} was born from thousands of mitered corners, finished edges, and maintenance issues resolved. With years of experience spanning work as a sub-contractor, trim installer, remodeling and renovation builds, and general maintenance — we can cover just about all of it.
           </p>
           <p style="color: #444; line-height: 1.8; margin-bottom: 1rem;">
-            Whether it's trim carpentry that adds elegance to your home, flooring that transforms 
-            your space, or deck repairs that make your backyard usable again — we're here to help.
+            We've helped finish and trim dozens of high-quality vacation rentals, from full custom builds down to guest bathroom installs and simple bulb changes. No job is too small when quality matters.
           </p>
           <p style="color: #444; line-height: 1.8;">
-            As a traveling craftsman, we come to you. No big overhead. No hidden fees. 
-            Just honest work at honest prices.
+            Let us give your home, rental, or investment property the quality it deserves. We come to you throughout ${business.serviceArea} — no big overhead, no hidden fees. Just honest work at honest prices.
           </p>
         </div>
         

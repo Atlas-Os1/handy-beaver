@@ -9,7 +9,7 @@ export const siteConfig = {
   // Business Identity
   business: {
     name: "The Handy Beaver",
-    tagline: "Your Traveling Craftsman & Maintenance Service",
+    tagline: "Your Detail-Oriented Craftsman & Maintenance Service",
     description: "Professional carpentry, flooring, deck repair, and residential maintenance for Southeast Oklahoma",
     mascot: "🦫",
     email: "contact@handybeaver.co",

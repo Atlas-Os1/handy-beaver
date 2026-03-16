@@ -66,25 +66,25 @@ export const homePage = (c: Context) => {
       
       <div class="grid grid-4">
         <a href="/services#carpentry" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <span class="service-icon">🔨</span>
+          <img src="/api/assets/icons/carpentry.png" alt="Carpentry" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Trim Carpentry</h3>
           <p style="color: #666; margin-top: 0.5rem;">Crown molding, baseboards, door frames, and custom woodwork</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
         </a>
         <a href="/services#flooring" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <span class="service-icon">🏠</span>
+          <img src="/api/assets/icons/flooring.png" alt="Flooring" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Flooring</h3>
           <p style="color: #666; margin-top: 0.5rem;">Installation, repair, and refinishing for all floor types</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
         </a>
         <a href="/services#deck" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <span class="service-icon">🪵</span>
+          <img src="/api/assets/icons/deck.png" alt="Deck" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Deck Repair</h3>
           <p style="color: #666; margin-top: 0.5rem;">Restoration, board replacement, and sealing</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
         </a>
         <a href="/services#maintenance" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <span class="service-icon">🔧</span>
+          <img src="/api/assets/icons/maintenance.png" alt="Maintenance" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Maintenance</h3>
           <p style="color: #666; margin-top: 0.5rem;">General repairs and home improvement projects</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>

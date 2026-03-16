@@ -279,12 +279,19 @@ export const quotePage = (c: Context) => {
                 </div>
                 <span style="font-size: 1.5rem;">📦📦</span>
               </div>
-              <div class="size-option" data-size="large" data-hours="12" onclick="selectSize(this)">
+              <div class="size-option" data-size="large" data-hours="16" onclick="selectSize(this)">
                 <div>
                   <strong style="font-size: 1.1rem;">Large</strong>
-                  <p style="color: #666; margin: 0;">Multi-day project</p>
+                  <p style="color: #666; margin: 0;">2-2.5 days</p>
                 </div>
                 <span style="font-size: 1.5rem;">📦📦📦</span>
+              </div>
+              <div class="size-option" data-size="xlarge" data-hours="24" onclick="selectSize(this)">
+                <div>
+                  <strong style="font-size: 1.1rem;">Multi-Day Project</strong>
+                  <p style="color: #666; margin: 0;">3+ days — custom quote</p>
+                </div>
+                <span style="font-size: 1.5rem;">🏗️</span>
               </div>
             </div>
             
@@ -433,35 +440,57 @@ export const quotePage = (c: Context) => {
       
       function updateEstimate() {
         let min, max;
+        let isCustomQuote = false;
         
-        if (quoteData.hours <= 4) {
+        // Check for large deck/multi-day projects that require custom quotes
+        if (quoteData.size === 'xlarge' || (quoteData.service === 'deck' && quoteData.size === 'large')) {
+          // Multi-day deck jobs or 3+ day projects: $1,500+
+          min = 1500;
+          max = null; // Custom quote
+          isCustomQuote = true;
+        } else if (quoteData.hours <= 4) {
           min = pricing.halfDay;
           max = pricing.halfDay;
         } else if (quoteData.hours <= 8) {
           min = pricing.halfDay;
           max = pricing.fullDay;
-        } else {
-          // Multi-day
+        } else if (quoteData.hours <= 20) {
+          // Up to ~2.5 days (handyman rate)
           const days = Math.ceil(quoteData.hours / 8);
           min = pricing.fullDay * (days - 1);
           max = pricing.fullDay * days;
+        } else {
+          // Over 2.5 days: custom quote territory
+          min = 1500;
+          max = null;
+          isCustomQuote = true;
         }
         
-        // Urgency premium
-        if (quoteData.timeline === 'urgent') {
+        // Urgency premium (only for standard quotes)
+        if (!isCustomQuote && quoteData.timeline === 'urgent') {
           min = Math.round(min * 1.15);
-          max = Math.round(max * 1.15);
+          if (max) max = Math.round(max * 1.15);
         }
         
-        const estimate = min === max ? '$' + min : '$' + min + ' - $' + max;
+        let estimate;
+        if (isCustomQuote) {
+          estimate = '$' + min + '+';
+        } else {
+          estimate = min === max ? '$' + min : '$' + min + ' - $' + max;
+        }
+        
         document.getElementById('estimate-amount').textContent = estimate;
         document.getElementById('final-estimate').textContent = estimate;
         document.getElementById('success-estimate').textContent = estimate;
         
-        const sizeText = { small: 'Small project', medium: 'Medium project', large: 'Large project' };
+        const sizeText = { small: 'Small project', medium: 'Medium project', large: 'Large project (2-2.5 days)', xlarge: 'Multi-day project (custom quote)' };
         const timeText = { flexible: 'Flexible timing', soon: 'Within 2 weeks', urgent: 'Urgent (rush fee may apply)' };
-        document.getElementById('estimate-details').textContent = 
-          sizeText[quoteData.size] + ' • ' + timeText[quoteData.timeline];
+        
+        let detailsText = (sizeText[quoteData.size] || 'Project') + ' • ' + (timeText[quoteData.timeline] || '');
+        if (isCustomQuote) {
+          detailsText += ' • We\\'ll provide a detailed custom quote';
+        }
+        document.getElementById('estimate-details').textContent = detailsText;
       }
       
       function nextStep() {
