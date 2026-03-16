@@ -288,10 +288,11 @@ Enhanced prompt:`
     }
     
     // Try multiple CF models in order of quality
+    // FLUX dev 2 is primary (highest quality), fallback to schnell and others
     const models = [
+      '@cf/black-forest-labs/flux-1-dev-2',
       '@cf/black-forest-labs/flux-1-schnell',
       '@cf/lykon/dreamshaper-8-lcm', 
-      '@cf/stabilityai/stable-diffusion-xl-base-1.0',
     ];
     
     let imageData: Uint8Array | null = null;

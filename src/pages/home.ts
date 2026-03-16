@@ -54,7 +54,7 @@ export const homePage = (c: Context) => {
         margin: 0 auto 2rem;
       ">${business.tagline}</p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="/contact" class="btn btn-primary" style="font-size: 1.25rem;">Get Free Quote</a>
+        <a href="/quote" class="btn btn-primary" style="font-size: 1.25rem;">💰 Get Instant Quote</a>
         <a href="/visualize" class="btn btn-secondary">See Your Project Come to Life ✨</a>
       </div>
     </section>
@@ -65,26 +65,30 @@ export const homePage = (c: Context) => {
       <p class="section-subtitle">Quality craftsmanship for your home</p>
       
       <div class="grid grid-4">
-        <div class="card" style="text-align: center;">
-          <img src="/api/assets/icons/carpentry.png" alt="Carpentry" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+        <a href="/services#carpentry" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
+          <span class="service-icon">🔨</span>
           <h3>Trim Carpentry</h3>
           <p style="color: #666; margin-top: 0.5rem;">Crown molding, baseboards, door frames, and custom woodwork</p>
-        </div>
-        <div class="card" style="text-align: center;">
-          <img src="/api/assets/icons/flooring.png" alt="Flooring" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+          <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
+        </a>
+        <a href="/services#flooring" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
+          <span class="service-icon">🏠</span>
           <h3>Flooring</h3>
           <p style="color: #666; margin-top: 0.5rem;">Installation, repair, and refinishing for all floor types</p>
-        </div>
-        <div class="card" style="text-align: center;">
-          <img src="/api/assets/icons/deck.png" alt="Deck Repair" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+          <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
+        </a>
+        <a href="/services#deck" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
+          <span class="service-icon">🪵</span>
           <h3>Deck Repair</h3>
           <p style="color: #666; margin-top: 0.5rem;">Restoration, board replacement, and sealing</p>
-        </div>
-        <div class="card" style="text-align: center;">
-          <img src="/api/assets/icons/maintenance.png" alt="Maintenance" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+          <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
+        </a>
+        <a href="/services#maintenance" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
+          <span class="service-icon">🔧</span>
           <h3>Maintenance</h3>
           <p style="color: #666; margin-top: 0.5rem;">General repairs and home improvement projects</p>
-        </div>
+          <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
+        </a>
       </div>
       
       <div style="text-align: center; margin-top: 2rem;">

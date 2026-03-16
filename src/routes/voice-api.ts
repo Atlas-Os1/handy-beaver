@@ -4,6 +4,7 @@ type Bindings = {
   DB: D1Database;
   DISCORD_WEBHOOK_NOTIFICATIONS?: string;
   VOICE_AGENT_API_KEY?: string;
+  ELEVENLABS_API_KEY?: string;
 };
 
 export const voiceApi = new Hono<{ Bindings: Bindings }>();
@@ -96,6 +97,9 @@ voiceApi.post('/lead', async (c) => {
   const url = new URL(c.req.url);
   const queryParams = Object.fromEntries(url.searchParams);
   
+  // ElevenLabs sends query params with extra quotes like "\"John Smith\"" - strip them
+  const stripQuotes = (val: string | undefined) => val?.replace(/^"|"$/g, '');
+  
   let body: any = {};
   try {
     body = await c.req.json();
@@ -104,12 +108,12 @@ voiceApi.post('/lead', async (c) => {
   }
   
   // Merge query params + body, handle ElevenLabs field name variations
-  const name = body.name || queryParams.name || queryParams.caller_name || queryParams.customer_name;
-  const phone = body.phone || queryParams.phone || queryParams.Phone;
-  const email = body.email || queryParams.email;
-  const project_type = body.project_type || queryParams.project_type;
-  const description = body.description || queryParams.description;
-  const address = body.address || queryParams.address;
+  const name = stripQuotes(body.name || queryParams.name || queryParams.caller_name || queryParams.customer_name);
+  const phone = stripQuotes(body.phone || queryParams.phone || queryParams.Phone);
+  const email = stripQuotes(body.email || queryParams.email);
+  const project_type = stripQuotes(body.project_type || queryParams.project_type);
+  const description = stripQuotes(body.description || queryParams.description);
+  const address = stripQuotes(body.address || queryParams.address);
   
   if (!name || !phone || !project_type) {
     return c.json({ error: 'name, phone, and project_type required' }, 400);
@@ -227,6 +231,9 @@ voiceApi.post('/schedule', async (c) => {
   const url = new URL(c.req.url);
   const queryParams = Object.fromEntries(url.searchParams);
   
+  // ElevenLabs sends query params with extra quotes - strip them
+  const stripQuotes = (val: string | undefined) => val?.replace(/^"|"$/g, '');
+  
   let body: any = {};
   try {
     body = await c.req.json();
@@ -235,12 +242,12 @@ voiceApi.post('/schedule', async (c) => {
   }
   
   // Merge query params + body
-  const customer_name = body.customer_name || queryParams.customer_name || queryParams.name || queryParams.caller_name;
-  const phone = body.phone || queryParams.phone || queryParams.Phone;
-  const date = body.date || queryParams.date;
-  const time = body.time || queryParams.time;
-  const project_type = body.project_type || queryParams.project_type;
-  const address = body.address || queryParams.address;
+  const customer_name = stripQuotes(body.customer_name || queryParams.customer_name || queryParams.name || queryParams.caller_name);
+  const phone = stripQuotes(body.phone || queryParams.phone || queryParams.Phone);
+  const date = stripQuotes(body.date || queryParams.date);
+  const time = stripQuotes(body.time || queryParams.time);
+  const project_type = stripQuotes(body.project_type || queryParams.project_type);
+  const address = stripQuotes(body.address || queryParams.address);
   
   if (!customer_name || !phone || !date || !project_type) {
     return c.json({ error: 'customer_name, phone, date, and project_type required' }, 400);
@@ -397,31 +404,243 @@ voiceApi.post('/webhook', async (c) => {
   
   // Handle conversation end - log the transcript
   if (event.type === 'conversation.ended' || event.type === 'call.ended') {
-    const transcript = event.data?.transcript || event.transcript;
-    const phoneNumber = event.data?.phone_number || event.phone_number;
+    const transcript = event.data?.transcript || event.transcript || [];
+    const phoneNumber = event.data?.phone_number || event.phone_number || 'Unknown';
+    const callDuration = event.data?.duration || event.duration || 0;
+    const conversationId = event.conversation_id || event.data?.conversation_id || `call-${now}`;
     
-    if (transcript && phoneNumber) {
-      // Find customer by phone
-      const customer = await c.env.DB.prepare(
-        'SELECT id FROM customers WHERE phone LIKE ?'
-      ).bind(`%${phoneNumber.slice(-10)}%`).first<{ id: number }>();
+    // Build transcript text
+    const transcriptText = transcript.map((msg: any) => 
+      `${msg.role === 'agent' ? 'Lil Beaver' : 'Caller'}: ${msg.text || msg.content || ''}`
+    ).join('\n');
+    
+    // Find customer by phone
+    let customer = await c.env.DB.prepare(
+      'SELECT id, name FROM customers WHERE phone LIKE ?'
+    ).bind(`%${phoneNumber.slice(-10)}%`).first<{ id: number; name: string }>();
+    
+    let isNewLead = false;
+    
+    if (!customer) {
+      // Create a new lead from this call
+      isNewLead = true;
       
-      if (customer) {
-        // Log each message in transcript
-        for (const msg of transcript) {
-          await c.env.DB.prepare(`
-            INSERT INTO messages (customer_id, sender, content, source, created_at)
-            VALUES (?, ?, ?, 'voice', ?)
-          `).bind(
-            customer.id,
-            msg.role === 'agent' ? 'business' : 'customer',
-            msg.text || msg.content,
-            now
-          ).run();
-        }
+      // Try to extract name from transcript (look for "my name is" or "this is")
+      let callerName = 'Voice Lead';
+      const nameMatch = transcriptText.match(/(?:my name is|this is|i'm|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+      if (nameMatch) {
+        callerName = nameMatch[1];
       }
+      
+      // Create customer record
+      const email = phoneNumber ? `${phoneNumber.replace(/\D/g, '').slice(-10)}@voice.handybeaver.co` : `voice-${now}@voice.handybeaver.co`;
+      const result = await c.env.DB.prepare(`
+        INSERT INTO customers (name, phone, email, source, created_at)
+        VALUES (?, ?, ?, 'voice_call', ?)
+      `).bind(callerName, phoneNumber, email, now).run();
+      
+      customer = { id: result.meta.last_row_id as number, name: callerName };
+      
+      // Create lead
+      await c.env.DB.prepare(`
+        INSERT INTO leads (customer_id, source, content, notes, created_at)
+        VALUES (?, 'voice_call', 'Voice Call', ?)
+      `).bind(customer.id, `Voice call transcript:\n${transcriptText.slice(0, 1000)}`, now).run();
+    }
+    
+    // Log transcript messages
+    if (customer && transcript.length > 0) {
+      for (const msg of transcript) {
+        await c.env.DB.prepare(`
+          INSERT INTO messages (customer_id, sender, content, source, created_at)
+          VALUES (?, ?, ?, 'voice', ?)
+        `).bind(
+          customer.id,
+          msg.role === 'agent' ? 'business' : 'customer',
+          msg.text || msg.content,
+          now
+        ).run();
+      }
+    }
+    
+    // Send Discord notification
+    if (c.env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+      const embed = {
+        title: isNewLead ? '📞 New Voice Lead!' : '📞 Voice Call Received',
+        color: isNewLead ? 0x22c55e : 0x3b82f6,
+        fields: [
+          { name: 'Caller', value: customer?.name || 'Unknown', inline: true },
+          { name: 'Phone', value: phoneNumber, inline: true },
+          { name: 'Duration', value: `${Math.round(callDuration / 60)} min`, inline: true },
+          { name: 'Transcript Preview', value: transcriptText.slice(0, 500) || 'No transcript', inline: false },
+        ],
+        footer: { text: `Conversation ID: ${conversationId}` },
+        timestamp: new Date().toISOString(),
+      };
+      
+      await fetch(c.env.DISCORD_WEBHOOK_NOTIFICATIONS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [embed] }),
+      }).catch(err => console.error('Discord notify failed:', err));
     }
   }
   
   return c.json({ received: true });
+});
+
+// ============ Manual conversation sync ============
+voiceApi.post('/sync', async (c) => {
+  if (!c.env.ELEVENLABS_API_KEY) {
+    return c.json({ error: 'ElevenLabs not configured' }, 500);
+  }
+  
+  const agentId = 'agent_6401kk7jr6ngey2ancnk6nf7kpwy'; // Lil Beaver
+  
+  try {
+    // Fetch recent conversations
+    const res = await fetch(`https://api.elevenlabs.io/v1/convai/conversations?agent_id=${agentId}&page_size=10`, {
+      headers: { 'xi-api-key': c.env.ELEVENLABS_API_KEY },
+    });
+    
+    if (!res.ok) {
+      return c.json({ error: 'ElevenLabs API error', status: res.status }, 500);
+    }
+    
+    const data = await res.json() as { conversations: any[] };
+    const now = Math.floor(Date.now() / 1000);
+    const results: any[] = [];
+    
+    for (const conv of data.conversations || []) {
+      // Skip if already processed
+      const existing = await c.env.DB.prepare(
+        "SELECT id FROM leads WHERE notes LIKE ?"
+      ).bind(`%${conv.conversation_id}%`).first();
+      
+      if (existing) {
+        results.push({ id: conv.conversation_id, status: 'skipped', reason: 'already_synced' });
+        continue;
+      }
+      
+      // Skip very old conversations (> 24 hours)
+      if (now - conv.start_time_unix_secs > 86400) {
+        results.push({ id: conv.conversation_id, status: 'skipped', reason: 'too_old' });
+        continue;
+      }
+      
+      // Fetch full transcript
+      const transcriptRes = await fetch(`https://api.elevenlabs.io/v1/convai/conversations/${conv.conversation_id}`, {
+        headers: { 'xi-api-key': c.env.ELEVENLABS_API_KEY },
+      });
+      
+      if (!transcriptRes.ok) {
+        results.push({ id: conv.conversation_id, status: 'error', reason: 'transcript_fetch_failed' });
+        continue;
+      }
+      
+      const convData = await transcriptRes.json() as { transcript: any[] };
+      const transcript = convData.transcript || [];
+      
+      // Build transcript text
+      const transcriptText = transcript.map((msg: any) => 
+        `${msg.role === 'agent' ? 'Lil Beaver' : 'Caller'}: ${msg.message || ''}`
+      ).join('\n');
+      
+      // Only look at USER messages for name/phone extraction
+      const userMessages = transcript
+        .filter((msg: any) => msg.role === 'user')
+        .map((msg: any) => msg.message || '')
+        .join(' ');
+      
+      // Extract name from user messages
+      let callerName = 'Voice Lead';
+      // Look for "John Smith" pattern - two capitalized words together in user speech
+      const nameMatch = userMessages.match(/\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/);
+      if (nameMatch) {
+        callerName = `${nameMatch[1]} ${nameMatch[2]}`;
+      } else {
+        // Fallback: look for "my name is X" or "this is X"
+        const altNameMatch = userMessages.match(/(?:my name is|this is|i'm|i am)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+        if (altNameMatch) callerName = altNameMatch[1];
+      }
+      
+      // Extract phone - look for spoken digit sequences like "five-eight-zero, three-nine-two"
+      let phoneNumber = '';
+      const digitWords: Record<string, string> = {
+        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+      };
+      
+      // Convert spoken numbers to digits
+      let normalizedUserMsg = userMessages.toLowerCase();
+      for (const [word, digit] of Object.entries(digitWords)) {
+        normalizedUserMsg = normalizedUserMsg.replace(new RegExp(word, 'g'), digit);
+      }
+      
+      // Find longest digit sequence
+      const phoneMatch = normalizedUserMsg.match(/(\d[\d\-\s,]{7,})/);
+      if (phoneMatch) {
+        phoneNumber = phoneMatch[1].replace(/[\s\-,]/g, '');
+        if (phoneNumber.length === 10) {
+          phoneNumber = `${phoneNumber.slice(0,3)}-${phoneNumber.slice(3,6)}-${phoneNumber.slice(6)}`;
+        }
+      }
+      
+      // Create customer and lead
+      const email = phoneNumber ? `${phoneNumber.replace(/\D/g, '')}@voice.handybeaver.co` : `voice-${Date.now()}@voice.handybeaver.co`;
+      const customerResult = await c.env.DB.prepare(`
+        INSERT INTO customers (name, phone, email, source, created_at)
+        VALUES (?, ?, ?, 'voice_call', ?)
+      `).bind(callerName, phoneNumber, email, now).run();
+      
+      const customerId = customerResult.meta.last_row_id;
+      
+      await c.env.DB.prepare(`
+        INSERT INTO leads (customer_id, source, content, notes, created_at)
+        VALUES (?, 'voice_call', ?, ?, ?)
+      `).bind(customerId, conv.call_summary_title || 'Voice Call', `[${conv.conversation_id}]\n\nTranscript:\n${transcriptText.slice(0, 2000)}`, now).run();
+      
+      // Log transcript messages
+      for (const msg of transcript) {
+        await c.env.DB.prepare(`
+          INSERT INTO messages (customer_id, sender, content, source, created_at)
+          VALUES (?, ?, ?, 'voice', ?)
+        `).bind(customerId, msg.role === 'agent' ? 'business' : 'customer', msg.message || '', now).run();
+      }
+      
+      // Send Discord notification
+      if (c.env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+        await fetch(c.env.DISCORD_WEBHOOK_NOTIFICATIONS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: '📞 New Voice Lead!',
+              color: 0x22c55e,
+              fields: [
+                { name: 'Name', value: callerName, inline: true },
+                { name: 'Phone', value: phoneNumber || 'Not captured', inline: true },
+                { name: 'Topic', value: conv.call_summary_title || 'General inquiry', inline: true },
+                { name: 'Duration', value: `${Math.round(conv.call_duration_secs / 60)} min`, inline: true },
+                { name: 'Transcript', value: transcriptText.slice(0, 500) || 'No transcript', inline: false },
+              ],
+              timestamp: new Date(conv.start_time_unix_secs * 1000).toISOString(),
+            }],
+          }),
+        }).catch(err => console.error('Discord notify failed:', err));
+      }
+      
+      results.push({ 
+        id: conv.conversation_id, 
+        status: 'synced', 
+        customer: callerName,
+        phone: phoneNumber,
+        topic: conv.call_summary_title 
+      });
+    }
+    
+    return c.json({ success: true, results });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
 });

@@ -123,7 +123,7 @@ export const adminInvoicesPage = async (c: Context) => {
     
     <!-- New Invoice Modal -->
     <div class="modal-overlay" id="invoice-modal">
-      <div class="modal" style="max-width: 700px;">
+      <div class="modal" style="max-width: 800px;">
         <div class="modal-header">
           <h2>Create Invoice</h2>
           <button class="close-btn" onclick="closeModal()">&times;</button>
@@ -147,36 +147,31 @@ export const adminInvoicesPage = async (c: Context) => {
           
           <h3 class="section-title">Line Items</h3>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label>Labor ($)</label>
-              <input type="number" id="inv-labor" value="0" step="0.01" onchange="calculateInvoiceTotal()">
-            </div>
-            <div class="form-group">
-              <label>Helper ($)</label>
-              <input type="number" id="inv-helper" value="0" step="0.01" onchange="calculateInvoiceTotal()">
-            </div>
+          <div id="line-items-container">
+            <table class="line-items-table">
+              <thead>
+                <tr>
+                  <th style="width: 50%;">Description</th>
+                  <th style="width: 15%;">Qty</th>
+                  <th style="width: 15%;">Rate ($)</th>
+                  <th style="width: 15%;">Amount</th>
+                  <th style="width: 5%;"></th>
+                </tr>
+              </thead>
+              <tbody id="line-items-body">
+                <!-- Dynamic rows added here -->
+              </tbody>
+            </table>
+            <button type="button" class="btn-secondary btn-sm" onclick="addLineItem()" style="margin-top: 0.5rem;">+ Add Item</button>
           </div>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label>Materials ($)</label>
-              <input type="number" id="inv-materials" value="0" step="0.01" onchange="calculateInvoiceTotal()">
-            </div>
-            <div class="form-group">
-              <label>Equipment ($)</label>
-              <input type="number" id="inv-equipment" value="0" step="0.01" onchange="calculateInvoiceTotal()">
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>Discount ($)</label>
-              <input type="number" id="inv-discount" value="0" step="0.01" onchange="calculateInvoiceTotal()">
-            </div>
+          <div class="form-row" style="margin-top: 1rem;">
             <div class="form-group">
               <label>Tax Rate (%)</label>
               <input type="number" id="inv-tax" value="0" step="0.01" onchange="calculateInvoiceTotal()">
+            </div>
+            <div class="form-group">
+              <!-- Spacer -->
             </div>
           </div>
           
@@ -218,6 +213,7 @@ export const adminInvoicesPage = async (c: Context) => {
       .btn-primary { background: #8B4513; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
       .btn-secondary { background: #e0e0e0; color: #333; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; }
       .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+      .btn-danger { background: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
       
       .stats-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
       .stat-card { background: white; padding: 1rem 1.5rem; border-radius: 8px; text-align: center; flex: 1; min-width: 100px; }
@@ -263,13 +259,64 @@ export const adminInvoicesPage = async (c: Context) => {
       .total-row { display: flex; justify-content: space-between; padding: 0.25rem 0; }
       .total-final { border-top: 2px solid #ddd; margin-top: 0.5rem; padding-top: 0.5rem; font-size: 1.1rem; }
       .total-final strong { color: #8B4513; }
+      
+      .line-items-table { width: 100%; border-collapse: collapse; }
+      .line-items-table th { padding: 0.5rem; text-align: left; font-size: 0.85rem; color: #666; border-bottom: 1px solid #ddd; }
+      .line-items-table td { padding: 0.5rem; }
+      .line-items-table input { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
+      .line-items-table .amount-cell { text-align: right; font-weight: 500; }
     </style>
     
     <script>
+      // Line items array
+      let lineItems = [];
+      let itemIdCounter = 0;
+      
+      function addLineItem(description = '', quantity = 1, rate = 0) {
+        const id = ++itemIdCounter;
+        lineItems.push({ id, description, quantity, rate });
+        renderLineItems();
+        calculateInvoiceTotal();
+      }
+      
+      function removeLineItem(id) {
+        lineItems = lineItems.filter(item => item.id !== id);
+        renderLineItems();
+        calculateInvoiceTotal();
+      }
+      
+      function updateLineItem(id, field, value) {
+        const item = lineItems.find(i => i.id === id);
+        if (item) {
+          item[field] = field === 'description' ? value : parseFloat(value) || 0;
+          calculateInvoiceTotal();
+          // Update amount display
+          const amountCell = document.getElementById('item-amount-' + id);
+          if (amountCell) {
+            amountCell.textContent = '$' + (item.quantity * item.rate).toFixed(2);
+          }
+        }
+      }
+      
+      function renderLineItems() {
+        const tbody = document.getElementById('line-items-body');
+        tbody.innerHTML = lineItems.map(item => \`
+          <tr>
+            <td><input type="text" value="\${item.description}" placeholder="Description" onchange="updateLineItem(\${item.id}, 'description', this.value)"></td>
+            <td><input type="number" value="\${item.quantity}" min="0" step="0.5" onchange="updateLineItem(\${item.id}, 'quantity', this.value)"></td>
+            <td><input type="number" value="\${item.rate}" min="0" step="0.01" onchange="updateLineItem(\${item.id}, 'rate', this.value)"></td>
+            <td class="amount-cell" id="item-amount-\${item.id}">$\${(item.quantity * item.rate).toFixed(2)}</td>
+            <td><button type="button" class="btn-danger" onclick="removeLineItem(\${item.id})">×</button></td>
+          </tr>
+        \`).join('');
+      }
+      
       function showNewInvoice() {
         document.getElementById('invoice-form').reset();
         document.getElementById('inv-job-id').value = '';
-        calculateInvoiceTotal();
+        lineItems = [];
+        itemIdCounter = 0;
+        addLineItem('Labor', 1, 175); // Default item
         document.getElementById('invoice-modal').classList.add('active');
       }
       
@@ -277,8 +324,9 @@ export const adminInvoicesPage = async (c: Context) => {
         document.getElementById('invoice-form').reset();
         document.getElementById('inv-job-id').value = jobId;
         document.getElementById('inv-customer').value = customerId;
-        document.getElementById('inv-labor').value = 175; // Default half-day
-        calculateInvoiceTotal();
+        lineItems = [];
+        itemIdCounter = 0;
+        addLineItem('Labor - Job Completion', 1, 175);
         document.getElementById('invoice-modal').classList.add('active');
       }
       
@@ -291,14 +339,8 @@ export const adminInvoicesPage = async (c: Context) => {
       }
       
       function calculateInvoiceTotal() {
-        const labor = parseFloat(document.getElementById('inv-labor').value) || 0;
-        const helper = parseFloat(document.getElementById('inv-helper').value) || 0;
-        const materials = parseFloat(document.getElementById('inv-materials').value) || 0;
-        const equipment = parseFloat(document.getElementById('inv-equipment').value) || 0;
-        const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
+        const subtotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
         const taxRate = parseFloat(document.getElementById('inv-tax').value) || 0;
-        
-        const subtotal = labor + helper + materials + equipment - discount;
         const tax = subtotal * (taxRate / 100);
         const total = subtotal + tax;
         
@@ -310,14 +352,20 @@ export const adminInvoicesPage = async (c: Context) => {
       async function saveInvoice(e) {
         e.preventDefault();
         
+        if (lineItems.length === 0) {
+          alert('Please add at least one line item');
+          return;
+        }
+        
         const data = {
           customer_id: document.getElementById('inv-customer').value,
           booking_id: document.getElementById('inv-job-id').value || null,
-          labor_amount: parseFloat(document.getElementById('inv-labor').value) || 0,
-          helper_amount: parseFloat(document.getElementById('inv-helper').value) || 0,
-          materials_amount: parseFloat(document.getElementById('inv-materials').value) || 0,
-          equipment_amount: parseFloat(document.getElementById('inv-equipment').value) || 0,
-          discount_amount: parseFloat(document.getElementById('inv-discount').value) || 0,
+          items: lineItems.map((item, idx) => ({
+            description: item.description,
+            quantity: item.quantity,
+            rate: item.rate,
+            sort_order: idx
+          })),
           tax_rate: parseFloat(document.getElementById('inv-tax').value) || 0,
           notes: document.getElementById('inv-notes').value,
           due_days: parseInt(document.getElementById('inv-due-days').value) || 14,
@@ -393,15 +441,20 @@ export const adminInvoiceDetail = async (c: Context) => {
     return c.notFound();
   }
   
+  // Get line items
+  const lineItems = await c.env.DB.prepare(`
+    SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order
+  `).bind(invoiceId).all<any>();
+  
   // Get related job if exists
   let job = null;
   if (invoice.booking_id) {
     job = await c.env.DB.prepare(`SELECT * FROM bookings WHERE id = ?`).bind(invoice.booking_id).first<any>();
   }
   
-  // Get payments
+  // Get payments from invoice_payments table
   const payments = await c.env.DB.prepare(`
-    SELECT * FROM payments WHERE invoice_id = ? ORDER BY created_at DESC
+    SELECT * FROM invoice_payments WHERE invoice_id = ? ORDER BY created_at DESC
   `).bind(invoiceId).all<any>();
   
   const statusColors: Record<string, string> = {
@@ -436,9 +489,49 @@ export const adminInvoiceDetail = async (c: Context) => {
       
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
         <div>
+          <!-- Line Items Card -->
           <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px; margin-bottom: 1rem;">
-            <h3 style="margin-top: 0;">Invoice Details</h3>
+            <h3 style="margin-top: 0;">Line Items</h3>
             
+            ${lineItems.results?.length ? `
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1px solid #333; color: #888;">
+                  <th style="padding: 0.5rem 0; text-align: left;">Description</th>
+                  <th style="padding: 0.5rem 0; text-align: center; width: 80px;">Qty</th>
+                  <th style="padding: 0.5rem 0; text-align: right; width: 100px;">Rate</th>
+                  <th style="padding: 0.5rem 0; text-align: right; width: 100px;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${lineItems.results.map((item: any) => `
+                <tr style="border-bottom: 1px solid #222;">
+                  <td style="padding: 0.75rem 0;">${item.description}</td>
+                  <td style="padding: 0.75rem 0; text-align: center;">${item.quantity}</td>
+                  <td style="padding: 0.75rem 0; text-align: right;">${formatMoney(item.rate)}</td>
+                  <td style="padding: 0.75rem 0; text-align: right;">${formatMoney(item.amount)}</td>
+                </tr>
+                `).join('')}
+              </tbody>
+              <tfoot>
+                <tr style="border-top: 2px solid #333;">
+                  <td colspan="3" style="padding: 0.75rem 0; text-align: right; font-weight: 600;">Subtotal:</td>
+                  <td style="padding: 0.75rem 0; text-align: right;">${formatMoney(invoice.subtotal)}</td>
+                </tr>
+                ${invoice.tax_amount ? `
+                <tr>
+                  <td colspan="3" style="padding: 0.5rem 0; text-align: right; color: #888;">Tax (${invoice.tax_rate}%):</td>
+                  <td style="padding: 0.5rem 0; text-align: right;">${formatMoney(invoice.tax_amount)}</td>
+                </tr>
+                ` : ''}
+                <tr style="font-size: 1.1rem; font-weight: 700;">
+                  <td colspan="3" style="padding: 0.75rem 0; text-align: right;">Total:</td>
+                  <td style="padding: 0.75rem 0; text-align: right; color: #8B4513;">${formatMoney(invoice.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+            ` : `
+            <!-- Legacy format: show old fixed fields if no line items -->
             <table style="width: 100%; border-collapse: collapse;">
               ${invoice.labor_amount ? `
               <tr style="border-bottom: 1px solid #333;">
@@ -480,19 +573,8 @@ export const adminInvoiceDetail = async (c: Context) => {
                 <td style="padding: 0.75rem 0;">Total</td>
                 <td style="padding: 0.75rem 0; text-align: right;">${formatMoney(invoice.total)}</td>
               </tr>
-              ${invoice.amount_paid ? `
-              <tr style="color: #10b981;">
-                <td style="padding: 0.75rem 0;">Amount Paid</td>
-                <td style="padding: 0.75rem 0; text-align: right;">-${formatMoney(invoice.amount_paid)}</td>
-              </tr>
-              ` : ''}
-              ${balance > 0 ? `
-              <tr style="font-size: 1.25rem; font-weight: 700; color: #f97316;">
-                <td style="padding: 1rem 0;">Balance Due</td>
-                <td style="padding: 1rem 0; text-align: right;">${formatMoney(balance)}</td>
-              </tr>
-              ` : ''}
             </table>
+            `}
             
             ${invoice.notes ? `
             <div style="margin-top: 1.5rem; padding: 1rem; background: #111; border-radius: 6px;">
@@ -508,34 +590,66 @@ export const adminInvoiceDetail = async (c: Context) => {
             </div>
           </div>
           
+          <!-- Payments Card -->
           <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px;">
-            <h3 style="margin-top: 0;">Payment History</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="margin: 0;">Payment History</h3>
+              ${balance > 0 ? `
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-secondary btn-sm" onclick="showRecordPaymentModal()">Record Payment</button>
+                <button class="btn-primary btn-sm" onclick="markPaidInFull()">Mark Paid in Full</button>
+              </div>
+              ` : ''}
+            </div>
+            
+            ${invoice.amount_paid ? `
+            <div style="background: #0a4a20; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Amount Paid:</span>
+                <strong style="color: #10b981;">${formatMoney(invoice.amount_paid)}</strong>
+              </div>
+              ${balance > 0 ? `
+              <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; color: #f59e0b;">
+                <span>Balance Due:</span>
+                <strong>${formatMoney(balance)}</strong>
+              </div>
+              ` : `
+              <div style="text-align: center; margin-top: 0.5rem; color: #10b981;">
+                ✓ Paid in Full
+              </div>
+              `}
+            </div>
+            ` : balance > 0 ? `
+            <div style="background: #4a2c0a; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; color: #f59e0b;">
+                <span>Balance Due:</span>
+                <strong>${formatMoney(balance)}</strong>
+              </div>
+            </div>
+            ` : ''}
+            
             ${payments.results?.length ? `
             <table style="width: 100%; border-collapse: collapse;">
               <thead>
                 <tr style="color: #888; border-bottom: 1px solid #333;">
                   <th style="padding: 0.5rem; text-align: left;">Date</th>
-                  <th style="padding: 0.5rem; text-align: left;">Type</th>
+                  <th style="padding: 0.5rem; text-align: left;">Method</th>
                   <th style="padding: 0.5rem; text-align: right;">Amount</th>
-                  <th style="padding: 0.5rem; text-align: left;">Status</th>
+                  <th style="padding: 0.5rem; text-align: left;">Reference</th>
                 </tr>
               </thead>
               <tbody>
                 ${payments.results.map((p: any) => `
                 <tr style="border-bottom: 1px solid #222;">
-                  <td style="padding: 0.5rem;">${formatDate(p.created_at)}</td>
-                  <td style="padding: 0.5rem;">${p.type}</td>
-                  <td style="padding: 0.5rem; text-align: right;">${formatMoney(p.amount)}</td>
-                  <td style="padding: 0.5rem;">${p.status}</td>
+                  <td style="padding: 0.5rem;">${p.payment_date || formatDate(p.created_at)}</td>
+                  <td style="padding: 0.5rem;">${p.method || '-'}</td>
+                  <td style="padding: 0.5rem; text-align: right; color: #10b981;">${formatMoney(p.amount)}</td>
+                  <td style="padding: 0.5rem; color: #888;">${p.reference || '-'}</td>
                 </tr>
                 `).join('')}
               </tbody>
             </table>
-            ` : '<p style="color: #666;">No payments yet.</p>'}
-            
-            ${balance > 0 ? `
-            <button class="btn-primary" style="margin-top: 1rem;" onclick="recordPayment()">Record Payment</button>
-            ` : ''}
+            ` : '<p style="color: #666;">No payments recorded yet.</p>'}
           </div>
         </div>
         
@@ -567,6 +681,74 @@ export const adminInvoiceDetail = async (c: Context) => {
       </div>
     </div>
     
+    <!-- Record Payment Modal -->
+    <div class="modal-overlay" id="payment-modal">
+      <div class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2>Record Payment</h2>
+          <button class="close-btn" onclick="closePaymentModal()">&times;</button>
+        </div>
+        <form id="payment-form" onsubmit="submitPayment(event)">
+          <div style="padding: 1.5rem;">
+            <div class="form-group">
+              <label>Amount *</label>
+              <input type="number" id="payment-amount" value="${balance.toFixed(2)}" step="0.01" min="0.01" max="${balance.toFixed(2)}" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Payment Date *</label>
+              <input type="date" id="payment-date" value="${new Date().toISOString().split('T')[0]}" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Method</label>
+              <select id="payment-method">
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+                <option value="square">Square</option>
+                <option value="venmo">Venmo</option>
+                <option value="zelle">Zelle</option>
+                <option value="paypal">PayPal</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Reference (check #, transaction ID, etc)</label>
+              <input type="text" id="payment-reference" placeholder="Optional">
+            </div>
+            
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea id="payment-notes" rows="2" placeholder="Optional notes"></textarea>
+            </div>
+            
+            <div class="modal-actions">
+              <button type="button" class="btn-secondary" onclick="closePaymentModal()">Cancel</button>
+              <button type="submit" class="btn-primary">Record Payment</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <style>
+      .btn-primary { background: #8B4513; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+      .btn-secondary { background: #333; color: #fff; border: 1px solid #444; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; }
+      .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+      
+      .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+      .modal-overlay.active { display: flex; }
+      .modal { background: #1a1a1a; border-radius: 12px; width: 100%; }
+      .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #333; }
+      .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; }
+      
+      .form-group { margin-bottom: 1rem; }
+      .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #ccc; }
+      .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #333; border-radius: 6px; font-size: 1rem; background: #111; color: #fff; }
+      .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
+    </style>
+    
     <script>
       async function sendInvoice() {
         if (!confirm('Send this invoice to ${invoice.customer_email}?')) return;
@@ -589,14 +771,61 @@ export const adminInvoiceDetail = async (c: Context) => {
         window.open('/api/admin/invoices/${invoice.id}/pdf', '_blank');
       }
       
-      function recordPayment() {
-        const amount = prompt('Enter payment amount:', '${balance.toFixed(2)}');
-        if (!amount) return;
-        fetch('/api/admin/invoices/${invoice.id}/payment', {
+      function showRecordPaymentModal() {
+        document.getElementById('payment-modal').classList.add('active');
+      }
+      
+      function closePaymentModal() {
+        document.getElementById('payment-modal').classList.remove('active');
+      }
+      
+      async function submitPayment(e) {
+        e.preventDefault();
+        
+        const data = {
+          amount: parseFloat(document.getElementById('payment-amount').value),
+          payment_date: document.getElementById('payment-date').value,
+          method: document.getElementById('payment-method').value,
+          reference: document.getElementById('payment-reference').value || null,
+          notes: document.getElementById('payment-notes').value || null,
+        };
+        
+        const res = await fetch('/api/admin/invoices/${invoice.id}/payments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: parseFloat(amount), type: 'manual' })
-        }).then(() => location.reload());
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+          location.reload();
+        } else {
+          alert(result.error || 'Failed to record payment');
+        }
+      }
+      
+      async function markPaidInFull() {
+        if (!confirm('Mark this invoice as paid in full ($${balance.toFixed(2)})?')) return;
+        
+        const data = {
+          amount: ${balance},
+          payment_date: new Date().toISOString().split('T')[0],
+          method: 'cash',
+          notes: 'Marked paid in full',
+        };
+        
+        const res = await fetch('/api/admin/invoices/${invoice.id}/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+          location.reload();
+        } else {
+          alert(result.error || 'Failed to record payment');
+        }
       }
     </script>
   `;

@@ -503,9 +503,21 @@ adminApi.post('/invoices', async (c) => {
   const data = await c.req.json();
   const now = Math.floor(Date.now() / 1000);
   
-  const subtotal = (data.labor_amount || 0) + (data.helper_amount || 0) + 
-                   (data.materials_amount || 0) + (data.equipment_amount || 0) -
-                   (data.discount_amount || 0);
+  // Support both legacy fixed fields and new line items format
+  let subtotal = 0;
+  const hasLineItems = Array.isArray(data.items) && data.items.length > 0;
+  
+  if (hasLineItems) {
+    // Calculate subtotal from line items
+    subtotal = data.items.reduce((sum: number, item: any) => 
+      sum + ((item.quantity || 1) * (item.rate || 0)), 0);
+  } else {
+    // Legacy: fixed fields
+    subtotal = (data.labor_amount || 0) + (data.helper_amount || 0) + 
+               (data.materials_amount || 0) + (data.equipment_amount || 0) -
+               (data.discount_amount || 0);
+  }
+  
   const taxAmount = subtotal * ((data.tax_rate || 0) / 100);
   const total = subtotal + taxAmount;
   
@@ -542,7 +554,26 @@ adminApi.post('/invoices', async (c) => {
     now
   ).run();
   
-  return c.json({ success: true, id: result.meta.last_row_id, invoice_number: invoiceNumber, total });
+  const invoiceId = result.meta.last_row_id;
+  
+  // Insert line items if provided
+  if (hasLineItems) {
+    for (const item of data.items) {
+      await c.env.DB.prepare(`
+        INSERT INTO invoice_items (invoice_id, description, quantity, rate, sort_order, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        invoiceId,
+        item.description || '',
+        item.quantity || 1,
+        item.rate || 0,
+        item.sort_order || 0,
+        now
+      ).run();
+    }
+  }
+  
+  return c.json({ success: true, id: invoiceId, invoice_number: invoiceNumber, total });
 });
 
 // Invoice preview HTML
@@ -560,9 +591,36 @@ adminApi.get('/invoices/:id/preview', async (c) => {
     return c.text('Invoice not found', 404);
   }
   
+  // Get line items
+  const lineItems = await c.env.DB.prepare(`
+    SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order ASC, id ASC
+  `).bind(id).all<any>();
+  
+  const hasLineItems = lineItems.results && lineItems.results.length > 0;
+  
   const createdDate = invoice.created_at ? new Date(invoice.created_at * 1000).toLocaleDateString() : 'N/A';
   const dueDate = invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'N/A';
   const paymentLink = `https://handybeaver.co/pay/${id}`;
+  
+  // Build line items HTML
+  let lineItemsHtml = '';
+  if (hasLineItems) {
+    lineItemsHtml = lineItems.results!.map((item: any) => `
+      <tr>
+        <td style="padding: 0.75rem; border-bottom: 1px solid #eee;">${item.description}</td>
+        <td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+        <td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${Number(item.rate).toFixed(2)}</td>
+        <td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${Number(item.amount).toFixed(2)}</td>
+      </tr>
+    `).join('');
+  } else {
+    // Legacy: fixed fields
+    if (invoice.labor_amount) lineItemsHtml += `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Labor</td><td></td><td></td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${Number(invoice.labor_amount).toFixed(2)}</td></tr>`;
+    if (invoice.helper_amount) lineItemsHtml += `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Helper</td><td></td><td></td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${Number(invoice.helper_amount).toFixed(2)}</td></tr>`;
+    if (invoice.materials_amount) lineItemsHtml += `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Materials</td><td></td><td></td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${Number(invoice.materials_amount).toFixed(2)}</td></tr>`;
+    if (invoice.equipment_amount) lineItemsHtml += `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Equipment Rental</td><td></td><td></td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${Number(invoice.equipment_amount).toFixed(2)}</td></tr>`;
+    if (invoice.discount_amount) lineItemsHtml += `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee; color: #059669;">Discount</td><td></td><td></td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right; color: #059669;">-$${Number(invoice.discount_amount).toFixed(2)}</td></tr>`;
+  }
   
   const html = `
     <div class="invoice-document" style="padding: 2rem; font-family: Georgia, serif;">
@@ -596,38 +654,36 @@ adminApi.get('/invoices/:id/preview', async (c) => {
         <thead>
           <tr style="background: #8B4513; color: white;">
             <th style="padding: 0.75rem; text-align: left;">Description</th>
-            <th style="padding: 0.75rem; text-align: right;">Amount</th>
+            <th style="padding: 0.75rem; text-align: center; width: 60px;">Qty</th>
+            <th style="padding: 0.75rem; text-align: right; width: 80px;">Rate</th>
+            <th style="padding: 0.75rem; text-align: right; width: 100px;">Amount</th>
           </tr>
         </thead>
         <tbody>
-          ${invoice.labor_amount ? `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Labor</td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${invoice.labor_amount.toFixed(2)}</td></tr>` : ''}
-          ${invoice.helper_amount ? `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Helper</td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${invoice.helper_amount.toFixed(2)}</td></tr>` : ''}
-          ${invoice.materials_amount ? `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Materials</td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${invoice.materials_amount.toFixed(2)}</td></tr>` : ''}
-          ${invoice.equipment_amount ? `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee;">Equipment Rental</td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right;">$${invoice.equipment_amount.toFixed(2)}</td></tr>` : ''}
-          ${invoice.discount_amount ? `<tr><td style="padding: 0.75rem; border-bottom: 1px solid #eee; color: #059669;">Discount</td><td style="padding: 0.75rem; border-bottom: 1px solid #eee; text-align: right; color: #059669;">-$${invoice.discount_amount.toFixed(2)}</td></tr>` : ''}
+          ${lineItemsHtml}
         </tbody>
         <tfoot>
           <tr>
-            <td style="padding: 0.75rem; text-align: right; font-weight: 600;">Subtotal:</td>
-            <td style="padding: 0.75rem; text-align: right;">$${invoice.subtotal?.toFixed(2) || '0.00'}</td>
+            <td colspan="3" style="padding: 0.75rem; text-align: right; font-weight: 600;">Subtotal:</td>
+            <td style="padding: 0.75rem; text-align: right;">$${Number(invoice.subtotal || 0).toFixed(2)}</td>
           </tr>
           ${invoice.tax_amount ? `
           <tr>
-            <td style="padding: 0.75rem; text-align: right;">Tax (${invoice.tax_rate}%):</td>
-            <td style="padding: 0.75rem; text-align: right;">$${invoice.tax_amount.toFixed(2)}</td>
+            <td colspan="3" style="padding: 0.75rem; text-align: right;">Tax (${invoice.tax_rate}%):</td>
+            <td style="padding: 0.75rem; text-align: right;">$${Number(invoice.tax_amount).toFixed(2)}</td>
           </tr>
           ` : ''}
           <tr style="background: #f9f9f9;">
-            <td style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.1rem;">TOTAL:</td>
-            <td style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.25rem; color: #8B4513;">$${invoice.total?.toFixed(2) || '0.00'}</td>
+            <td colspan="3" style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.1rem;">TOTAL:</td>
+            <td style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.25rem; color: #8B4513;">$${Number(invoice.total || 0).toFixed(2)}</td>
           </tr>
           ${invoice.amount_paid ? `
           <tr>
-            <td style="padding: 0.75rem; text-align: right; color: #059669;">Amount Paid:</td>
-            <td style="padding: 0.75rem; text-align: right; color: #059669;">-$${invoice.amount_paid.toFixed(2)}</td>
+            <td colspan="3" style="padding: 0.75rem; text-align: right; color: #059669;">Amount Paid:</td>
+            <td style="padding: 0.75rem; text-align: right; color: #059669;">-$${Number(invoice.amount_paid).toFixed(2)}</td>
           </tr>
           <tr style="background: #fef3c7;">
-            <td style="padding: 0.75rem; text-align: right; font-weight: 700;">BALANCE DUE:</td>
+            <td colspan="3" style="padding: 0.75rem; text-align: right; font-weight: 700;">BALANCE DUE:</td>
             <td style="padding: 0.75rem; text-align: right; font-weight: 700; color: #dc2626;">$${(invoice.total - invoice.amount_paid).toFixed(2)}</td>
           </tr>
           ` : ''}
@@ -951,14 +1007,68 @@ adminApi.post('/messages', async (c) => {
   const data = await c.req.json();
   const now = Math.floor(Date.now() / 1000);
   
+  // Get customer info for email
+  const customer = await c.env.DB.prepare(`
+    SELECT id, name, email FROM customers WHERE id = ?
+  `).bind(data.customer_id).first<{ id: number; name: string; email: string }>();
+  
+  if (!customer) {
+    return c.json({ error: 'Customer not found' }, 404);
+  }
+  
   await c.env.DB.prepare(`
     INSERT INTO messages (customer_id, booking_id, sender, content, created_at)
     VALUES (?, ?, 'business', ?, ?)
   `).bind(data.customer_id, data.booking_id || null, data.content, now).run();
   
-  // TODO: Send email if data.send_email is true
+  // Send email notification (default: false - must explicitly set send_email: true)
+  // This ensures admin approval before external emails are sent
+  const shouldSendEmail = data.send_email === true && customer.email;
+  let emailSent = false;
   
-  return c.json({ success: true });
+  if (shouldSendEmail) {
+    try {
+      const { sendGmail } = await import('../utils/gmail');
+      
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #2d5a27; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">🦫 The Handy Beaver</h1>
+          </div>
+          <div style="padding: 20px; background: #f9f9f9;">
+            <p>Hi ${customer.name.split(' ')[0]},</p>
+            <div style="background: white; padding: 15px; border-left: 4px solid #2d5a27; margin: 15px 0;">
+              ${data.content.replace(/\n/g, '<br>')}
+            </div>
+            <p style="color: #666; font-size: 14px;">
+              You can reply to this email or log into your <a href="https://handybeaver.co/portal">customer portal</a> to view all messages.
+            </p>
+          </div>
+          <div style="padding: 15px; text-align: center; color: #666; font-size: 12px;">
+            The Handy Beaver | Southeast Oklahoma<br>
+            <a href="https://handybeaver.co">handybeaver.co</a>
+          </div>
+        </div>
+      `;
+      
+      const result = await sendGmail(
+        c.env as any,
+        customer.email,
+        'New message from The Handy Beaver 🦫',
+        emailHtml,
+        'The Handy Beaver'
+      );
+      
+      emailSent = result.success;
+      if (!result.success) {
+        console.error('Email send failed:', result.error);
+      }
+    } catch (e) {
+      console.error('Failed to send email notification:', e);
+    }
+  }
+  
+  return c.json({ success: true, email_sent: emailSent });
 });
 
 // ============ SUMMARY ============
@@ -1032,6 +1142,334 @@ ${data.notes || notes.map((n: any) => n.content).join('\n\n')}
   `.trim();
   
   return c.json({ draft: blogDraft });
+});
+
+// ============ INVOICE LINE ITEMS ============
+
+// Helper to recalculate invoice totals
+async function recalculateInvoiceTotals(db: D1Database, invoiceId: number) {
+  // Sum all line items
+  const itemsSum = await db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) as subtotal FROM invoice_items WHERE invoice_id = ?
+  `).bind(invoiceId).first<{ subtotal: number }>();
+  
+  const subtotal = itemsSum?.subtotal || 0;
+  
+  // Get current tax rate and amount_paid
+  const invoice = await db.prepare(`
+    SELECT tax_rate, amount_paid FROM invoices WHERE id = ?
+  `).bind(invoiceId).first<{ tax_rate: number; amount_paid: number }>();
+  
+  const taxRate = invoice?.tax_rate || 0;
+  const amountPaid = invoice?.amount_paid || 0;
+  const taxAmount = subtotal * (taxRate / 100);
+  const total = subtotal + taxAmount;
+  const balanceDue = total - amountPaid;
+  
+  await db.prepare(`
+    UPDATE invoices 
+    SET subtotal = ?, tax_amount = ?, total = ?, balance_due = ?, updated_at = unixepoch()
+    WHERE id = ?
+  `).bind(subtotal, taxAmount, total, balanceDue, invoiceId).run();
+  
+  return { subtotal, taxAmount, total, balanceDue };
+}
+
+// List items for invoice
+adminApi.get('/invoices/:id/items', async (c) => {
+  const invoiceId = c.req.param('id');
+  
+  const items = await c.env.DB.prepare(`
+    SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order ASC, id ASC
+  `).bind(invoiceId).all();
+  
+  return c.json(items);
+});
+
+// Add item to invoice
+adminApi.post('/invoices/:id/items', async (c) => {
+  const invoiceId = c.req.param('id');
+  const data = await c.req.json();
+  
+  if (!data.description || data.rate === undefined) {
+    return c.json({ error: 'description and rate are required' }, 400);
+  }
+  
+  // Get max sort_order
+  const maxOrder = await c.env.DB.prepare(`
+    SELECT COALESCE(MAX(sort_order), 0) as max_order FROM invoice_items WHERE invoice_id = ?
+  `).bind(invoiceId).first<{ max_order: number }>();
+  
+  const result = await c.env.DB.prepare(`
+    INSERT INTO invoice_items (invoice_id, description, quantity, rate, sort_order)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(
+    invoiceId,
+    data.description,
+    data.quantity ?? 1,
+    data.rate,
+    data.sort_order ?? (maxOrder?.max_order || 0) + 1
+  ).run();
+  
+  // Recalculate invoice totals
+  const totals = await recalculateInvoiceTotals(c.env.DB, Number(invoiceId));
+  
+  return c.json({ 
+    success: true, 
+    id: result.meta.last_row_id,
+    ...totals
+  });
+});
+
+// Update item
+adminApi.patch('/invoices/:id/items/:itemId', async (c) => {
+  const invoiceId = c.req.param('id');
+  const itemId = c.req.param('itemId');
+  const data = await c.req.json();
+  
+  const updates: string[] = [];
+  const values: any[] = [];
+  
+  if (data.description !== undefined) {
+    updates.push('description = ?');
+    values.push(data.description);
+  }
+  if (data.quantity !== undefined) {
+    updates.push('quantity = ?');
+    values.push(data.quantity);
+  }
+  if (data.rate !== undefined) {
+    updates.push('rate = ?');
+    values.push(data.rate);
+  }
+  if (data.sort_order !== undefined) {
+    updates.push('sort_order = ?');
+    values.push(data.sort_order);
+  }
+  
+  if (updates.length === 0) {
+    return c.json({ error: 'No fields to update' }, 400);
+  }
+  
+  values.push(itemId, invoiceId);
+  
+  await c.env.DB.prepare(
+    `UPDATE invoice_items SET ${updates.join(', ')} WHERE id = ? AND invoice_id = ?`
+  ).bind(...values).run();
+  
+  // Recalculate invoice totals
+  const totals = await recalculateInvoiceTotals(c.env.DB, Number(invoiceId));
+  
+  return c.json({ success: true, ...totals });
+});
+
+// Delete item
+adminApi.delete('/invoices/:id/items/:itemId', async (c) => {
+  const invoiceId = c.req.param('id');
+  const itemId = c.req.param('itemId');
+  
+  await c.env.DB.prepare(
+    'DELETE FROM invoice_items WHERE id = ? AND invoice_id = ?'
+  ).bind(itemId, invoiceId).run();
+  
+  // Recalculate invoice totals
+  const totals = await recalculateInvoiceTotals(c.env.DB, Number(invoiceId));
+  
+  return c.json({ success: true, ...totals });
+});
+
+// ============ INVOICE PAYMENTS ============
+
+// Helper to update invoice payment status
+async function updateInvoicePaymentStatus(db: D1Database, invoiceId: number) {
+  // Sum all payments
+  const paymentsSum = await db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) as total_paid FROM invoice_payments WHERE invoice_id = ?
+  `).bind(invoiceId).first<{ total_paid: number }>();
+  
+  const amountPaid = paymentsSum?.total_paid || 0;
+  
+  // Get invoice total
+  const invoice = await db.prepare(`
+    SELECT total, status FROM invoices WHERE id = ?
+  `).bind(invoiceId).first<{ total: number; status: string }>();
+  
+  const total = invoice?.total || 0;
+  const balanceDue = total - amountPaid;
+  
+  // Determine status
+  let newStatus = invoice?.status || 'draft';
+  if (balanceDue <= 0) {
+    newStatus = 'paid';
+  } else if (amountPaid > 0) {
+    newStatus = 'partial';
+  } else if (invoice?.status === 'paid' || invoice?.status === 'partial') {
+    newStatus = 'sent'; // Revert if payments deleted
+  }
+  
+  await db.prepare(`
+    UPDATE invoices 
+    SET amount_paid = ?, balance_due = ?, status = ?, updated_at = unixepoch()
+    WHERE id = ?
+  `).bind(amountPaid, balanceDue, newStatus, invoiceId).run();
+  
+  return { amountPaid, balanceDue, status: newStatus };
+}
+
+// List payments for invoice
+adminApi.get('/invoices/:id/payments', async (c) => {
+  const invoiceId = c.req.param('id');
+  
+  const payments = await c.env.DB.prepare(`
+    SELECT * FROM invoice_payments WHERE invoice_id = ? ORDER BY payment_date DESC, id DESC
+  `).bind(invoiceId).all();
+  
+  return c.json(payments);
+});
+
+// Record payment
+adminApi.post('/invoices/:id/payments', async (c) => {
+  const invoiceId = c.req.param('id');
+  const data = await c.req.json();
+  
+  if (!data.amount || !data.payment_date) {
+    return c.json({ error: 'amount and payment_date are required' }, 400);
+  }
+  
+  const result = await c.env.DB.prepare(`
+    INSERT INTO invoice_payments (invoice_id, amount, payment_date, method, reference, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(
+    invoiceId,
+    data.amount,
+    data.payment_date,
+    data.method || null,
+    data.reference || null,
+    data.notes || null
+  ).run();
+  
+  // Update invoice payment status
+  const status = await updateInvoicePaymentStatus(c.env.DB, Number(invoiceId));
+  
+  return c.json({ 
+    success: true, 
+    id: result.meta.last_row_id,
+    ...status
+  });
+});
+
+// Delete payment
+adminApi.delete('/invoices/:id/payments/:paymentId', async (c) => {
+  const invoiceId = c.req.param('id');
+  const paymentId = c.req.param('paymentId');
+  
+  await c.env.DB.prepare(
+    'DELETE FROM invoice_payments WHERE id = ? AND invoice_id = ?'
+  ).bind(paymentId, invoiceId).run();
+  
+  // Update invoice payment status
+  const status = await updateInvoicePaymentStatus(c.env.DB, Number(invoiceId));
+  
+  return c.json({ success: true, ...status });
+});
+
+// Mark invoice as fully paid
+adminApi.post('/invoices/:id/mark-paid', async (c) => {
+  const invoiceId = c.req.param('id');
+  const data = await c.req.json().catch(() => ({}));
+  
+  // Get invoice total and current amount paid
+  const invoice = await c.env.DB.prepare(`
+    SELECT total, amount_paid FROM invoices WHERE id = ?
+  `).bind(invoiceId).first<{ total: number; amount_paid: number }>();
+  
+  if (!invoice) {
+    return c.json({ error: 'Invoice not found' }, 404);
+  }
+  
+  const remaining = invoice.total - (invoice.amount_paid || 0);
+  
+  if (remaining > 0) {
+    // Record payment for remaining balance
+    const today = new Date().toISOString().split('T')[0];
+    await c.env.DB.prepare(`
+      INSERT INTO invoice_payments (invoice_id, amount, payment_date, method, notes)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      invoiceId,
+      remaining,
+      data.payment_date || today,
+      data.method || 'cash',
+      data.notes || 'Marked as paid'
+    ).run();
+  }
+  
+  // Update invoice status
+  await c.env.DB.prepare(`
+    UPDATE invoices 
+    SET amount_paid = total, balance_due = 0, status = 'paid', updated_at = unixepoch()
+    WHERE id = ?
+  `).bind(invoiceId).run();
+  
+  return c.json({ 
+    success: true, 
+    amountPaid: invoice.total, 
+    balanceDue: 0, 
+    status: 'paid' 
+  });
+});
+
+// ============ BUSINESS SETTINGS ============
+
+// Get all settings as object
+adminApi.get('/settings', async (c) => {
+  const result = await c.env.DB.prepare(`
+    SELECT key, value FROM business_settings
+  `).all<{ key: string; value: string }>();
+  
+  const settings: Record<string, string> = {};
+  for (const row of result.results) {
+    settings[row.key] = row.value;
+  }
+  
+  return c.json(settings);
+});
+
+// Update settings (key-value pairs)
+adminApi.patch('/settings', async (c) => {
+  const data = await c.req.json();
+  
+  const updates: Promise<any>[] = [];
+  for (const [key, value] of Object.entries(data)) {
+    updates.push(
+      c.env.DB.prepare(`
+        INSERT INTO business_settings (key, value, updated_at)
+        VALUES (?, ?, unixepoch())
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+      `).bind(key, String(value)).run()
+    );
+  }
+  
+  await Promise.all(updates);
+  
+  return c.json({ success: true, updated: Object.keys(data) });
+});
+
+// Upload logo (save URL)
+adminApi.post('/settings/logo', async (c) => {
+  const data = await c.req.json();
+  
+  if (!data.url) {
+    return c.json({ error: 'url is required' }, 400);
+  }
+  
+  await c.env.DB.prepare(`
+    INSERT INTO business_settings (key, value, updated_at)
+    VALUES ('logo_url', ?, unixepoch())
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+  `).bind(data.url).run();
+  
+  return c.json({ success: true, logo_url: data.url });
 });
 
 // ============ SQUARE INVOICES ============

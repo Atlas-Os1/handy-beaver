@@ -29,6 +29,7 @@ import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, port
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
+import { quotePage } from './pages/quote';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -38,6 +39,7 @@ import { facebookPosts } from './routes/facebook-posts';
 // Facebook scraping via Browser Rendering
 import { facebookSession } from './routes/facebook-session';
 import { facebookScraper } from './routes/facebook-scraper';
+import { facebookComment } from './routes/facebook-comment';
 import { portfolioApi } from './routes/portfolio';
 import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
@@ -95,6 +97,7 @@ app.get('/chat', agentPage); // Alias
 app.get('/gallery', galleryPage);
 app.get('/gallery/:slug', galleryCategoryPage);
 app.get('/social', socialPage);
+app.get('/quote', quotePage); // Instant quote calculator
 
 // Shareable quote page (public - customer can view and accept)
 app.get('/quote/:id', quoteSharePage);
@@ -328,6 +331,7 @@ api.route('/facebook', facebookPosts);
 // Facebook scraping via Browser Rendering
 api.route('/facebook', facebookSession);
 api.route('/facebook', facebookScraper);
+api.route('/facebook', facebookComment);
 
 // Mount portfolio/gallery API routes
 api.route('/images/portfolio', portfolioApi);
@@ -341,6 +345,10 @@ api.route('/calendar', calendarApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
+
+// Content queue for social media publishing
+import { contentQueueApi } from './routes/content-queue-api';
+api.route('/content', contentQueueApi);
 
 // Debug endpoint to check secrets
 api.get('/debug/secrets', async (c) => {
@@ -412,7 +420,35 @@ api.post('/contact', async (c) => {
     }
     
     // TODO: Upload photos to R2
-    // TODO: Send Discord notification
+    
+    // Send Discord notification to #lil-beaver-admin
+    if (c.env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+      try {
+        await fetch(c.env.DISCORD_WEBHOOK_NOTIFICATIONS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: null,
+            embeds: [{
+              title: '🆕 New Quote Request!',
+              color: 0x2d5a27, // Handy Beaver green
+              fields: [
+                { name: '👤 Customer', value: name, inline: true },
+                { name: '📧 Email', value: email, inline: true },
+                { name: '📱 Phone', value: phone || 'Not provided', inline: true },
+                { name: '🔧 Service', value: service_type, inline: true },
+                { name: '📍 Address', value: address || 'Not provided', inline: true },
+                { name: '📝 Description', value: description?.substring(0, 200) || 'No details', inline: false },
+              ],
+              timestamp: new Date().toISOString(),
+            }],
+          }),
+        });
+      } catch (e) {
+        console.error('Discord notification failed:', e);
+      }
+    }
+    
     // TODO: Send confirmation email with login link
     
     return c.html(`
@@ -439,6 +475,44 @@ api.post('/contact', async (c) => {
   } catch (error) {
     console.error('Contact form error:', error);
     return c.json({ error: 'Failed to submit form' }, 500);
+  }
+});
+
+// Public Quote Calculator Submission
+api.post('/quotes', async (c) => {
+  try {
+    const data = await c.req.json();
+    const { name, email, phone, details, service, size, timeline, estimated_cost } = data;
+    
+    if (!name || !email || !service || !size) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+    
+    // Insert quote request
+    const result = await c.env.DB.prepare(`
+      INSERT INTO quote_requests (customer_name, email, phone, project_details, service_type, project_size, timeline, estimated_cost, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+    `).bind(name, email, phone || '', details || '', service, size, timeline, estimated_cost).run();
+    
+    // Also add to email_subscribers if they provided email
+    if (email) {
+      try {
+        await c.env.DB.prepare(`
+          INSERT OR IGNORE INTO email_subscribers (email, source, subscribed_at)
+          VALUES (?, 'quote_calculator', datetime('now'))
+        `).bind(email).run();
+      } catch (e) {
+        // Ignore duplicate email errors
+      }
+    }
+    
+    // Send notification email (optional - could add later)
+    console.log('New quote request:', { name, email, service, size, timeline, estimated_cost });
+    
+    return c.json({ success: true, id: result.meta?.last_row_id || 1 });
+  } catch (error) {
+    console.error('Quote submission error:', error);
+    return c.json({ error: 'Failed to submit quote request' }, 500);
   }
 });
 
@@ -560,6 +634,147 @@ api.get('/social/feed', async (c) => {
 // Mount API
 app.route('/api', api);
 
+// Sync ElevenLabs conversations to DB
+async function syncElevenLabsConversations(env: Bindings) {
+  if (!env.ELEVENLABS_API_KEY) {
+    console.log('No ElevenLabs API key, skipping conversation sync');
+    return { synced: 0 };
+  }
+  
+  const agentId = 'agent_6401kk7jr6ngey2ancnk6nf7kpwy'; // Lil Beaver
+  
+  try {
+    // Fetch recent conversations
+    const res = await fetch(`https://api.elevenlabs.io/v1/convai/conversations?agent_id=${agentId}&page_size=10`, {
+      headers: { 'xi-api-key': env.ELEVENLABS_API_KEY },
+    });
+    
+    if (!res.ok) {
+      console.error('ElevenLabs API error:', res.status);
+      return { synced: 0, error: res.status };
+    }
+    
+    const data = await res.json() as { conversations: any[] };
+    const now = Math.floor(Date.now() / 1000);
+    let synced = 0;
+    
+    for (const conv of data.conversations || []) {
+      // Skip if already processed (check by conversation_id in leads notes)
+      const existing = await env.DB.prepare(
+        "SELECT id FROM leads WHERE notes LIKE ?"
+      ).bind(`%${conv.conversation_id}%`).first();
+      
+      if (existing) continue;
+      
+      // Skip very old conversations (> 24 hours)
+      if (now - conv.start_time_unix_secs > 86400) continue;
+      
+      // Fetch full transcript
+      const transcriptRes = await fetch(`https://api.elevenlabs.io/v1/convai/conversations/${conv.conversation_id}`, {
+        headers: { 'xi-api-key': env.ELEVENLABS_API_KEY },
+      });
+      
+      if (!transcriptRes.ok) continue;
+      
+      const convData = await transcriptRes.json() as { transcript: any[], metadata?: any };
+      const transcript = convData.transcript || [];
+      
+      // Build transcript text
+      const transcriptText = transcript.map((msg: any) => 
+        `${msg.role === 'agent' ? 'Lil Beaver' : 'Caller'}: ${msg.message || ''}`
+      ).join('\n');
+      
+      // Only look at USER messages for name/phone extraction
+      const userMessages = transcript
+        .filter((msg: any) => msg.role === 'user')
+        .map((msg: any) => msg.message || '')
+        .join(' ');
+      
+      // Extract name from user messages
+      let callerName = 'Voice Lead';
+      const nameMatch = userMessages.match(/\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/);
+      if (nameMatch) {
+        callerName = `${nameMatch[1]} ${nameMatch[2]}`;
+      } else {
+        const altNameMatch = userMessages.match(/(?:my name is|this is|i'm|i am)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+        if (altNameMatch) callerName = altNameMatch[1];
+      }
+      
+      // Extract phone - convert spoken numbers
+      let phoneNumber = '';
+      const digitWords: Record<string, string> = {
+        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+      };
+      
+      let normalizedUserMsg = userMessages.toLowerCase();
+      for (const [word, digit] of Object.entries(digitWords)) {
+        normalizedUserMsg = normalizedUserMsg.replace(new RegExp(word, 'g'), digit);
+      }
+      
+      const phoneMatch = normalizedUserMsg.match(/(\d[\d\-\s,]{7,})/);
+      if (phoneMatch) {
+        phoneNumber = phoneMatch[1].replace(/[\s\-,]/g, '');
+        if (phoneNumber.length === 10) {
+          phoneNumber = `${phoneNumber.slice(0,3)}-${phoneNumber.slice(3,6)}-${phoneNumber.slice(6)}`;
+        }
+      }
+      
+      // Create customer and lead
+      const email = phoneNumber ? `${phoneNumber.replace(/\D/g, '')}@voice.handybeaver.co` : `voice-${Date.now()}@voice.handybeaver.co`;
+      const customerResult = await env.DB.prepare(`
+        INSERT INTO customers (name, phone, email, source, created_at)
+        VALUES (?, ?, ?, 'voice_call', ?)
+      `).bind(callerName, phoneNumber, email, now).run();
+      
+      const customerId = customerResult.meta.last_row_id;
+      
+      await env.DB.prepare(`
+        INSERT INTO leads (customer_id, source, content, notes, created_at)
+        VALUES (?, 'voice_call', ?, ?, ?)
+      `).bind(customerId, conv.call_summary_title || 'Voice Call', `[${conv.conversation_id}]\n\nTranscript:\n${transcriptText.slice(0, 2000)}`, now).run();
+      
+      // Log transcript messages
+      for (const msg of transcript) {
+        await env.DB.prepare(`
+          INSERT INTO messages (customer_id, sender, content, source, created_at)
+          VALUES (?, ?, ?, 'voice', ?)
+        `).bind(customerId, msg.role === 'agent' ? 'business' : 'customer', msg.message || '', now).run();
+      }
+      
+      // Send Discord notification
+      if (env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+        await fetch(env.DISCORD_WEBHOOK_NOTIFICATIONS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: '📞 New Voice Lead!',
+              color: 0x22c55e,
+              fields: [
+                { name: 'Name', value: callerName, inline: true },
+                { name: 'Phone', value: phoneNumber || 'Not captured', inline: true },
+                { name: 'Topic', value: conv.call_summary_title || 'General inquiry', inline: true },
+                { name: 'Duration', value: `${Math.round(conv.call_duration_secs / 60)} min`, inline: true },
+                { name: 'Transcript', value: transcriptText.slice(0, 500) || 'No transcript', inline: false },
+              ],
+              timestamp: new Date(conv.start_time_unix_secs * 1000).toISOString(),
+            }],
+          }),
+        }).catch(err => console.error('Discord notify failed:', err));
+      }
+      
+      synced++;
+      console.log(`Synced voice lead: ${callerName} - ${conv.call_summary_title}`);
+    }
+    
+    return { synced };
+  } catch (error) {
+    console.error('ElevenLabs sync error:', error);
+    return { synced: 0, error: String(error) };
+  }
+}
+
 // Scheduled handler for cron triggers (Facebook group scanning)
 async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
   console.log('Cron triggered: periodic background jobs');
@@ -580,6 +795,10 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
   } else {
     console.log(`Calendar sync failed: ${calendarSync.error}`);
   }
+  
+  // Sync ElevenLabs voice conversations
+  const elevenLabsSync = await syncElevenLabsConversations(env);
+  console.log(`ElevenLabs sync: ${elevenLabsSync.synced} conversation(s) synced`);
 
   console.log('Cron completed');
 }

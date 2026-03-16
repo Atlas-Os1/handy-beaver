@@ -206,6 +206,186 @@ export const baseStyles = `
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
+
+  /* Mobile CTA Buttons */
+  .mobile-cta-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--primary), #6B3410);
+    padding: 0.75rem 1rem;
+    z-index: 1001;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+  }
+
+  .mobile-cta-bar .cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .mobile-cta-bar a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--card);
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 50px;
+    transition: transform 0.2s;
+  }
+
+  .mobile-cta-bar a:active {
+    transform: scale(0.95);
+  }
+
+  @media (max-width: 768px) {
+    .mobile-cta-bar {
+      display: block;
+    }
+    
+    body {
+      padding-bottom: 70px;
+    }
+    
+    .promo-popup {
+      bottom: 80px;
+    }
+  }
+
+  /* Service Card Enhanced Animations */
+  .service-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .service-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 
+      0 0 40px var(--card-glow),
+      0 0 80px var(--card-glow),
+      0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .service-card:hover .service-icon {
+    animation: bounce 0.5s ease;
+  }
+
+  .service-card:hover .learn-more {
+    transform: translateX(8px);
+  }
+
+  .service-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+    transition: transform 0.3s;
+  }
+
+  .learn-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary);
+    font-weight: 600;
+    transition: transform 0.3s;
+  }
+
+  .learn-more::after {
+    content: '→';
+    transition: transform 0.3s;
+  }
+
+  .service-card:hover .learn-more::after {
+    transform: translateX(5px);
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* Trust Signals Banner */
+  .trust-banner {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 1.5rem;
+    background: rgba(44, 24, 16, 0.8);
+    border-bottom: 2px solid var(--secondary);
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .trust-item:hover {
+    color: var(--secondary);
+  }
+
+  .trust-item span.icon {
+    font-size: 1.5rem;
+  }
+
+  /* Chat Trigger Button */
+  .chat-trigger {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--card);
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(139, 69, 19, 0.4);
+    z-index: 999;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: transform 0.3s, box-shadow 0.3s;
+    animation: pulse 2s infinite;
+  }
+
+  .chat-trigger:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 30px rgba(139, 69, 19, 0.6);
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(139, 69, 19, 0.4); }
+    50% { box-shadow: 0 4px 30px rgba(139, 69, 19, 0.7); }
+  }
+
+  @media (max-width: 768px) {
+    .chat-trigger {
+      bottom: 160px;
+      right: 12px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .trust-banner {
+      gap: 1rem;
+      padding: 1rem 0.5rem;
+    }
+    
+    .trust-item {
+      font-size: 0.85rem;
+    }
+  }
   
   /* Footer */
   footer {
@@ -301,6 +481,14 @@ export const layout = (title: string, content: string, activeNav?: string) => `
     </ul>
   </nav>
   
+  <!-- Trust Signals Banner -->
+  <div class="trust-banner">
+    <span class="trust-item"><span class="icon">🛠️</span> 25 Years Experience</span>
+    <span class="trust-item"><span class="icon">✅</span> 100+ Projects Completed</span>
+    <a href="https://www.facebook.com/1040910635768535/reviews" target="_blank" rel="noopener" class="trust-item"><span class="icon">⭐</span> 5-Star Rated</a>
+    <span class="trust-item"><span class="icon">🏠</span> Locally Owned - SE Oklahoma</span>
+  </div>
+  
   ${content}
   
   <!-- Promo Popup -->
@@ -319,8 +507,28 @@ export const layout = (title: string, content: string, activeNav?: string) => `
     <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8">
       📧 ${business.email} | 📍 ${business.serviceArea}
     </p>
+    <div style="margin-top: 1rem; display: flex; justify-content: center; gap: 1rem;">
+      <a href="tel:${business.phone}" style="color: var(--secondary); text-decoration: none; font-weight: 600;">📞 Call Us</a>
+      <a href="sms:${business.phone}" style="color: var(--secondary); text-decoration: none; font-weight: 600;">💬 Text Us</a>
+      <a href="/quote" style="color: var(--accent); text-decoration: none; font-weight: 600;">💰 Get Quote</a>
+    </div>
   </footer>
   
+  <!-- Mobile CTA Bar (shows on mobile only) -->
+  <div class="mobile-cta-bar">
+    <div class="cta-buttons">
+      <a href="tel:${business.phone}">📞 Call</a>
+      <a href="sms:${business.phone}">💬 Text</a>
+      <a href="/quote" style="background: var(--secondary); color: white;">💰 Quote</a>
+    </div>
+  </div>
+  
+  <!-- Chat Trigger Button -->
+  <button class="chat-trigger" onclick="document.querySelector('elevenlabs-convai').click(); this.style.display='none';">
+    🦫 Chat with Lil Beaver
+  </button>
+  
+  <!-- Promo Popup -->
   <script>
     // Show promo after 5 seconds for new visitors
     setTimeout(() => {
@@ -333,6 +541,15 @@ export const layout = (title: string, content: string, activeNav?: string) => `
     function closePromo() {
       document.getElementById('promo-popup').classList.remove('active');
     }
+    
+    // Show chat prompt after 10 seconds
+    setTimeout(() => {
+      const trigger = document.querySelector('.chat-trigger');
+      if (trigger && !localStorage.getItem('chatPrompted')) {
+        trigger.innerHTML = '🦫 Need help? Ask Lil Beaver!';
+        localStorage.setItem('chatPrompted', Date.now());
+      }
+    }, 10000);
   </script>
   
   <!-- Lil Beaver Voice Agent Widget -->

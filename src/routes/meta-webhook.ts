@@ -2,10 +2,10 @@ import { Hono } from 'hono';
 
 type Bindings = {
   DB: D1Database;
+  AI: Ai;
   FACEBOOK_PAGE_ACCESS_TOKEN?: string;
   FACEBOOK_VERIFY_TOKEN?: string;
   INSTAGRAM_ACCESS_TOKEN?: string;
-  ANTHROPIC_API_KEY?: string;
   DISCORD_WEBHOOK_NOTIFICATIONS?: string;
 };
 
@@ -218,25 +218,9 @@ async function handleInstagramComment(c: any, value: any, now: number) {
   `).bind('instagram', username || 'unknown', mediaId, text, 'inbound', 'comment', now).run();
 }
 
-// Generate Lil Beaver response using AI
+// Generate Lil Beaver response using Workers AI
 async function generateBeaverResponse(c: any, userMessage: string, platform: string): Promise<string | null> {
-  if (!c.env.ANTHROPIC_API_KEY) {
-    // Fallback response
-    return "Hey there! 🦫 Thanks for reaching out to The Handy Beaver! I handle flooring, trim work, deck repair and general maintenance in SE Oklahoma. Check out handybeaver.co for pricing or to request a free quote!";
-  }
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': c.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 300,
-        system: `You are Lil Beaver, the friendly AI assistant for The Handy Beaver handyman service in SE Oklahoma. 
+  const systemPrompt = `You are Lil Beaver, the friendly AI assistant for The Handy Beaver handyman service in SE Oklahoma. 
 
 Personality:
 - Warm, helpful, slightly playful
@@ -255,18 +239,22 @@ Rates:
 - Customer pays materials directly
 
 Website: handybeaver.co
-Goal: Qualify leads, answer questions, direct to website for quotes.`,
-        messages: [
-          { role: 'user', content: userMessage }
-        ],
-      }),
-    });
+Goal: Qualify leads, answer questions, direct to website for quotes.`;
 
-    const data = await response.json() as any;
-    return data.content?.[0]?.text || null;
+  try {
+    // Use Cloudflare Workers AI (included in plan)
+    const result = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      max_tokens: 300,
+    }) as { response?: string };
+
+    return result.response || "Hey there! 🦫 Thanks for reaching out to The Handy Beaver! Check out handybeaver.co for pricing or to request a free quote!";
   } catch (error) {
     console.error('AI response error:', error);
-    return null;
+    return "Hey there! 🦫 Thanks for reaching out to The Handy Beaver! Check out handybeaver.co for pricing or to request a free quote!";
   }
 }
 

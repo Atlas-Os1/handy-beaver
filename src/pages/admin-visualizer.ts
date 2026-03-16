@@ -100,19 +100,89 @@ const adminLayout = (title: string, content: string, activePage: string, admin?:
     .stat-value { font-size: 2rem; font-weight: bold; color: #8B4513; }
     .stat-label { color: #666; font-size: 0.9rem; }
     :root { --primary: #8B4513; --secondary: #D2691E; }
+    
+    /* Mobile Menu Toggle */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+    
+    /* Mobile Styles */
+    @media (max-width: 900px) {
+      .menu-toggle { display: block !important; }
+      .admin-nav { padding: 0.75rem 1rem; }
+      .admin-nav .user span { display: none; }
+      
+      .admin-layout { grid-template-columns: 1fr; }
+      
+      .sidebar {
+        position: fixed !important;
+        top: 60px;
+        left: -260px;
+        width: 250px !important;
+        height: calc(100vh - 60px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        background: #1a1a2e !important;
+        flex-direction: column !important;
+        overflow-y: auto;
+        display: flex !important;
+        padding: 1rem 0 !important;
+      }
+      .sidebar.open { left: 0 !important; }
+      
+      .sidebar a {
+        color: #ccc !important;
+        border-left: 3px solid transparent !important;
+        padding: 0.75rem 1rem !important;
+      }
+      .sidebar a:hover { background: rgba(255,255,255,0.1) !important; }
+      .sidebar a.active {
+        border-left-color: #8B4513 !important;
+        background: rgba(139, 69, 19, 0.2) !important;
+        color: white !important;
+      }
+      .sidebar .divider {
+        background: rgba(255,255,255,0.1) !important;
+        margin: 0.5rem 0 !important;
+      }
+      
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+      }
+      .sidebar-overlay.open { display: block; }
+      
+      .main-content { padding: 1rem; width: 100% !important; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <nav class="admin-nav">
     <div class="brand">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <img src="/api/assets/beaver-avatar.png" alt="Beaver">
       <span>${siteConfig.business.name} Admin</span>
     </div>
-    <div style="display: flex; align-items: center; gap: 1rem;">
+    <div class="user" style="display: flex; align-items: center; gap: 1rem;">
       <span>${admin?.name || admin?.github_username || 'Admin'}</span>
       <a href="/api/auth/logout" style="color: #ccc;">Logout</a>
     </div>
   </nav>
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
   
   <div class="admin-layout">
     <aside class="sidebar">
@@ -134,6 +204,14 @@ const adminLayout = (title: string, content: string, activePage: string, admin?:
       ${content}
     </main>
   </div>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+  </script>
 </body>
 </html>
 `;

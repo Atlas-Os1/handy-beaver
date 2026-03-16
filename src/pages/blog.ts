@@ -4,6 +4,130 @@ import { layout } from '../lib/html';
 // Placeholder blog posts - will be dynamic from D1 later
 const blogPosts = [
   {
+    id: 5,
+    title: 'Tornado Season Prep: Securing Your Outdoor Spaces in Southeast Oklahoma',
+    slug: 'tornado-season-prep-oklahoma-2026',
+    excerpt: 'With tornado season approaching, now is the time to secure loose items, reinforce structures, and prepare your property for severe weather. Essential tips for Oklahoma homeowners.',
+    date: '2026-03-15',
+    category: 'Safety',
+    content: `<h1>Tornado Season Prep: Securing Your Outdoor Spaces in Southeast Oklahoma</h1>
+
+<p>March in Southeast Oklahoma means one thing: tornado season is right around the corner. While we can't control the weather, we can control how well our properties are prepared. A few hours of work now can prevent thousands in damage and keep your family safer when severe weather strikes.</p>
+
+<h2>Why Outdoor Prep Matters</h2>
+
+<p>Tornadoes and severe thunderstorms don't just damage roofs and windows — they turn everyday outdoor items into dangerous projectiles. That patio chair, unsecured trash can, or loose fence panel becomes a hazard in 70+ mph winds. Taking time to secure or store these items protects both your property and your neighbors'.</p>
+
+<h2>Secure Loose Items First</h2>
+
+<p><strong>Patio Furniture &amp; Grills:</strong> Heavy items might seem stable, but high winds can toss even a full propane grill. Move furniture into a garage or shed, or use heavy-duty straps to anchor pieces to the deck or ground.</p>
+
+<p><strong>Trash Cans &amp; Recycling Bins:</strong> Either bring them into the garage between storm events or use bungee cords to secure lids and anchor bins to a fence post or wall hook.</p>
+
+<p><strong>Yard Decorations:</strong> Garden gnomes, flags, hanging planters — anything not permanently installed should come down or be secured. Spring is beautiful, but decorations can wait until after severe weather season passes.</p>
+
+<p><strong>Tools &amp; Equipment:</strong> Ladders, wheelbarrows, garden tools left outside become missiles in a tornado. Store everything in a shed or garage. If you don't have storage, lay items flat and anchor them.</p>
+
+<h2>Reinforce Your Fence</h2>
+
+<p>High winds love to find weak fence panels and posts. A quick inspection now can save you from replacing entire sections later.</p>
+
+<p><strong>Check Posts:</strong> Wiggle each fence post to test stability. Loose posts need immediate attention — dig out and reset with fresh concrete, or add cross-bracing for temporary support.</p>
+
+<p><strong>Tighten Panels:</strong> Walk the fence line and tighten any loose screws or nails. Replace missing fasteners. A panel that's slightly loose now will be ripped off in a storm.</p>
+
+<p><strong>Clear Debris:</strong> Remove anything leaning against or piled near your fence. Debris creates pressure points that can snap posts or panels.</p>
+
+<p><strong>Consider Temporary Removal:</strong> If you have decorative fence sections or gates that are purely cosmetic, consider removing them for tornado season and reinstalling in late summer.</p>
+
+<h2>Inspect Your Deck</h2>
+
+<p>A well-maintained deck handles wind better than one with structural issues.</p>
+
+<p><strong>Check Railings:</strong> Shake railings firmly. Loose railings can detach and become airborne. Tighten bolts and replace damaged sections.</p>
+
+<p><strong>Secure Lattice:</strong> Decorative lattice panels under decks catch wind like a sail. Either remove them for the season or add extra fasteners every 12 inches.</p>
+
+<p><strong>Remove or Secure Deck Furniture:</strong> Don't leave cushions, umbrellas, or lightweight furniture on the deck. Store them or anchor them securely.</p>
+
+<h2>Trim Trees and Shrubs</h2>
+
+<p>Overhanging branches and dead limbs are the #1 cause of storm damage to homes and fences in our area.</p>
+
+<p><strong>Dead Branches:</strong> Remove any dead or damaged limbs now, before a storm does it for you. A falling branch can punch through a roof or demolish a fence.</p>
+
+<p><strong>Overgrown Trees:</strong> Trim back branches within 10 feet of your house, deck, or fence. This creates a buffer zone that reduces impact damage.</p>
+
+<p><strong>Clear Storm Drains:</strong> Make sure gutters and yard drains are clear. Heavy rain accompanies tornadoes, and flooding can cause as much damage as wind.</p>
+
+<h2>Create a Safe Zone</h2>
+
+<p>Know where you'll shelter during a tornado warning. Basements and interior rooms on the lowest floor are safest. Avoid windows, exterior walls, and mobile structures.</p>
+
+<p>Keep a weather radio, flashlight, first aid kit, and battery bank in your safe zone. Cell towers often go down during severe weather — don't rely on your phone alone.</p>
+
+<h2>Document Your Property</h2>
+
+<p>Take photos of your deck, fence, and outdoor structures <em>before</em> storm season. If you need to file an insurance claim, having "before" photos makes the process much easier.</p>
+
+<p>Walk your property with your phone and snap pictures from multiple angles. Include close-ups of areas you've recently repaired or reinforced.</p>
+
+<h2>DIY vs. Professional Help</h2>
+
+<p><strong>You Can Handle:</strong></p>
+<ul>
+<li>Moving patio furniture and loose items</li>
+<li>Tightening visible screws and bolts</li>
+<li>Clearing gutters and yard debris</li>
+<li>Taking inventory photos</li>
+</ul>
+
+<p><strong>Call a Professional For:</strong></p>
+<ul>
+<li>Resetting fence posts in concrete</li>
+<li>Major tree trimming (especially near power lines)</li>
+<li>Structural deck repairs</li>
+<li>Anything requiring a ladder on uneven ground</li>
+</ul>
+
+<p>A handyman can handle fence and deck reinforcement in a half-day ($175) or tackle larger structural projects with a full-day rate ($300). Materials are provided at cost.</p>
+
+<h2>When Storms Approach</h2>
+
+<p>Keep an eye on weather forecasts from mid-March through June. When severe weather is predicted:</p>
+<ul>
+<li>Move vehicles into the garage if possible</li>
+<li>Bring in any remaining outdoor items</li>
+<li>Close and latch all gates and shed doors</li>
+<li>Charge phones and battery banks</li>
+<li>Fill bathtubs with water (in case water service is interrupted)</li>
+</ul>
+
+<h2>After the Storm</h2>
+
+<p>Don't rush outside immediately. Downed power lines, gas leaks, and structural damage aren't always visible. Wait for the all-clear from local authorities.</p>
+
+<p>When it's safe, inspect your property carefully:</p>
+<ul>
+<li>Check for fence and deck damage</li>
+<li>Look for roof damage or missing shingles</li>
+<li>Inspect trees for hanging or damaged limbs</li>
+<li>Document damage with photos for insurance</li>
+</ul>
+
+<p>If you have structural damage, don't attempt DIY repairs without professional assessment first. What looks like a simple fix might be hiding bigger problems.</p>
+
+<h2>Start This Weekend</h2>
+
+<p>Tornado prep doesn't have to be overwhelming. Start with one task this weekend — secure loose items, inspect your fence, or trim that dead branch you've been ignoring. Each step makes your property safer and gives you peace of mind when storm warnings pop up on your phone.</p>
+
+<p>We can't stop tornadoes, but we can be ready for them. A few hours of preparation now means less stress and fewer repairs later.</p>
+
+<hr>
+
+<p><em>Need help securing your fence, deck, or outdoor structures before storm season? The Handy Beaver serves Southeast Oklahoma with professional handyman services. <a href="/contact">Get a free quote today!</a></em></p>`
+  },
+  {
     id: 4,
     title: 'Spring Home Maintenance Essentials: Preparing Your Southeast Oklahoma Property',
     slug: 'spring-home-maintenance-essentials-2026',

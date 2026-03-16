@@ -2,10 +2,10 @@ import { Hono } from 'hono';
 
 type Bindings = {
   DB: D1Database;
+  AI: Ai;
+  OPENROUTER_API_KEY?: string;
   OPENCLAW_GATEWAY_URL?: string;
   OPENCLAW_GATEWAY_TOKEN?: string;
-  OPENCLAW_MODEL_ADMIN?: string;
-  OPENCLAW_MODEL_CUSTOMER?: string;
 };
 
 export const chatApi = new Hono<{ Bindings: Bindings }>();
@@ -140,51 +140,99 @@ Be warm, friendly, and helpful. Keep responses concise for mobile chat.
 Service area: Southeast Oklahoma.`;
   }
   
-  // Build the request for OpenClaw Gateway
-  const input = [
-    { type: 'message', role: 'system', content: systemInstructions },
+  // Build messages
+  const aiMessages = [
+    { role: 'system', content: systemInstructions },
     ...messages.slice(-10).map((m: any) => ({
-      type: 'message',
-      role: m.role,
+      role: m.role as 'user' | 'assistant',
       content: m.content
     }))
   ];
   
-  try {
-    const response = await fetch(`${gatewayUrl}/v1/responses`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${gatewayToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        input,
-        user: mode === 'admin' ? 'admin-chat' : `customer-${context?.customerId || 'guest'}`,
-        metadata: {
-          mode,
-          customerId: context?.customerId || null,
-          portalScoped: mode !== 'admin',
+  // Try providers in order: Lil Beaver (OpenClaw) → OpenRouter free → Workers AI
+  
+  // Get the last user message for Lil Beaver
+  const lastUserMessage = messages.slice(-1)[0]?.content || '';
+  
+  // 1. Try Lil Beaver via OpenClaw gateway (best quality)
+  if (gatewayUrl && gatewayToken) {
+    try {
+      // Build context for Lil Beaver
+      const contextPrefix = mode === 'admin' 
+        ? '[ADMIN MODE] ' 
+        : context?.customerName 
+          ? `[Customer: ${context.customerName}] ` 
+          : '[Customer Portal] ';
+      
+      const response = await fetch(`${gatewayUrl}/v1/responses`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${gatewayToken}`,
+          'Content-Type': 'application/json',
         },
-        max_output_tokens: 500,
-      }),
-    });
-    
-    if (!response.ok) {
-      console.error('Gateway error:', response.status, await response.text());
-      return c.json({ 
-        response: "I'm having trouble connecting. Try again in a moment!" 
+        body: JSON.stringify({
+          model: 'openclaw:lil-beaver',
+          input: contextPrefix + lastUserMessage,
+          instructions: systemInstructions,
+          max_output_tokens: 500,
+        }),
       });
+      
+      if (response.ok) {
+        const data = await response.json() as any;
+        const text = extractAssistantText(data);
+        if (text) return c.json({ response: text, provider: 'lil-beaver' });
+      } else {
+        console.log('Gateway returned non-OK:', response.status);
+      }
+    } catch (e) {
+      console.log('Lil Beaver unavailable, falling back...', e);
     }
-    
-    const data = await response.json() as any;
-    const assistantText = extractAssistantText(data);
+  }
+  
+  // 2. Try OpenRouter free model (Llama 3.2 3B - free tier)
+  const openrouterKey = c.env.OPENROUTER_API_KEY;
+  
+  if (openrouterKey) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openrouterKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://handybeaver.co',
+          'X-Title': 'Handy Beaver Chat',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.2-3b-instruct:free',
+          messages: aiMessages,
+          max_tokens: 500,
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json() as any;
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return c.json({ response: text, provider: 'openrouter' });
+      }
+    } catch (e) {
+      console.log('OpenRouter unavailable, falling back...');
+    }
+  }
+  
+  // 3. Fallback to Workers AI (always available, included in plan)
+  try {
+    const result = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: aiMessages,
+      max_tokens: 500,
+    }) as { response?: string };
 
     return c.json({ 
-      response: assistantText || "I understood, but I'm not sure how to respond. Can you rephrase?" 
+      response: result.response || "I understood, but I'm not sure how to respond. Can you rephrase?",
+      provider: 'workers-ai'
     });
   } catch (error) {
-    console.error('Chat API error:', error);
+    console.error('All providers failed:', error);
     return c.json({ 
       response: "Connection error. Please try again or call us directly!" 
     });

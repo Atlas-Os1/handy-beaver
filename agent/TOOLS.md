@@ -2,12 +2,12 @@
 
 ## Admin API Access
 
-**API Key:** `59iVEDwyCvfRxcKmCJnYEl1bdx2dI5mo`
+**API Key:** `87fb50eabb599139374846293d48c7c8dc36982055eb7581199d258bad67b245`
 **Base URL:** `https://handybeaver.co`
 
 When making API calls, always include:
 ```
-Authorization: Bearer 59iVEDwyCvfRxcKmCJnYEl1bdx2dI5mo
+Authorization: Bearer 87fb50eabb599139374846293d48c7c8dc36982055eb7581199d258bad67b245
 Content-Type: application/json
 ```
 
