@@ -80,6 +80,13 @@ const TIMES = ['golden hour sunset', 'bright morning light', 'soft afternoon glo
 const ACTIONS = ['working confidently', 'giving thumbs up', 'holding tools proudly', 'measuring carefully', 'standing back to admire work'];
 const OKLAHOMA_ELEMENTS = ['Ouachita Mountains in background', 'pine trees visible through window', 'Oklahoma red dirt visible', 'scenic forest backdrop', 'Broken Bow lake visible'];
 
+const IMAGE_PROMPTS: Record<Theme, string> = {
+  deck: "Cute cartoon beaver mascot in yellow hard hat and red flannel shirt standing proudly on a freshly stained wooden deck overlooking scenic Oklahoma forest, professional home improvement, warm sunset lighting, photorealistic background with cartoon character",
+  flooring: "Cute cartoon beaver mascot in yellow hard hat and flannel shirt installing beautiful dark hardwood flooring in modern living room, kneeling with tools, professional renovation, bright natural lighting, photorealistic interior",
+  trim: "Cute cartoon beaver mascot in hard hat installing crisp white baseboards in elegant living room, measuring tape in hand, professional carpentry setting, photorealistic background",
+  general: "Cute cartoon beaver mascot in yellow hard hat and red flannel shirt holding toolbox, standing in front of beautiful Oklahoma home with green lawn, friendly confident pose, photorealistic background"
+};
+
 function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -90,31 +97,8 @@ function generateCaption(theme: Theme): string {
   return caption.replace('{area}', area);
 }
 
-// Generate unique, AI-enhanced image prompt
-async function generateEnhancedPrompt(env: Env, theme: Theme, recentPrompts: string[]): Promise<string> {
-  const base = BASE_IMAGE_PROMPTS[theme];
-  const setting = randomItem(SETTINGS);
-  const time = randomItem(TIMES);
-  const action = randomItem(ACTIONS);
-  const okElement = randomItem(OKLAHOMA_ELEMENTS);
-  
-  // Build a unique prompt with random variations
-  const prompt = `${base}, ${action}, ${setting} setting, ${okElement}, ${time}, professional home improvement photography style, photorealistic background with cartoon character, high quality`;
-  
-  // Check if too similar to recent prompts (simple hash check)
-  const promptHash = prompt.slice(0, 50);
-  if (recentPrompts.some(p => p.startsWith(promptHash.slice(0, 30)))) {
-    // If similar, add more randomization
-    const extraDetails = ['with power tools', 'wearing safety glasses', 'with wood shavings around', 'next to a toolbox', 'with a happy expression'];
-    return `${prompt}, ${randomItem(extraDetails)}`;
-  }
-  
-  return prompt;
-}
-
-async function generateImage(env: Env, theme: Theme, recentPrompts: string[] = []): Promise<{ image: Uint8Array; prompt: string }> {
-  const prompt = await generateEnhancedPrompt(env, theme, recentPrompts);
-  console.log('Generated image prompt:', prompt);
+async function generateImage(env: Env, theme: Theme): Promise<Uint8Array> {
+  const prompt = IMAGE_PROMPTS[theme];
   
   const response = await env.AI.run('@cf/black-forest-labs/flux-1-schnell', {
     prompt,
@@ -129,16 +113,10 @@ async function generateImage(env: Env, theme: Theme, recentPrompts: string[] = [
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    return { image: bytes, prompt };
+    return bytes;
   }
   
   throw new Error('No image in AI response');
-}
-
-// Get recent prompts to avoid duplicates
-async function getRecentPrompts(env: Env): Promise<string[]> {
-  const history = JSON.parse(await env.STATE.get('post_history') || '[]');
-  return history.slice(0, 10).map((p: any) => p.imagePrompt || '').filter(Boolean);
 }
 
 async function postToFacebook(env: Env, imageUrl: string, caption: string): Promise<{ id: string; post_id: string }> {
@@ -196,36 +174,7 @@ async function postToInstagram(env: Env, imageUrl: string, caption: string): Pro
   
   const container = await containerResponse.json() as { id: string };
   
-  // Step 2: Wait for media to be ready (Instagram needs time to process)
-  // Poll the container status until it's ready (max 30 seconds)
-  let mediaReady = false;
-  for (let i = 0; i < 6; i++) {
-    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-    
-    const statusResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${container.id}?fields=status_code&access_token=${env.IG_TOKEN}`
-    );
-    
-    if (statusResponse.ok) {
-      const status = await statusResponse.json() as { status_code?: string };
-      console.log(`Instagram media status check ${i + 1}/6:`, status.status_code);
-      
-      if (status.status_code === 'FINISHED') {
-        mediaReady = true;
-        break;
-      } else if (status.status_code === 'ERROR') {
-        console.error('Instagram media processing failed');
-        return null;
-      }
-    }
-  }
-  
-  if (!mediaReady) {
-    console.error('Instagram media not ready after 30 seconds');
-    return null;
-  }
-  
-  // Step 3: Publish
+  // Step 2: Publish
   const publishParams = new URLSearchParams({
     creation_id: container.id,
     access_token: env.IG_TOKEN
@@ -254,32 +203,14 @@ async function createPost(env: Env, theme?: string): Promise<{ success: boolean;
     const selectedTheme: Theme = (theme && THEMES.includes(theme as Theme)) 
       ? (theme as Theme) 
       : randomItem([...THEMES]);
+    const caption = generateCaption(selectedTheme);
     
-    // Check for duplicate theme in last 24 hours
-    const history = JSON.parse(await env.STATE.get('post_history') || '[]');
-    const recentThemes = history
-      .filter((p: any) => Date.now() - new Date(p.timestamp).getTime() < 24 * 60 * 60 * 1000)
-      .map((p: any) => p.theme);
-    
-    // Avoid same theme twice in a day
-    let finalTheme = selectedTheme;
-    if (recentThemes.includes(selectedTheme)) {
-      const availableThemes = THEMES.filter(t => !recentThemes.includes(t));
-      finalTheme = availableThemes.length > 0 ? randomItem(availableThemes) : selectedTheme;
-      console.log(`Theme ${selectedTheme} used recently, switching to ${finalTheme}`);
-    }
-    
-    const caption = generateCaption(finalTheme);
-    
-    // Get recent prompts to avoid duplicates
-    const recentPrompts = await getRecentPrompts(env);
-    
-    // Generate image with enhanced, unique prompt
-    const { image: imageData, prompt: imagePrompt } = await generateImage(env, finalTheme, recentPrompts);
+    // Generate image
+    const imageData = await generateImage(env, selectedTheme);
     
     // Upload to R2
     const timestamp = Date.now();
-    const imagePath = `handy-beaver/posts/lilbeaver-${finalTheme}-${timestamp}.png`;
+    const imagePath = `handy-beaver/posts/lilbeaver-${selectedTheme}-${timestamp}.png`;
     await env.MEDIA.put(imagePath, imageData, {
       httpMetadata: { contentType: 'image/png' }
     });
@@ -292,14 +223,14 @@ async function createPost(env: Env, theme?: string): Promise<{ success: boolean;
     // Post to Instagram
     const igResult = await postToInstagram(env, imageUrl, caption);
     
-    // Track in KV with prompt for duplicate detection
+    // Track in KV
+    const history = JSON.parse(await env.STATE.get('post_history') || '[]');
     history.unshift({
       id: fbResult.post_id,
       instagramId: igResult?.id,
-      theme: finalTheme,
+      theme: selectedTheme,
       caption,
       imageUrl,
-      imagePrompt,
       timestamp: new Date().toISOString()
     });
     await env.STATE.put('post_history', JSON.stringify(history.slice(0, 50)));
