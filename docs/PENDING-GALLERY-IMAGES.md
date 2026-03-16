@@ -84,6 +84,20 @@ done
 - Mark best shots as featured
 - Keep file sizes reasonable (< 500KB per image ideally)
 
+## Social Media Use
+
+These images also serve as **reference material for AI-generated social content**:
+- Use real project photos as input for image generation models
+- Generate fresh variations for Facebook/Instagram posts
+- Maintains authentic style based on actual work
+- Better than stock photos for showcasing real craftsmanship
+
+Store originals in a separate folder for social generation:
+```bash
+# Copy best shots to social reference folder
+npx wrangler r2 object put handy-beaver-images/social-reference/[category]/[filename] --file="[path]"
+```
+
 ## Monitoring PC Status
 
 ```bash
