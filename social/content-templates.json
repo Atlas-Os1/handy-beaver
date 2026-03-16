@@ -1,0 +1,68 @@
+{
+  "page_id": "1040910635768535",
+  "instagram_id": "17841443253800030",
+  "brand_voice": "Lil Beaver - friendly Oklahoma handyman, says y'all, no corporate jargon, 1-2 emojis max",
+  "services": [
+    "trim carpentry",
+    "flooring installation", 
+    "deck repair & restoration",
+    "baseboard installation",
+    "custom built-ins",
+    "general maintenance"
+  ],
+  "service_areas": [
+    "Hochatown", "Broken Bow", "Idabel", "Valliant", "Hugo", "Antlers", "Paris TX"
+  ],
+  "caption_templates": [
+    {
+      "theme": "deck",
+      "captions": [
+        "Nothing beats a fresh deck stain job. 🦫 If your deck's looking rough, let's talk → handybeaver.co",
+        "Deck season is coming — make sure yours is ready. We do staining, sealing, and repairs across Southeast Oklahoma.",
+        "Just wrapped another deck restoration in {area}. That weathered gray? Gone. 🪵 handybeaver.co"
+      ],
+      "image_prompts": [
+        "Cute cartoon beaver mascot in hard hat and flannel shirt standing proudly on a freshly stained wooden deck overlooking scenic Oklahoma forest, sunset lighting, photorealistic background"
+      ]
+    },
+    {
+      "theme": "flooring",
+      "captions": [
+        "New floors can transform a whole room. We install hardwood, laminate, and vinyl plank. 🦫 handybeaver.co",
+        "That feeling when the last plank clicks into place... chef's kiss. Flooring installs across SE Oklahoma.",
+        "Thinking about new floors? We've got you covered — hardwood to vinyl plank. Message us or visit handybeaver.co"
+      ],
+      "image_prompts": [
+        "Cute cartoon beaver mascot in hard hat installing beautiful dark hardwood flooring in modern living room, professional renovation setting, photorealistic interior with cartoon character"
+      ]
+    },
+    {
+      "theme": "trim",
+      "captions": [
+        "Baseboards make the room. We do trim carpentry that actually looks right. 🦫 handybeaver.co",
+        "Custom trim work in {area} today. Those clean corners? That's the good stuff.",
+        "It's the details that matter — baseboards, crown molding, door trim. We handle it all."
+      ],
+      "image_prompts": [
+        "Cute cartoon beaver mascot in hard hat installing white baseboards along wall in elegant living room, measuring tape in hand, professional carpentry setting, photorealistic background"
+      ]
+    },
+    {
+      "theme": "general",
+      "captions": [
+        "Got a project you've been putting off? Let's knock it out. 🦫 handybeaver.co",
+        "No job too small, no attitude too big. That's how we do it at Handy Beaver Co.",
+        "Something broken? We can probably fix it. Serving {area} and surrounding areas."
+      ],
+      "image_prompts": [
+        "Cute cartoon beaver mascot in hard hat and flannel shirt holding tools, standing in front of beautiful Oklahoma home, friendly pose, photorealistic setting"
+      ]
+    }
+  ],
+  "hashtags": ["#HandyBeaverCo", "#SoutheastOklahoma", "#Handyman", "#HomeImprovement", "#BrokenBow", "#Hochatown", "#OklahomaHandyman"],
+  "posting_schedule": {
+    "frequency": "3x per week",
+    "times": ["10:00 CST", "14:00 CST", "18:00 CST"],
+    "days": ["Monday", "Wednesday", "Friday"]
+  }
+}

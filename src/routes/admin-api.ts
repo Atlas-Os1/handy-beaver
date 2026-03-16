@@ -1,10 +1,16 @@
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
+import { detectSchedulingConflicts } from './calendar-api';
 
 type Bindings = {
   DB: D1Database;
   ADMIN_API_KEY?: string;
   DISCORD_WEBHOOK_NOTIFICATIONS?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REFRESH_TOKEN?: string;
+  GOOGLE_ACCESS_TOKEN?: string;
+  GOOGLE_CALENDAR_ID?: string;
 };
 
 export const adminApi = new Hono<{ Bindings: Bindings }>();
@@ -158,6 +164,37 @@ adminApi.get('/customers/:id', async (c) => {
 
 // ============ QUOTES ============
 
+// List all quotes
+adminApi.get('/quotes', async (c) => {
+  const quotes = await c.env.DB.prepare(`
+    SELECT q.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone
+    FROM quotes q
+    JOIN customers c ON q.customer_id = c.id
+    ORDER BY q.created_at DESC
+    LIMIT 100
+  `).all();
+  
+  return c.json(quotes);
+});
+
+// Get single quote
+adminApi.get('/quotes/:id', async (c) => {
+  const quoteId = c.req.param('id');
+  
+  const quote = await c.env.DB.prepare(`
+    SELECT q.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone
+    FROM quotes q
+    JOIN customers c ON q.customer_id = c.id
+    WHERE q.id = ?
+  `).bind(quoteId).first();
+  
+  if (!quote) {
+    return c.json({ error: 'Quote not found' }, 404);
+  }
+  
+  return c.json(quote);
+});
+
 adminApi.post('/quotes', async (c) => {
   const data = await c.req.json();
   const now = Math.floor(Date.now() / 1000);
@@ -203,6 +240,54 @@ adminApi.post('/quotes', async (c) => {
   ).run();
   
   return c.json({ success: true, id: result.meta.last_row_id, total });
+});
+
+// Update quote
+adminApi.put('/quotes/:id', async (c) => {
+  const id = c.req.param('id');
+  const data = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
+  
+  const result = await c.env.DB.prepare(`
+    UPDATE quotes SET
+      customer_id = ?,
+      status = ?,
+      labor_type = ?,
+      labor_rate = ?,
+      estimated_hours = ?,
+      helper_needed = ?,
+      helper_type = ?,
+      helper_rate = ?,
+      materials_estimate = ?,
+      equipment_estimate = ?,
+      discount_percent = ?,
+      discount_reason = ?,
+      subtotal = ?,
+      total = ?,
+      notes = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).bind(
+    data.customer_id,
+    data.status,
+    data.labor_type,
+    data.labor_rate,
+    data.estimated_hours,
+    data.helper_needed ? 1 : 0,
+    data.helper_type,
+    data.helper_rate,
+    data.materials_estimate,
+    data.equipment_estimate,
+    data.discount_percent,
+    data.discount_reason,
+    data.subtotal,
+    data.total,
+    data.notes,
+    now,
+    id
+  ).run();
+  
+  return c.json({ success: true, id });
 });
 
 // Quote preview HTML (for viewing and printing)
@@ -677,10 +762,38 @@ adminApi.patch('/bookings/:id', async (c) => {
   const id = c.req.param('id');
   const data = await c.req.json();
   const now = Math.floor(Date.now() / 1000);
-  
+
+  const existing = await c.env.DB.prepare(
+    'SELECT * FROM bookings WHERE id = ?'
+  ).bind(id).first<any>();
+
+  if (!existing) {
+    return c.json({ error: 'Job not found' }, 404);
+  }
+
+  const nextStatus = data.status || existing.status;
+  const nextDate = data.scheduled_date || existing.scheduled_date;
+
+  if (nextStatus === 'confirmed') {
+    if (!nextDate) {
+      return c.json({ error: 'scheduled_date is required before confirming a job' }, 400);
+    }
+
+    if (!data.force_conflict_override) {
+      const conflicts = await detectSchedulingConflicts(c.env, Number(id), nextDate);
+      if (conflicts.length > 0) {
+        return c.json({
+          error: 'Scheduling conflict detected',
+          conflicts,
+          allow_override: true,
+        }, 409);
+      }
+    }
+  }
+
   const updates: string[] = [];
   const values: any[] = [];
-  
+
   if (data.status) {
     updates.push('status = ?');
     values.push(data.status);
@@ -693,15 +806,15 @@ adminApi.patch('/bookings/:id', async (c) => {
     updates.push('notes = ?');
     values.push(data.notes);
   }
-  
+
   updates.push('updated_at = ?');
   values.push(now);
   values.push(id);
-  
+
   await c.env.DB.prepare(
     `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`
   ).bind(...values).run();
-  
+
   return c.json({ success: true });
 });
 

@@ -66,6 +66,20 @@ const CAPTIONS: Record<Theme, string[]> = {
   ]
 };
 
+// Base prompts - will be enhanced by AI for variety
+const BASE_IMAGE_PROMPTS: Record<Theme, string> = {
+  deck: "Lil Beaver (cute cartoon beaver mascot) in yellow hard hat and red flannel shirt on a wooden deck",
+  flooring: "Lil Beaver (cute cartoon beaver mascot) in hard hat installing hardwood flooring in a home",
+  trim: "Lil Beaver (cute cartoon beaver mascot) in hard hat doing trim carpentry work",
+  general: "Lil Beaver (cute cartoon beaver mascot) in yellow hard hat and flannel shirt as a handyman"
+};
+
+// Variations to add visual diversity
+const SETTINGS = ['cozy cabin', 'modern farmhouse', 'rustic lodge', 'suburban home', 'lakeside retreat'];
+const TIMES = ['golden hour sunset', 'bright morning light', 'soft afternoon glow', 'warm indoor lighting'];
+const ACTIONS = ['working confidently', 'giving thumbs up', 'holding tools proudly', 'measuring carefully', 'standing back to admire work'];
+const OKLAHOMA_ELEMENTS = ['Ouachita Mountains in background', 'pine trees visible through window', 'Oklahoma red dirt visible', 'scenic forest backdrop', 'Broken Bow lake visible'];
+
 const IMAGE_PROMPTS: Record<Theme, string> = {
   deck: "Cute cartoon beaver mascot in yellow hard hat and red flannel shirt standing proudly on a freshly stained wooden deck overlooking scenic Oklahoma forest, professional home improvement, warm sunset lighting, photorealistic background with cartoon character",
   flooring: "Cute cartoon beaver mascot in yellow hard hat and flannel shirt installing beautiful dark hardwood flooring in modern living room, kneeling with tools, professional renovation, bright natural lighting, photorealistic interior",

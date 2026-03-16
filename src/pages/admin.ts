@@ -145,15 +145,189 @@ export const adminLayout = (title: string, content: string, activePage: string =
     .btn-secondary { background: #e5e7eb; color: #374151; }
     .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
     
+    /* Mobile Menu Toggle */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+    
+    /* Mobile Styles */
+    @media (max-width: 768px) {
+      .menu-toggle { display: block; }
+      .admin-nav { padding: 0.75rem 1rem; }
+      .admin-nav .brand { font-size: 1rem; }
+      .admin-nav .brand img { width: 32px; height: 32px; }
+      .admin-nav .user span { display: none; }
+      
+      .admin-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: fixed;
+        top: 60px;
+        left: -280px;
+        width: 280px;
+        height: calc(100vh - 60px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+        background: #1a1a2e;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+      }
+      .sidebar-overlay.open { display: block; }
+      
+      .main-content { 
+        padding: 1rem; 
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+      .stat { padding: 1rem; }
+      .stat .value { font-size: 1.5rem; }
+      
+      .card { padding: 1rem; }
+      .table { font-size: 0.85rem; }
+      .table th, .table td { padding: 0.5rem; }
+      
+      /* Stack grid layouts */
+      [style*="grid-template-columns: 2fr 1fr"] {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      /* Responsive buttons */
+      .btn { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+      
+      /* Scrollable tables */
+      .table-container { overflow-x: auto; }
+    }
+    
     /* Chat Widget */
     ${chatWidgetStyles}
+
+    @media (max-width: 1100px) {
+      .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Tablet/mobile: sidebar becomes slide-out menu */
+    @media (max-width: 900px) {
+      .admin-nav {
+        padding: 0.75rem 1rem;
+      }
+      .admin-nav .user span { display: none; }
+      .menu-toggle { display: block !important; }
+      
+      .admin-layout {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+      
+      /* Slide-out sidebar - hidden by default */
+      .sidebar {
+        position: fixed !important;
+        top: 60px;
+        left: -260px;
+        width: 250px !important;
+        height: calc(100vh - 60px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        background: #1a1a2e !important;
+        flex-direction: column !important;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex !important;
+        border-right: 0 !important;
+        border-bottom: 0 !important;
+        padding: 1rem 0 !important;
+        gap: 0 !important;
+      }
+      .sidebar.open { left: 0 !important; }
+      
+      .sidebar a {
+        border-left: 3px solid transparent !important;
+        border-bottom: 0 !important;
+        white-space: nowrap;
+        padding: 0.75rem 1rem !important;
+        display: flex !important;
+        color: #ccc !important;
+      }
+      .sidebar a:hover {
+        background: rgba(255,255,255,0.1) !important;
+      }
+      .sidebar a.active {
+        border-left-color: #8B4513 !important;
+        background: rgba(139, 69, 19, 0.2) !important;
+        color: white !important;
+      }
+      .sidebar .divider {
+        width: 100% !important;
+        height: 1px !important;
+        margin: 0.5rem 0 !important;
+        background: rgba(255,255,255,0.1) !important;
+      }
+      
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+      }
+      .sidebar-overlay.open { display: block; }
+      
+      .main-content { 
+        padding: 1rem; 
+        width: 100% !important;
+        margin-left: 0 !important;
+      }
+      .card { padding: 1rem; }
+      .table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .mobile-stack {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .stat .value { font-size: 1.6rem; }
+      .btn { width: 100%; text-align: center; }
+    }
   </style>
 </head>
 <body>
   <nav class="admin-nav">
-    <div class="brand">
-      <img src="/api/assets/beaver-avatar.png" alt="Beaver">
-      <span>${siteConfig.business.name} Admin</span>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+      <div class="brand">
+        <img src="/api/assets/beaver-avatar.png" alt="Beaver">
+        <span>${siteConfig.business.name} Admin</span>
+      </div>
     </div>
     <div class="user">
       <span>${admin?.name || admin?.github_username || 'Admin'}</span>
@@ -162,11 +336,13 @@ export const adminLayout = (title: string, content: string, activePage: string =
     </div>
   </nav>
   
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
   <div class="admin-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <a href="/admin" class="${activePage === 'dashboard' ? 'active' : ''}"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
       <a href="/admin/quotes" class="${activePage === 'quotes' ? 'active' : ''}"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon"> Quotes</a>
       <a href="/admin/jobs" class="${activePage === 'jobs' ? 'active' : ''}"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon"> Jobs</a>
+      <a href="/admin/calendar" class="${activePage === 'calendar' ? 'active' : ''}"><img src="/api/assets/icons/calendar.png" alt="" class="nav-icon"> Calendar</a>
       <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}"><img src="/api/assets/icons/customers.png" alt="" class="nav-icon"> Customers</a>
       <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
       <div class="divider"></div>
@@ -184,6 +360,23 @@ export const adminLayout = (title: string, content: string, activePage: string =
   </div>
   
   ${chatWidgetHTML('admin', {})}
+  
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+    // Close sidebar on navigation
+    document.querySelectorAll('.sidebar a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          toggleSidebar();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
 `;
@@ -193,17 +386,17 @@ export const adminDashboard = async (c: Context) => {
   const db = c.env.DB;
   
   // Fetch stats
-  const [customers, pendingQuotes, activeJobs, unpaidInvoices, recentBookings, recentMessages] = await Promise.all([
+  const [customers, pendingQuotes, activeJobs, unpaidInvoices, recentBookings, recentMessages, recentQuotes] = await Promise.all([
     db.prepare('SELECT COUNT(*) as count FROM customers').first<{count: number}>(),
-    db.prepare("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'").first<{count: number}>(),
+    db.prepare("SELECT COUNT(*) as count FROM quotes WHERE status IN ('draft', 'sent')").first<{count: number}>(),
     db.prepare("SELECT COUNT(*) as count FROM bookings WHERE status IN ('confirmed', 'in_progress')").first<{count: number}>(),
-    db.prepare("SELECT COUNT(*) as count FROM payments WHERE status = 'pending'").first<{count: number}>(),
+    db.prepare("SELECT COUNT(*) as count FROM invoices WHERE status IN ('sent', 'partial')").first<{count: number}>(),
     db.prepare(`
       SELECT b.*, c.name as customer_name, c.email as customer_email
       FROM bookings b
       JOIN customers c ON b.customer_id = c.id
       ORDER BY b.created_at DESC
-      LIMIT 10
+      LIMIT 5
     `).all(),
     db.prepare(`
       SELECT m.*, c.name as customer_name
@@ -211,6 +404,13 @@ export const adminDashboard = async (c: Context) => {
       JOIN customers c ON m.customer_id = c.id
       WHERE m.sender = 'customer'
       ORDER BY m.created_at DESC
+      LIMIT 5
+    `).all(),
+    db.prepare(`
+      SELECT q.*, c.name as customer_name, c.email as customer_email
+      FROM quotes q
+      JOIN customers c ON q.customer_id = c.id
+      ORDER BY q.created_at DESC
       LIMIT 5
     `).all(),
   ]);
@@ -239,7 +439,7 @@ export const adminDashboard = async (c: Context) => {
       </div>
     </div>
     
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <div class="mobile-stack" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
       <div class="card">
         <h2>Recent Quote Requests</h2>
         <table class="table">
@@ -291,6 +491,44 @@ export const adminDashboard = async (c: Context) => {
       </div>
     </div>
     
+    <!-- Recent Quotes Section -->
+    <div class="card" style="margin-top: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">Recent Quotes</h2>
+        <a href="/admin/quotes" class="btn btn-sm btn-secondary">View All</a>
+      </div>
+      ${(recentQuotes.results as any[])?.length > 0 ? `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Quote #</th>
+              <th>Customer</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(recentQuotes.results as any[]).map((q: any) => `
+              <tr>
+                <td>#${q.id}</td>
+                <td>
+                  <strong>${q.customer_name}</strong><br>
+                  <small style="color: #666;">${q.customer_email || 'No email'}</small>
+                </td>
+                <td><strong>$${(q.total || 0).toFixed(2)}</strong></td>
+                <td><span class="badge badge-${q.status}">${q.status}</span></td>
+                <td>
+                  <a href="/admin/quotes/${q.id}" class="btn btn-sm btn-secondary">View</a>
+                  <button onclick="copyShareLink(${q.id})" class="btn btn-sm btn-secondary" title="Copy shareable link">🔗</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : '<p style="color: #666; text-align: center;">No quotes yet. <a href="/admin/quotes/create">Create one</a></p>'}
+    </div>
+    
     <div class="card" style="margin-top: 1.5rem;">
       <h2>Quick Actions</h2>
       <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -300,9 +538,18 @@ export const adminDashboard = async (c: Context) => {
         <a href="/admin/jobs" class="btn btn-secondary">Manage Jobs</a>
       </div>
     </div>
+    
+    <script>
+      function copyShareLink(quoteId) {
+        const link = 'https://handybeaver.co/quote/' + quoteId;
+        navigator.clipboard.writeText(link).then(() => {
+          alert('Quote link copied! Share with customer: ' + link);
+        });
+      }
+    </script>
   `;
   
-  return c.html(adminLayout('Dashboard', content, admin));
+  return c.html(adminLayout('Dashboard', content, 'dashboard', admin));
 };
 
 export const adminCustomers = async (c: Context) => {
@@ -363,7 +610,7 @@ export const adminCustomers = async (c: Context) => {
     </div>
   `;
   
-  return c.html(adminLayout('Customers', content, admin));
+  return c.html(adminLayout('Customers', content, 'customers', admin));
 };
 
 export const adminQuotes = async (c: Context) => {
@@ -422,7 +669,7 @@ export const adminQuotes = async (c: Context) => {
     </div>
   `;
   
-  return c.html(adminLayout('Quotes', content, admin));
+  return c.html(adminLayout('Quotes', content, 'quotes', admin));
 };
 
 export const adminMessages = async (c: Context) => {
@@ -494,5 +741,5 @@ export const adminMessages = async (c: Context) => {
     </div>
   `;
   
-  return c.html(adminLayout('Messages', content, admin));
+  return c.html(adminLayout('Messages', content, 'messages', admin));
 };

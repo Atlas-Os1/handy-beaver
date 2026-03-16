@@ -21,11 +21,14 @@ import { portalVisualizerPage, portalGalleryPage } from './pages/portal-visualiz
 import { adminGalleryPage } from './pages/admin-gallery';
 import { adminMessagesPage } from './pages/admin-messages';
 import { adminCustomersPage, adminCustomerDetail } from './pages/admin-customers';
-import { adminQuotesPage, adminQuoteDetail } from './pages/admin-quotes';
+import { adminQuotesPage, adminQuoteDetail, adminQuoteEdit } from './pages/admin-quotes';
 import { adminJobsPage, adminJobDetail } from './pages/admin-jobs';
+import { adminCalendarPage } from './pages/admin-calendar';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
+import { socialPage } from './pages/social';
+import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -39,8 +42,9 @@ import { portfolioApi } from './routes/portfolio';
 import { paymentsApi } from './routes/payments';
 import { voiceApi } from './routes/voice-api';
 import { whatsappApi } from './routes/whatsapp-api';
+import { metaWebhook } from './routes/meta-webhook';
 import { chatApi } from './routes/chat-api';
-import { calendarApi } from './routes/calendar-api';
+import { calendarApi, backSyncGoogleCalendarToBookings } from './routes/calendar-api';
 import { paymentPage } from './pages/payment';
 import { visualizeApi } from './routes/visualize-api';
 import { squareInvoicesApi } from './routes/square-invoices';
@@ -58,7 +62,17 @@ type Bindings = {
   RESEND_API_KEY?: string;
   SQUARE_ACCESS_TOKEN?: string;
   GEMINI_API_KEY?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REFRESH_TOKEN?: string;
+  GOOGLE_ACCESS_TOKEN?: string;
+  GOOGLE_CALENDAR_ID?: string;
+  CALENDAR_WEBHOOK_SECRET?: string;
   SEND_EMAIL?: any; // Cloudflare Email binding
+  FACEBOOK_PAGE_ACCESS_TOKEN?: string;
+  FACEBOOK_PAGE_ID?: string;
+  ANTHROPIC_API_KEY?: string;
+  DISCORD_WEBHOOK_NOTIFICATIONS?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -80,6 +94,12 @@ app.get('/agent', agentPage);
 app.get('/chat', agentPage); // Alias
 app.get('/gallery', galleryPage);
 app.get('/gallery/:slug', galleryCategoryPage);
+app.get('/social', socialPage);
+
+// Shareable quote page (public - customer can view and accept)
+app.get('/quote/:id', quoteSharePage);
+app.post('/quote/:id/accept', acceptQuote);
+app.post('/quote/:id/add-email', addEmailToQuote);
 
 // Payment page (public - anyone with link can pay)
 app.get('/pay/:invoice_id', paymentPage);
@@ -100,8 +120,10 @@ app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/customers/:id', requireAdmin, adminCustomerDetail);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
 app.get('/admin/quotes/:id', requireAdmin, adminQuoteDetail);
+app.get('/admin/quotes/:id/edit', requireAdmin, adminQuoteEdit);
 app.get('/admin/jobs', requireAdmin, adminJobsPage);
 app.get('/admin/jobs/:id', requireAdmin, adminJobDetail);
+app.get('/admin/calendar', requireAdmin, adminCalendarPage);
 app.get('/admin/invoices', requireAdmin, adminInvoicesPage);
 app.get('/admin/invoices/:id', requireAdmin, adminInvoiceDetail);
 app.get('/admin/settings', requireAdmin, async (c) => {
@@ -313,11 +335,22 @@ api.route('/portfolio', portfolioApi);
 api.route('/payments', paymentsApi);
 api.route('/voice', voiceApi);
 api.route('/whatsapp', whatsappApi);
+api.route('/webhooks/meta', metaWebhook);
 api.route('/chat', chatApi);
 api.route('/calendar', calendarApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
+
+// Debug endpoint to check secrets
+api.get('/debug/secrets', async (c) => {
+  return c.json({
+    hasAnthropicKey: !!c.env.ANTHROPIC_API_KEY,
+    hasDiscordWebhook: !!c.env.DISCORD_WEBHOOK_NOTIFICATIONS,
+    hasFacebookToken: !!c.env.FACEBOOK_PAGE_ACCESS_TOKEN,
+    envKeys: Object.keys(c.env).filter(k => !k.includes('KEY') && !k.includes('TOKEN') && !k.includes('SECRET')),
+  });
+});
 
 // Serve assets from R2
 api.get('/assets/:key{.+}', async (c) => {
@@ -475,27 +508,79 @@ api.post('/images/visualize', async (c) => {
   return c.json({ success: true, visualization_url: '' });
 });
 
+// Social feed API - fetches latest posts from Facebook/Instagram
+api.get('/social/feed', async (c) => {
+  try {
+    const fbToken = c.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+    const fbPageId = c.env.FACEBOOK_PAGE_ID || '1040910635768535';
+    const igAccountId = '17841443253800030'; // lilhandybeaver
+    
+    const response: { instagram: any[]; facebook: any[] } = {
+      instagram: [],
+      facebook: []
+    };
+    
+    if (fbToken) {
+      // Fetch Facebook posts
+      try {
+        const fbRes = await fetch(
+          `https://graph.facebook.com/v18.0/${fbPageId}/posts?fields=message,created_time,full_picture,permalink_url&limit=5&access_token=${fbToken}`
+        );
+        const fbData = await fbRes.json() as any;
+        if (fbData.data) {
+          response.facebook = fbData.data;
+        }
+      } catch (e) {
+        console.error('FB fetch error:', e);
+      }
+      
+      // Fetch Instagram posts (via Facebook API)
+      try {
+        const igRes = await fetch(
+          `https://graph.facebook.com/v18.0/${igAccountId}/media?fields=id,caption,media_type,media_url,permalink,timestamp&limit=6&access_token=${fbToken}`
+        );
+        const igData = await igRes.json() as any;
+        if (igData.data) {
+          response.instagram = igData.data;
+        }
+      } catch (e) {
+        console.error('IG fetch error:', e);
+      }
+    }
+    
+    // Cache header for 5 minutes
+    c.header('Cache-Control', 'public, max-age=300');
+    return c.json(response);
+  } catch (error) {
+    console.error('Social feed error:', error);
+    return c.json({ instagram: [], facebook: [] });
+  }
+});
+
 // Mount API
 app.route('/api', api);
 
 // Scheduled handler for cron triggers (Facebook group scanning)
 async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-  console.log('Cron triggered: Facebook group scan');
-  
-  // Get stored session
+  console.log('Cron triggered: periodic background jobs');
+
+  // Keep existing placeholder Facebook session check
   const session = await env.DB.prepare(
     'SELECT cookies FROM facebook_sessions WHERE id = 1'
   ).first<{ cookies: string }>();
-  
+
   if (!session?.cookies) {
-    console.log('No Facebook session stored, skipping scan');
-    return;
+    console.log('No Facebook session stored, skipping Facebook scan');
   }
-  
-  // Run scan silently - no Discord notification needed
-  // The scan results will be logged and stored, but we don't spam Discord
-  // TODO: Add daily summary instead of per-scan notifications
-  
+
+  // Calendar back-sync: pull Google changes and apply to bookings
+  const calendarSync = await backSyncGoogleCalendarToBookings(env);
+  if (calendarSync.success) {
+    console.log(`Calendar sync complete. Synced ${calendarSync.synced} booking(s).`);
+  } else {
+    console.log(`Calendar sync failed: ${calendarSync.error}`);
+  }
+
   console.log('Cron completed');
 }
 

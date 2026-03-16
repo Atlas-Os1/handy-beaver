@@ -87,37 +87,50 @@ export const servicesPage = (c: Context) => {
     
     <!-- Pricing -->
     <section class="container" style="margin-top: 4rem;">
-      <h2 class="section-title">Transparent Pricing</h2>
-      <p class="section-subtitle">Simple rates, no surprises</p>
+      <h2 class="section-title">Handyman Rates</h2>
+      <p class="section-subtitle">Simple, Honest Pricing</p>
+      <p style="text-align: center; color: #666; margin-bottom: 2rem;">No hidden fees. You pay for materials directly.</p>
       
-      <div class="card" style="max-width: 800px; margin: 0 auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--primary);">
-              <th style="text-align: left; padding: 1rem; color: var(--primary);">Service</th>
-              <th style="text-align: center; padding: 1rem; color: var(--primary);">Half Day (≤6 hrs)</th>
-              <th style="text-align: center; padding: 1rem; color: var(--primary);">Full Day</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 1rem;">Skilled Labor</td>
-              <td style="padding: 1rem; text-align: center; font-weight: bold;">$${pricing.labor.underSixHours}</td>
-              <td style="padding: 1rem; text-align: center; font-weight: bold;">$${pricing.labor.overSixHours}/day</td>
-            </tr>
-            <tr>
-              <td style="padding: 1rem;">Helper/Assistant</td>
-              <td style="padding: 1rem; text-align: center; font-weight: bold;">$${pricing.helper.underSixHours}</td>
-              <td style="padding: 1rem; text-align: center; font-weight: bold;">$${pricing.helper.overSixHours}/day</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div style="margin-top: 1.5rem; padding: 1rem; background: #f9f9f9; border-radius: 8px;">
-          <p style="margin: 0; color: #666;">
-            <strong>Note:</strong> ${pricing.notes}
-          </p>
+      <div class="grid grid-2" style="max-width: 700px; margin: 0 auto; gap: 1.5rem;">
+        <!-- Labor Rates Card -->
+        <div class="card">
+          <h3 style="color: var(--primary); margin-bottom: 1rem; font-family: 'Playfair Display', serif;">Labor Rates</h3>
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1rem;">
+            <p style="color: #666; margin: 0;">Half Day (≤6 hours)</p>
+            <p style="font-size: 1.75rem; font-weight: bold; color: var(--secondary); margin: 0.5rem 0 0;">$${pricing.labor.underSixHours}</p>
+          </div>
+          <div>
+            <p style="color: #666; margin: 0;">Full Day (6+ hours)</p>
+            <p style="font-size: 1.75rem; font-weight: bold; color: var(--secondary); margin: 0.5rem 0 0;">$${pricing.labor.overSixHours}/day</p>
+          </div>
         </div>
+        
+        <!-- Helper Rates Card -->
+        <div class="card">
+          <h3 style="color: var(--primary); margin-bottom: 1rem; font-family: 'Playfair Display', serif;">Helper Rates</h3>
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1rem;">
+            <p style="color: #666; margin: 0;">Half Day (≤6 hours)</p>
+            <p style="font-size: 1.75rem; font-weight: bold; color: var(--secondary); margin: 0.5rem 0 0;">$${pricing.helper.underSixHours}</p>
+          </div>
+          <div>
+            <p style="color: #666; margin: 0;">Full Day (6+ hours)</p>
+            <p style="font-size: 1.75rem; font-weight: bold; color: var(--secondary); margin: 0.5rem 0 0;">$${pricing.helper.overSixHours}/day</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Large Projects Note -->
+      <div style="max-width: 700px; margin: 1.5rem auto 0;">
+        <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; text-align: center;">
+          <h4 style="margin: 0 0 0.5rem;">🔨 Large Projects ($2,000+)</h4>
+          <p style="margin: 0; opacity: 0.9;">Projects over $2,000 are quoted individually based on scope, timeline, and materials. <a href="/contact" style="color: white; text-decoration: underline;">Request a custom quote →</a></p>
+        </div>
+      </div>
+      
+      <div style="max-width: 700px; margin: 1rem auto 0; padding: 1rem; background: #f9f9f9; border-radius: 8px; text-align: center;">
+        <p style="margin: 0; color: #666; font-size: 0.9rem;">
+          <strong>Note:</strong> ${pricing.notes}
+        </p>
       </div>
     </section>
     
