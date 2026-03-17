@@ -28,14 +28,38 @@ interface R2PortfolioImage {
   r2Path: string;
 }
 
-// Helper to get gallery images by theme
-function getGalleryByTheme(theme: string): R2PortfolioImage[] {
+// Patterns that indicate "before" or work-in-progress images (not finished product)
+const BEFORE_IMAGE_PATTERNS = [
+  /pre-/i,
+  /before/i,
+  /-wip/i,
+  /in-progress/i,
+  /demo/i,
+  /tear-?out/i,
+];
+
+// Check if image is a "before" shot (not finished product)
+function isBeforeImage(img: R2PortfolioImage): boolean {
+  const filename = img.filename.toLowerCase();
+  const path = img.r2Path.toLowerCase();
+  return BEFORE_IMAGE_PATTERNS.some(pattern => pattern.test(filename) || pattern.test(path));
+}
+
+// Helper to get gallery images by theme (only finished product images)
+function getGalleryByTheme(theme: string, includeBeforeImages = false): R2PortfolioImage[] {
+  let images = r2PortfolioImages as R2PortfolioImage[];
+  
+  // Filter out "before" images unless explicitly requested
+  if (!includeBeforeImages) {
+    images = images.filter(img => !isBeforeImage(img));
+  }
+  
   if (!theme || theme === 'general-handyman' || theme === 'all') {
-    return r2PortfolioImages as R2PortfolioImage[];
+    return images;
   }
   
   const normalizedTheme = theme.toLowerCase().replace(/-/g, '');
-  const filtered = (r2PortfolioImages as R2PortfolioImage[]).filter(img => {
+  const filtered = images.filter(img => {
     const category = (img.category || '').toLowerCase();
     const folder = (img.folder || '').toLowerCase().replace(/[^a-z]/g, '');
     return category.includes(normalizedTheme) || 
@@ -45,7 +69,7 @@ function getGalleryByTheme(theme: string): R2PortfolioImage[] {
   });
   
   // Return filtered if found, otherwise all images
-  return filtered.length > 0 ? filtered : r2PortfolioImages as R2PortfolioImage[];
+  return filtered.length > 0 ? filtered : images;
 }
 
 // Convert R2 path to public URL

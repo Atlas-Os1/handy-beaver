@@ -2081,6 +2081,51 @@ export const r2PortfolioImages = [
       "office"
     ],
     "r2Path": "portfolio/office-space/476442999_941002781478804_2230906665638072988_n.jpg"
+  },
+  {
+    "filename": "hardwood-repair.png",
+    "folder": "Flooring",
+    "title": "Hardwood Floor Repair - Finished",
+    "description": "Beautiful hardwood floor repair - finished product by The Handy Beaver",
+    "category": "flooring",
+    "type": "gallery",
+    "tags": [
+      "Flooring",
+      "flooring",
+      "hardwood",
+      "finished"
+    ],
+    "r2Path": "portfolio/Flooring/hardwood-repair.png"
+  },
+  {
+    "filename": "rustic-kitchen-island.jpg",
+    "folder": "Rustic-Cabin",
+    "title": "Rustic Kitchen Island",
+    "description": "Custom rustic kitchen island - finished product by The Handy Beaver",
+    "category": "specialty-wood",
+    "type": "gallery",
+    "tags": [
+      "Rustic-Cabin",
+      "specialty-wood",
+      "kitchen",
+      "finished"
+    ],
+    "r2Path": "portfolio/Rustic-Cabin/rustic-kitchen-island.jpg"
+  },
+  {
+    "filename": "rustic-barnwood-floor.jpg",
+    "folder": "Rustic-Cabin",
+    "title": "Rustic Barnwood Flooring",
+    "description": "Beautiful barnwood flooring installation - finished product by The Handy Beaver",
+    "category": "flooring",
+    "type": "gallery",
+    "tags": [
+      "Rustic-Cabin",
+      "flooring",
+      "barnwood",
+      "finished"
+    ],
+    "r2Path": "portfolio/Rustic-Cabin/rustic-barnwood-floor.jpg"
   }
 ];
 
