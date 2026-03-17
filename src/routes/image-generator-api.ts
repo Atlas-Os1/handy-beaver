@@ -62,10 +62,11 @@ type Bindings = {
 
 export const imageGeneratorApi = new Hono<{ Bindings: Bindings }>();
 
-// Auth middleware (skip for preview endpoint - it's public)
+// Auth middleware (skip for preview and render endpoints - they're public)
 imageGeneratorApi.use('/*', async (c, next) => {
-  // Allow public preview endpoint
-  if (c.req.path.endsWith('/preview') || c.req.path.includes('/preview?')) {
+  // Allow public preview and render endpoints
+  if (c.req.path.endsWith('/preview') || c.req.path.includes('/preview?') ||
+      c.req.path.endsWith('/render') || c.req.path.includes('/render?')) {
     return next();
   }
   
