@@ -392,7 +392,7 @@ export async function adminBlogPage(c: Context) {
     </script>
   `;
   
-  return c.html(adminLayout(content, 'Blog Management'));
+  return c.html(adminLayout('Blog Management', content, 'blog'));
 }
 
 // Single blog post detail/edit page
