@@ -350,6 +350,8 @@ export const adminLayout = (title: string, content: string, activePage: string =
       <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
       <a href="/admin/gallery" class="${activePage === 'gallery' ? 'active' : ''}">🖼️ Gallery</a>
       <a href="/admin/blog" class="${activePage === 'blog' ? 'active' : ''}">📝 Blog</a>
+      <a href="/admin/fliers" class="${activePage === 'fliers' ? 'active' : ''}">🎨 Fliers</a>
+      <a href="/admin/competitors" class="${activePage === 'competitors' ? 'active' : ''}">🔍 Competitors</a>
       <div class="divider"></div>
       <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}"><img src="/api/assets/icons/settings.png" alt="" class="nav-icon"> Settings</a>
       <a href="/" target="_blank">🌐 View Site</a>
