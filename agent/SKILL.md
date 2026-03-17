@@ -521,6 +521,88 @@ curl -X POST "https://handybeaver.co/api/social/engagement/123" \
 
 ---
 
+## 🖼️ Marketing Image Generator
+
+Generate branded marketing images with text overlays using REAL portfolio photos. Perfect for social media posts with professional branding.
+
+### Generate Marketing Image (auto-pick photo + text)
+
+```bash
+curl -X POST "https://handybeaver.co/api/image/marketing-post" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "style": "tip",
+    "theme": "flooring",
+    "template": "promo-bottom"
+  }'
+```
+
+### Generate + Queue in One Step
+
+```bash
+curl -X POST "https://handybeaver.co/api/image/create-and-queue" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "style": "tip",
+    "theme": "deck-outdoor",
+    "template": "promo-bottom",
+    "caption": "Optional custom caption",
+    "platform": "facebook"
+  }'
+```
+
+### Preview an Image (public, no auth)
+
+```bash
+# HTML preview (renders in browser)
+https://handybeaver.co/api/image/preview?imageUrl=URL&headline=TEXT&subtext=TEXT&cta=TEXT&template=TEMPLATE
+
+# Render to PNG
+https://handybeaver.co/api/image/render?imageUrl=URL&headline=TEXT&subtext=TEXT&cta=TEXT
+```
+
+### Custom Image Generation
+
+```bash
+curl -X POST "https://handybeaver.co/api/image/generate" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "imageUrl": "https://handybeaver.co/api/assets/portfolio/Flooring/hardwood-repair.png",
+    "headline": "Flooring Done Right",
+    "subtext": "Professional installation",
+    "cta": "Get a Quote",
+    "template": "promo-bottom"
+  }'
+```
+
+### Templates
+
+| Template | Style |
+|----------|-------|
+| `promo-bottom` | Dark overlay at bottom, large text, CTA button |
+| `promo-center` | Branded overlay centered on image |
+| `minimal` | Subtle branding, no phone number |
+| `clean-light` | White/light overlay style |
+
+### Themes (for auto-picking photos)
+
+`flooring`, `deck-outdoor`, `bathroom-remodel`, `specialty-wood`, `trim-carpentry`, `general-handyman`, `all`
+
+### What Gets Generated
+
+- **Headline** - Auto-generated based on style/theme
+- **Subtext** - Supporting text
+- **CTA button** - "Get a Quote", "Call Now", etc.
+- **Phone number** - 📞 (580) 566-7017
+- **Logo** - 🦫 The Handy Beaver
+
+**Note:** Only uses finished product photos (filters out "before" shots automatically).
+
+---
+
 ## Channel Restrictions
 
 | Channel | Admin Tools | Customer Tools |
