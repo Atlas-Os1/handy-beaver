@@ -354,6 +354,10 @@ api.route('/lilbeaver', lilBeaverChatApi);
 import { contentQueueApi } from './routes/content-queue-api';
 api.route('/content', contentQueueApi);
 
+// Social content engine for Lil Beaver's creative posts
+import { socialContentApi } from './routes/social-content-api';
+api.route('/social', socialContentApi);
+
 // Debug endpoint to check secrets
 api.get('/debug/secrets', async (c) => {
   return c.json({

@@ -405,6 +405,122 @@ curl -X POST "https://handybeaver.co/api/visualize/generate" \
 
 ---
 
+## 🎨 Social Content Engine (NEW!)
+
+**Be creative!** Use real photos from the gallery, try different post styles, and learn what works.
+
+### Get Content Ideas
+
+```bash
+curl -X GET "https://handybeaver.co/api/social/idea" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+Returns a creative idea with:
+- `style` - tip, before-after, behind-scenes, question, local-pride, etc.
+- `theme` - bathroom-remodel, flooring, deck-outdoor, etc.
+- `tone` - casual, professional, humorous, educational
+- `prompt` - AI prompt to generate caption
+- `galleryImage` - Suggested real photo from portfolio
+- `hashtags` - Recommended hashtags
+
+### Gallery Integration
+
+**Get photos by theme:**
+```bash
+curl -X GET "https://handybeaver.co/api/social/gallery/bathroom-remodel" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+# Themes: bathroom-remodel, deck-outdoor, flooring, specialty-wood, trim-carpentry, general-handyman, all
+```
+
+**Get before/after pairs:**
+```bash
+curl -X GET "https://handybeaver.co/api/social/transformations" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+**Get featured/hero shots:**
+```bash
+curl -X GET "https://handybeaver.co/api/social/featured" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+**Random inspiration:**
+```bash
+curl -X GET "https://handybeaver.co/api/social/inspire" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+### Generate Captions
+
+```bash
+curl -X POST "https://handybeaver.co/api/social/generate-caption" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Write a casual tip about maintaining hardwood floors",
+    "style": "tip"
+  }'
+```
+
+### Queue Posts
+
+```bash
+curl -X POST "https://handybeaver.co/api/social/queue" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "caption": "That moment when the floor matches perfectly 👌",
+    "imageUrl": "/api/assets/portfolio/Flooring/hardwood-repair.png",
+    "style": "before-after",
+    "theme": "flooring",
+    "hashtags": ["#HandyBeaver", "#Flooring", "#Oklahoma"],
+    "platform": "both"
+  }'
+```
+
+### Track Performance
+
+```bash
+# Get stats and top performers
+curl -X GET "https://handybeaver.co/api/social/stats" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+
+# Get recommendations (what's working, what to try)
+curl -X GET "https://handybeaver.co/api/social/recommendations" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+
+# Record engagement after posting
+curl -X POST "https://handybeaver.co/api/social/engagement/123" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"likes": 45, "comments": 12, "shares": 3}'
+```
+
+### Post Styles (rotate through these!)
+
+| Style | Description | Best For |
+|-------|-------------|----------|
+| `tip` | Quick DIY/woodworking tip | Morning posts |
+| `before-after` | Transformation showcase | Afternoon |
+| `behind-scenes` | Work in progress shots | Morning |
+| `seasonal` | Weather/timing relevant | Seasonal |
+| `question` | Engagement bait (good kind) | Evening |
+| `local-pride` | Oklahoma/community love | Evening |
+| `tool-spotlight` | Favorite tools | Morning |
+| `mistake-lesson` | Common mistakes to avoid | Afternoon |
+| `raw-moment` | Authentic, unpolished | Anytime |
+| `material-deep-dive` | Educate about materials | Afternoon |
+
+**Creative Philosophy:**
+- Use REAL photos from the gallery (70%+ of posts)
+- Rotate through different styles - don't repeat!
+- Track what gets engagement and do more of that
+- Sound human, not like a marketing bot
+- Experiment constantly - try new things!
+
+---
+
 ## Channel Restrictions
 
 | Channel | Admin Tools | Customer Tools |
