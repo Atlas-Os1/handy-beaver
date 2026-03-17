@@ -133,12 +133,12 @@ Key tables:
 
 ## Agent Architecture
 
-This repo contains TWO agents with different access levels:
+This repo contains ONE agent (Lil Beaver) with TWO access modes based on route:
 
-| Agent | Channel | Access | Rules |
-|-------|---------|--------|-------|
-| Lil Beaver Admin | Discord | Full CRUD | `agent/ADMIN-RULES.md` |
-| Lil Beaver Customer | Website/Phone | Read + Lead capture | `agent/CUSTOMER-RULES.md` |
+| Mode | Routes | Access | Rules |
+|------|--------|--------|-------|
+| Admin | Discord, `handybeaver.co/admin` | Full CRUD | `agent/ADMIN-RULES.md` |
+| Customer | `handybeaver.co/` chat, Phone, Messenger | Read + Lead capture | `agent/CUSTOMER-RULES.md` |
 
 When modifying agent behavior:
 - Check which mode you're editing
