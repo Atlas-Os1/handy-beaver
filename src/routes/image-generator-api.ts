@@ -6,6 +6,7 @@
  */
 
 import { Hono } from 'hono';
+import puppeteer from '@cloudflare/puppeteer';
 import { 
   generateOverlaySvg, 
   svgToDataUrl, 
@@ -296,6 +297,58 @@ imageGeneratorApi.get('/preview', async (c) => {
       'Cache-Control': 'public, max-age=3600',
     },
   });
+});
+
+/**
+ * Render preview as PNG using Browser Rendering API
+ * 
+ * GET /api/image/render?imageUrl=...&headline=...&template=...
+ */
+imageGeneratorApi.get('/render', async (c) => {
+  const imageUrl = c.req.query('imageUrl');
+  const headline = c.req.query('headline');
+  const subtext = c.req.query('subtext');
+  const cta = c.req.query('cta');
+  const template = c.req.query('template') || 'promo-bottom';
+
+  if (!imageUrl || !headline) {
+    return c.text('Missing imageUrl or headline', 400);
+  }
+
+  // Build preview URL
+  const previewUrl = `https://handybeaver.co/api/image/preview?${new URLSearchParams({
+    imageUrl,
+    headline,
+    ...(subtext && { subtext }),
+    ...(cta && { cta }),
+    template,
+  }).toString()}`;
+
+  try {
+    // Use Cloudflare Browser Rendering to screenshot the HTML preview
+    const browser = await puppeteer.launch(c.env.BROWSER);
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 630 });
+    await page.goto(previewUrl, { waitUntil: 'networkidle0' });
+    
+    // Wait for images to load
+    await page.waitForSelector('.background', { timeout: 5000 }).catch(() => {});
+    
+    const screenshot = await page.screenshot({ type: 'png' }) as Buffer;
+    await browser.close();
+
+    return new Response(screenshot, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  } catch (err) {
+    return c.json({ 
+      error: 'Failed to render image', 
+      details: err instanceof Error ? err.message : 'Unknown error' 
+    }, 500);
+  }
 });
 
 /**
