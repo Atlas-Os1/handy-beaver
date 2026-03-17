@@ -358,6 +358,10 @@ api.route('/content', contentQueueApi);
 import { socialContentApi } from './routes/social-content-api';
 api.route('/social', socialContentApi);
 
+// Image generator with text overlays for marketing posts
+import { imageGeneratorApi } from './routes/image-generator-api';
+api.route('/image', imageGeneratorApi);
+
 // Debug endpoint to check secrets
 api.get('/debug/secrets', async (c) => {
   return c.json({
