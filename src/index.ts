@@ -808,6 +808,84 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
   const elevenLabsSync = await syncElevenLabsConversations(env);
   console.log(`ElevenLabs sync: ${elevenLabsSync.synced} conversation(s) synced`);
 
+  // Publish ready posts from content queue
+  const now = Math.floor(Date.now() / 1000);
+  const readyPosts = await env.DB.prepare(`
+    SELECT * FROM content_queue 
+    WHERE status = 'ready' 
+    AND scheduled_for <= ?
+    ORDER BY scheduled_for ASC
+    LIMIT 3
+  `).bind(now).all<any>();
+  
+  if (readyPosts.results && readyPosts.results.length > 0) {
+    console.log(`Found ${readyPosts.results.length} posts ready to publish`);
+    
+    for (const post of readyPosts.results) {
+      try {
+        // Post to Facebook if we have a token
+        const fbToken = env.FACEBOOK_PAGE_ACCESS_TOKEN;
+        const fbPageId = env.FACEBOOK_PAGE_ID || '1040910635768535';
+        
+        if (fbToken && (post.platform === 'facebook' || post.platform === 'both')) {
+          const fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/feed`;
+          const fbPayload: any = { message: post.caption, access_token: fbToken };
+          
+          // Add image if available
+          if (post.image_url) {
+            // If it's a local URL, convert to full URL
+            const imageUrl = post.image_url.startsWith('/') 
+              ? `https://handybeaver.co${post.image_url}` 
+              : post.image_url;
+            fbPayload.link = imageUrl;
+          }
+          
+          const fbRes = await fetch(fbUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fbPayload)
+          });
+          
+          const fbData = await fbRes.json() as any;
+          
+          if (fbData.id) {
+            await env.DB.prepare(`
+              UPDATE content_queue 
+              SET status = 'published', 
+                  fb_post_id = ?, 
+                  published_at = ?,
+                  updated_at = ?
+              WHERE id = ?
+            `).bind(fbData.id, now, now, post.id).run();
+            console.log(`Published post ${post.id} to Facebook: ${fbData.id}`);
+          } else {
+            await env.DB.prepare(`
+              UPDATE content_queue 
+              SET status = 'failed', 
+                  error_message = ?,
+                  updated_at = ?
+              WHERE id = ?
+            `).bind(JSON.stringify(fbData.error || fbData), now, post.id).run();
+            console.error(`Failed to publish post ${post.id}:`, fbData);
+          }
+        } else if (!fbToken) {
+          console.log('No FACEBOOK_PAGE_ACCESS_TOKEN set, skipping Facebook publish');
+        }
+      } catch (err) {
+        console.error(`Error publishing post ${post.id}:`, err);
+        await env.DB.prepare(`
+          UPDATE content_queue 
+          SET status = 'failed', 
+              error_message = ?,
+              updated_at = ?
+          WHERE id = ?
+        `).bind(String(err), now, post.id).run();
+      }
+    }
+  } else {
+    console.log('No posts ready to publish');
+  }
+
   console.log('Cron completed');
 }
 
