@@ -2,6 +2,19 @@ import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { siteConfig } from '../../config/site.config';
 import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
+import { r2PortfolioImages } from '../../config/r2-portfolio';
+
+// Combined portfolio: original + R2 images (160+ total)
+const fullPortfolio = [
+  ...portfolioManifest,
+  ...r2PortfolioImages.map(img => ({
+    ...img,
+    type: 'gallery' as const,
+  }))
+];
+
+// Get R2 image URL
+const getR2ImageUrl = (img: typeof r2PortfolioImages[0]) => `/api/assets/${img.r2Path}`;
 
 const { business } = siteConfig;
 
@@ -69,7 +82,8 @@ export const galleryPage = (c: Context) => {
       
       <div class="grid grid-3">
         ${categories.map(cat => {
-          const catImages = portfolioManifest.filter(img => img.category === cat.slug);
+          // Count from both original manifest AND R2 images
+          const catImages = fullPortfolio.filter(img => img.category === cat.slug);
           return `
             <a href="/gallery/${cat.slug}" class="category-card card" style="text-decoration: none; display: block;">
               <div style="font-size: 3rem; margin-bottom: 1rem; text-align: center;">${cat.icon}</div>
@@ -320,7 +334,8 @@ export const galleryCategoryPage = async (c: Context) => {
     `), 404);
   }
   
-  const images = portfolioManifest.filter(img => img.category === slug);
+  // Include both original manifest AND R2 images
+  const images = fullPortfolio.filter(img => img.category === slug);
   
   const content = `
     <section style="padding: 4rem 2rem; text-align: center; background: linear-gradient(180deg, rgba(139, 69, 19, 0.3) 0%, transparent 100%);">
