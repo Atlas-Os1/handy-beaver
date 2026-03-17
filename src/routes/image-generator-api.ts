@@ -155,7 +155,7 @@ imageGeneratorApi.post('/generate', async (c) => {
 });
 
 /**
- * Preview a generated image (renders SVG)
+ * Preview a generated image (renders as HTML for proper image loading)
  * 
  * GET /api/image/preview?imageUrl=...&headline=...&template=...
  */
@@ -165,6 +165,7 @@ imageGeneratorApi.get('/preview', async (c) => {
   const subtext = c.req.query('subtext');
   const cta = c.req.query('cta');
   const template = c.req.query('template') || 'promo-bottom';
+  const format = c.req.query('format') || 'html'; // html or svg
 
   if (!imageUrl || !headline) {
     return c.text('Missing imageUrl or headline', 400);
@@ -172,18 +173,126 @@ imageGeneratorApi.get('/preview', async (c) => {
 
   const templateOptions = POST_TEMPLATES[template as keyof typeof POST_TEMPLATES] || POST_TEMPLATES['promo-bottom'];
   
-  const options: TextOverlayOptions = {
-    headline,
-    subtext,
-    cta,
-    ...templateOptions,
-  };
+  // For SVG format, return raw SVG
+  if (format === 'svg') {
+    const options: TextOverlayOptions = {
+      headline,
+      subtext,
+      cta,
+      ...templateOptions,
+    };
+    const svg = generateOverlaySvg(imageUrl, options);
+    return new Response(svg, {
+      headers: {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  }
 
-  const svg = generateOverlaySvg(imageUrl, options);
+  // HTML format - renders properly in browsers
+  const theme = templateOptions.theme || 'dark';
+  const position = templateOptions.position || 'bottom';
   
-  return new Response(svg, {
+  const colors = {
+    dark: { bg: 'rgba(0,0,0,0.75)', text: '#FFFFFF', accent: '#FFD700', ctaText: '#2C1810' },
+    light: { bg: 'rgba(255,255,255,0.9)', text: '#2C1810', accent: '#8B4513', ctaText: '#FFFFFF' },
+    branded: { bg: 'rgba(44,24,16,0.9)', text: '#FFF8DC', accent: '#FFD700', ctaText: '#2C1810' },
+  };
+  const color = colors[theme as keyof typeof colors] || colors.dark;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200, height=630">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      width: 1200px; 
+      height: 630px; 
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .container {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+    }
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .overlay {
+      position: absolute;
+      ${position === 'bottom' ? 'bottom: 0;' : position === 'top' ? 'top: 0;' : 'top: 50%; transform: translateY(-50%);'}
+      left: 0;
+      right: 0;
+      background: ${color.bg};
+      padding: 40px;
+      text-align: center;
+    }
+    .logo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .headline {
+      font-size: 56px;
+      font-weight: bold;
+      color: ${color.text};
+      margin-bottom: 16px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .subtext {
+      font-size: 28px;
+      color: ${color.text};
+      opacity: 0.9;
+      margin-bottom: 24px;
+    }
+    .cta {
+      display: inline-block;
+      background: ${color.accent};
+      color: ${color.ctaText};
+      padding: 16px 40px;
+      border-radius: 8px;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+    .phone {
+      font-size: 22px;
+      color: ${color.accent};
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="background" src="${imageUrl}" alt="Background">
+    <div class="logo">🦫 The Handy Beaver</div>
+    <div class="overlay">
+      <div class="headline">${headline}</div>
+      ${subtext ? `<div class="subtext">${subtext}</div>` : ''}
+      ${cta ? `<div class="cta">${cta}</div>` : ''}
+      <div class="phone">📞 (580) 566-7017</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  return new Response(html, {
     headers: {
-      'Content-Type': 'image/svg+xml',
+      'Content-Type': 'text/html',
       'Cache-Control': 'public, max-age=3600',
     },
   });
