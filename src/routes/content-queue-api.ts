@@ -320,3 +320,84 @@ contentQueueApi.post('/publish', async (c) => {
 });
 
 export default contentQueueApi;
+
+/**
+ * POST /api/content-queue/publish-now
+ * Manually trigger publishing of ready posts (for testing)
+ */
+contentQueueApi.post('/publish-now', async (c) => {
+  const env = c.env as any;
+  const now = Math.floor(Date.now() / 1000);
+  
+  const readyPosts = await env.DB.prepare(`
+    SELECT * FROM content_queue 
+    WHERE status = 'ready' 
+    AND scheduled_for <= ?
+    ORDER BY scheduled_for ASC
+    LIMIT 3
+  `).bind(now).all<any>();
+  
+  if (!readyPosts.results || readyPosts.results.length === 0) {
+    return c.json({ message: 'No posts ready to publish', count: 0 });
+  }
+  
+  const results = [];
+  
+  for (const post of readyPosts.results) {
+    try {
+      const fbToken = env.FACEBOOK_PAGE_ACCESS_TOKEN;
+      const fbPageId = env.FACEBOOK_PAGE_ID || '1040910635768535';
+      
+      if (!fbToken) {
+        results.push({ id: post.id, status: 'skipped', reason: 'No FB token' });
+        continue;
+      }
+      
+      if (post.platform !== 'facebook' && post.platform !== 'both') {
+        results.push({ id: post.id, status: 'skipped', reason: `Platform is ${post.platform}` });
+        continue;
+      }
+      
+      const fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/feed`;
+      const fbPayload: any = { message: post.caption, access_token: fbToken };
+      
+      // Add image if available
+      if (post.image_url) {
+        const imageUrl = post.image_url.startsWith('/') 
+          ? `https://handybeaver.co${post.image_url}` 
+          : post.image_url;
+        fbPayload.link = imageUrl;
+      }
+      
+      const fbRes = await fetch(fbUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fbPayload)
+      });
+      
+      const fbData = await fbRes.json() as any;
+      
+      if (fbData.id) {
+        await env.DB.prepare(`
+          UPDATE content_queue 
+          SET status = 'published', fb_post_id = ?, published_at = ?, updated_at = ?
+          WHERE id = ?
+        `).bind(fbData.id, now, now, post.id).run();
+        
+        results.push({ id: post.id, status: 'published', fb_post_id: fbData.id });
+      } else {
+        await env.DB.prepare(`
+          UPDATE content_queue 
+          SET status = 'failed', error_message = ?, updated_at = ?
+          WHERE id = ?
+        `).bind(JSON.stringify(fbData.error || fbData), now, post.id).run();
+        
+        results.push({ id: post.id, status: 'failed', error: fbData });
+      }
+    } catch (err) {
+      results.push({ id: post.id, status: 'error', error: String(err) });
+    }
+  }
+  
+  return c.json({ message: 'Publishing complete', results });
+});
