@@ -54,7 +54,8 @@ function parseGoogleEventMeta(notes?: string | null): GoogleEventMeta {
 }
 
 async function getAccessToken(env: Bindings): Promise<string | null> {
-  if (env.GOOGLE_ACCESS_TOKEN) return env.GOOGLE_ACCESS_TOKEN;
+  // Always use refresh flow - static GOOGLE_ACCESS_TOKEN expires after 1hr
+  // if (env.GOOGLE_ACCESS_TOKEN) return env.GOOGLE_ACCESS_TOKEN;
   if (!env.GOOGLE_REFRESH_TOKEN || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return null;
 
   try {
