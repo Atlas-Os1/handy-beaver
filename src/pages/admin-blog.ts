@@ -165,17 +165,27 @@ export async function adminBlogPage(c: Context) {
             <p style="color: #666; font-size: 0.85em; margin-top: 8px;">Supports Markdown formatting</p>
           </div>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-            <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600;">Featured Image URL</label>
-              <input type="text" id="post-image" name="featured_image" placeholder="https://..."
-                     style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Featured Image</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <button type="button" onclick="openGalleryPicker()" class="btn btn-secondary" style="flex: 1;">
+                🖼️ Pick from Gallery
+              </button>
+              <button type="button" onclick="openVisualizerModal()" class="btn btn-secondary" style="flex: 1;">
+                ✨ Generate with AI
+              </button>
             </div>
-            <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600;">Tags</label>
-              <input type="text" id="post-tags" name="tags" placeholder="flooring, tips, maintenance"
-                     style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+            <input type="text" id="post-image" name="featured_image" placeholder="Or paste image URL..."
+                   style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+            <div id="image-preview" style="margin-top: 10px; display: none;">
+              <img id="preview-img" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
             </div>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Tags</label>
+            <input type="text" id="post-tags" name="tags" placeholder="flooring, tips, maintenance"
+                   style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -197,6 +207,73 @@ export async function adminBlogPage(c: Context) {
             <button type="submit" name="action" value="publish" class="btn">Publish</button>
           </div>
         </form>
+      </div>
+    </div>
+    
+    <!-- Gallery Picker Modal -->
+    <div id="gallery-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1001; overflow: auto;">
+      <div style="background: white; max-width: 900px; margin: 40px auto; border-radius: 12px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>🖼️ Select from Gallery</h2>
+          <button onclick="closeGalleryModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+        </div>
+        
+        <div id="gallery-categories" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;"></div>
+        
+        <div id="gallery-images" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto;">
+          <p style="color: #666; grid-column: 1/-1; text-align: center;">Loading gallery...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- AI Visualizer Modal -->
+    <div id="visualizer-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1001; overflow: auto;">
+      <div style="background: white; max-width: 700px; margin: 40px auto; border-radius: 12px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>✨ AI Image Generator</h2>
+          <button onclick="closeVisualizerModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+        </div>
+        
+        <form id="visualizer-form">
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Describe the image you want</label>
+            <textarea id="viz-prompt" rows="3" placeholder="e.g., A beautiful hardwood floor installation in a modern cabin living room, warm lighting, professional finish"
+                      style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600;">Style</label>
+              <select id="viz-style" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                <option value="photo">Photorealistic</option>
+                <option value="professional">Professional/Stock</option>
+                <option value="warm">Warm & Cozy</option>
+                <option value="modern">Modern & Clean</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600;">Subject</label>
+              <select id="viz-subject" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                <option value="interior">Interior/Room</option>
+                <option value="exterior">Exterior/Outdoor</option>
+                <option value="detail">Detail/Close-up</option>
+                <option value="before-after">Before/After</option>
+              </select>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn" style="width: 100%;">🎨 Generate Image</button>
+        </form>
+        
+        <div id="viz-status" style="margin-top: 15px;"></div>
+        
+        <div id="viz-result" style="display: none; margin-top: 20px; text-align: center;">
+          <img id="viz-result-img" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="useGeneratedImage()" class="btn">Use This Image</button>
+            <button onclick="regenerateImage()" class="btn btn-secondary">Try Again</button>
+          </div>
+        </div>
       </div>
     </div>
     
@@ -389,6 +466,184 @@ export async function adminBlogPage(c: Context) {
       function getApiKey() {
         return document.cookie.split('; ').find(c => c.startsWith('admin_token='))?.split('=')[1] || '';
       }
+      
+      // ============ GALLERY PICKER ============
+      let galleryImages = [];
+      
+      async function openGalleryPicker() {
+        document.getElementById('gallery-modal').style.display = 'block';
+        await loadGalleryImages();
+      }
+      
+      function closeGalleryModal() {
+        document.getElementById('gallery-modal').style.display = 'none';
+      }
+      
+      async function loadGalleryImages(categoryId = null) {
+        const imagesEl = document.getElementById('gallery-images');
+        const categoriesEl = document.getElementById('gallery-categories');
+        
+        try {
+          // Load categories
+          const catRes = await fetch('/api/portfolio/categories');
+          const categories = await catRes.json();
+          
+          categoriesEl.innerHTML = \`
+            <button onclick="loadGalleryImages()" class="btn btn-secondary \${!categoryId ? 'active' : ''}" style="padding: 6px 12px;">All</button>
+            \${categories.map(cat => \`
+              <button onclick="loadGalleryImages(\${cat.id})" class="btn btn-secondary \${categoryId === cat.id ? 'active' : ''}" style="padding: 6px 12px;">\${cat.name}</button>
+            \`).join('')}
+          \`;
+          
+          // Load images
+          const imgRes = await fetch('/api/portfolio/manifest');
+          const manifest = await imgRes.json();
+          galleryImages = manifest.images || [];
+          
+          // Filter by category if specified
+          let filtered = galleryImages;
+          if (categoryId) {
+            filtered = galleryImages.filter(img => img.category_id === categoryId);
+          }
+          
+          if (filtered.length === 0) {
+            imagesEl.innerHTML = '<p style="color: #666; grid-column: 1/-1; text-align: center;">No images found</p>';
+            return;
+          }
+          
+          imagesEl.innerHTML = filtered.map(img => \`
+            <div onclick="selectGalleryImage('\${img.url}')" style="cursor: pointer; border-radius: 8px; overflow: hidden; border: 2px solid transparent; transition: all 0.2s;" 
+                 onmouseover="this.style.borderColor='#8B4513'" onmouseout="this.style.borderColor='transparent'">
+              <img src="\${img.url}" alt="\${img.title || ''}" style="width: 100%; height: 120px; object-fit: cover;">
+              <p style="padding: 5px; font-size: 0.8em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">\${img.title || 'Untitled'}</p>
+            </div>
+          \`).join('');
+        } catch (err) {
+          imagesEl.innerHTML = '<p style="color: #ff6b6b; grid-column: 1/-1; text-align: center;">Error loading gallery</p>';
+        }
+      }
+      
+      function selectGalleryImage(url) {
+        document.getElementById('post-image').value = url;
+        showImagePreview(url);
+        closeGalleryModal();
+      }
+      
+      // ============ AI VISUALIZER ============
+      let lastGeneratedImageUrl = '';
+      
+      function openVisualizerModal() {
+        document.getElementById('visualizer-modal').style.display = 'block';
+        document.getElementById('viz-result').style.display = 'none';
+        document.getElementById('viz-status').innerHTML = '';
+      }
+      
+      function closeVisualizerModal() {
+        document.getElementById('visualizer-modal').style.display = 'none';
+      }
+      
+      document.getElementById('visualizer-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await generateVisualizerImage();
+      });
+      
+      async function generateVisualizerImage() {
+        const statusEl = document.getElementById('viz-status');
+        const resultEl = document.getElementById('viz-result');
+        
+        const prompt = document.getElementById('viz-prompt').value;
+        const style = document.getElementById('viz-style').value;
+        const subject = document.getElementById('viz-subject').value;
+        
+        if (!prompt.trim()) {
+          statusEl.innerHTML = '<p style="color: #ff6b6b;">Please describe the image you want</p>';
+          return;
+        }
+        
+        statusEl.innerHTML = '<p style="color: #8B4513;">🎨 Generating image... This may take 15-30 seconds...</p>';
+        resultEl.style.display = 'none';
+        
+        // Build enhanced prompt
+        const stylePrompts = {
+          'photo': 'photorealistic, high quality photograph',
+          'professional': 'professional stock photography, commercial quality',
+          'warm': 'warm cozy atmosphere, soft lighting, inviting',
+          'modern': 'modern clean aesthetic, minimalist, contemporary'
+        };
+        
+        const subjectPrompts = {
+          'interior': 'interior room shot, home improvement',
+          'exterior': 'exterior outdoor shot, curb appeal',
+          'detail': 'close-up detail shot, craftsmanship focus',
+          'before-after': 'renovation transformation, dramatic improvement'
+        };
+        
+        const enhancedPrompt = \`\${prompt}. \${stylePrompts[style] || ''}. \${subjectPrompts[subject] || ''}. Southeast Oklahoma cabin style, professional handyman work.\`;
+        
+        try {
+          const res = await fetch('/api/visualize/generate', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + getApiKey(),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              prompt: enhancedPrompt,
+              admin: true // Skip customer_id requirement
+            })
+          });
+          
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Generation failed');
+          }
+          
+          const result = await res.json();
+          lastGeneratedImageUrl = result.result_url || result.url;
+          
+          statusEl.innerHTML = '<p style="color: #90EE90;">✅ Image generated!</p>';
+          document.getElementById('viz-result-img').src = lastGeneratedImageUrl;
+          resultEl.style.display = 'block';
+        } catch (err) {
+          statusEl.innerHTML = \`<p style="color: #ff6b6b;">❌ Error: \${err.message}</p>\`;
+        }
+      }
+      
+      function useGeneratedImage() {
+        if (lastGeneratedImageUrl) {
+          document.getElementById('post-image').value = lastGeneratedImageUrl;
+          showImagePreview(lastGeneratedImageUrl);
+          closeVisualizerModal();
+        }
+      }
+      
+      function regenerateImage() {
+        document.getElementById('viz-result').style.display = 'none';
+        generateVisualizerImage();
+      }
+      
+      // ============ IMAGE PREVIEW ============
+      function showImagePreview(url) {
+        const previewEl = document.getElementById('image-preview');
+        const imgEl = document.getElementById('preview-img');
+        if (url) {
+          imgEl.src = url;
+          previewEl.style.display = 'block';
+        } else {
+          previewEl.style.display = 'none';
+        }
+      }
+      
+      // Update preview when URL changes
+      document.getElementById('post-image').addEventListener('change', function() {
+        showImagePreview(this.value);
+      });
+      
+      document.getElementById('post-image').addEventListener('input', function() {
+        if (this.value && this.value.startsWith('http')) {
+          showImagePreview(this.value);
+        }
+      });
     </script>
   `;
   
