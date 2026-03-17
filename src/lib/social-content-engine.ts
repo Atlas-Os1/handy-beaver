@@ -9,6 +9,7 @@
  */
 
 import { portfolioManifest, getImageUrl, getFeaturedImages, getBeforeAfterPairs, PortfolioImage, PortfolioCategory } from '../../config/portfolio-manifest';
+import { r2PortfolioImages } from '../../config/r2-portfolio';
 
 // Post styles to rotate through
 export type PostStyle = 
@@ -356,6 +357,37 @@ export function updatePostHistory(
 }
 
 // Export for Lil Beaver to use
+// Combined portfolio: original manifest + R2 uploads (160 images)
+const fullPortfolio = [...portfolioManifest, ...r2PortfolioImages.map(img => ({
+  ...img,
+  getUrl: () => `/api/assets/${img.r2Path}`
+}))];
+
+// Get random R2 image for a category
+function getR2Image(category?: string): { url: string; title: string; folder: string } | null {
+  const filtered = category 
+    ? r2PortfolioImages.filter(img => img.category === category || img.folder.toLowerCase().includes(category.toLowerCase()))
+    : r2PortfolioImages;
+  
+  if (filtered.length === 0) return null;
+  const img = filtered[Math.floor(Math.random() * filtered.length)];
+  return {
+    url: `/api/assets/${img.r2Path}`,
+    title: img.title,
+    folder: img.folder
+  };
+}
+
+// Get all R2 images for a folder
+function getR2ImagesByFolder(folder: string): Array<{ url: string; filename: string }> {
+  return r2PortfolioImages
+    .filter(img => img.folder.toLowerCase() === folder.toLowerCase())
+    .map(img => ({
+      url: `/api/assets/${img.r2Path}`,
+      filename: img.filename
+    }));
+}
+
 export const socialEngine = {
   generateContentIdea,
   getGalleryInspiration,
@@ -364,6 +396,10 @@ export const socialEngine = {
   getFeaturedImages,
   getBeforeAfterPairs,
   portfolioManifest,
+  r2PortfolioImages,
+  fullPortfolio,
+  getR2Image,
+  getR2ImagesByFolder,
   updatePostHistory,
   getCurrentSeason,
   getDayOfWeek,

@@ -397,3 +397,93 @@ socialContentApi.get('/inspire', async (c) => {
     } post.`
   });
 });
+
+/**
+ * GET /api/social/flier-idea
+ * Generate a flier/ad concept with text overlay suggestions
+ */
+socialContentApi.get('/flier-idea', async (c) => {
+  const category = c.req.query('category');
+  const type = c.req.query('type') || 'promo'; // promo, seasonal, service, testimonial
+  
+  // Get random R2 image
+  const image = socialEngine.getR2Image(category);
+  if (!image) {
+    return c.json({ error: 'No images found for category' }, 404);
+  }
+
+  // Flier templates by type
+  const templates: Record<string, { headline: string; subtext: string; cta: string }[]> = {
+    promo: [
+      { headline: '10% OFF Spring Deck Staining', subtext: 'Book before April 30th', cta: 'Call Now: (XXX) XXX-XXXX' },
+      { headline: 'FREE Estimates', subtext: 'Quality work at fair prices', cta: 'handybeaver.co' },
+      { headline: 'Limited Time Offer', subtext: 'Mention this ad for a discount', cta: 'Schedule Today!' },
+    ],
+    seasonal: [
+      { headline: 'Spring is Here!', subtext: 'Time to refresh your outdoor space', cta: 'Book Your Deck Project' },
+      { headline: 'Beat the Summer Rush', subtext: 'Schedule your project now', cta: 'Free Quote' },
+      { headline: 'Winter-Proof Your Home', subtext: 'Doors, windows, weatherstripping', cta: 'Call The Handy Beaver' },
+    ],
+    service: [
+      { headline: 'Custom Woodwork', subtext: 'Blue pine • Live edge • Specialty finishes', cta: 'See Our Portfolio' },
+      { headline: 'Deck Restoration', subtext: 'Staining • Sealing • Repairs', cta: 'Transform Your Deck' },
+      { headline: 'Bathroom Remodels', subtext: 'Tile • Shiplap • Custom Vanities', cta: 'Get Started' },
+    ],
+    testimonial: [
+      { headline: '"Best decision we made!"', subtext: '— Happy Hochatown Customer', cta: '5 Stars on Google' },
+      { headline: '"Exceeded expectations"', subtext: '— Broken Bow Homeowner', cta: 'Read More Reviews' },
+      { headline: '"Finally found someone reliable"', subtext: '— Idabel Resident', cta: 'Join Our Happy Customers' },
+    ],
+  };
+
+  const typeTemplates = templates[type] || templates.promo;
+  const template = typeTemplates[Math.floor(Math.random() * typeTemplates.length)];
+
+  return c.json({
+    image,
+    overlay: {
+      headline: template.headline,
+      subtext: template.subtext,
+      cta: template.cta,
+      style: {
+        position: 'bottom', // top, bottom, center
+        textColor: '#FFFFFF',
+        backgroundColor: 'rgba(139, 69, 19, 0.85)', // brand brown
+        font: 'bold sans-serif'
+      }
+    },
+    instructions: `
+To create this flier:
+1. Download image: ${image.url}
+2. Add text overlay with the headline, subtext, and CTA
+3. Use brand colors: Brown (#8B4513), Cream (#F5DEB3)
+4. Add logo if available
+
+Or use AI image generation to create a composite.
+    `.trim()
+  });
+});
+
+/**
+ * GET /api/social/r2-images
+ * List all R2 portfolio images by folder
+ */
+socialContentApi.get('/r2-images', async (c) => {
+  const folder = c.req.query('folder');
+  
+  if (folder) {
+    const images = socialEngine.getR2ImagesByFolder(folder);
+    return c.json({ folder, count: images.length, images });
+  }
+  
+  // Group by folder
+  const byFolder: Record<string, number> = {};
+  socialEngine.r2PortfolioImages.forEach(img => {
+    byFolder[img.folder] = (byFolder[img.folder] || 0) + 1;
+  });
+  
+  return c.json({
+    total: socialEngine.r2PortfolioImages.length,
+    folders: byFolder
+  });
+});
