@@ -168,9 +168,9 @@ contentQueueApi.post('/generate-and-queue', async (c) => {
       // Try FLUX schnell first (more reliable), then dev-2
       let result: any = null;
       const models = [
-        '@cf/black-forest-labs/flux-1-schnell',
-        '@cf/black-forest-labs/flux-1-dev',
-        '@cf/lykon/dreamshaper-8-lcm',
+        '@cf/black-forest-labs/flux-2-dev',      // Primary - best quality
+        '@cf/black-forest-labs/flux-1-schnell',  // Backup - fast & reliable
+        '@cf/lykon/dreamshaper-8-lcm',           // Last resort
       ];
       
       for (const model of models) {
