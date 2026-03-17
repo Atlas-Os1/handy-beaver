@@ -26,6 +26,7 @@ import { adminJobsPage, adminJobDetail } from './pages/admin-jobs';
 import { adminCalendarPage } from './pages/admin-calendar';
 import { adminCalendarMonthPage } from './pages/admin-calendar-month';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
+import { adminBlogPage } from './pages/admin-blog';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
@@ -132,6 +133,7 @@ app.get('/admin/calendar', requireAdmin, adminCalendarMonthPage);
 app.get('/admin/calendar/list', requireAdmin, adminCalendarPage);
 app.get('/admin/invoices', requireAdmin, adminInvoicesPage);
 app.get('/admin/invoices/:id', requireAdmin, adminInvoiceDetail);
+app.get('/admin/blog', requireAdmin, adminBlogPage);
 app.get('/admin/settings', requireAdmin, async (c) => {
   return c.redirect('/admin');
 });

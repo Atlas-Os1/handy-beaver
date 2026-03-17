@@ -1262,7 +1262,7 @@ adminApi.delete('/blog/:id', async (c) => {
 // Generate AI blog post
 adminApi.post('/blog/generate', async (c) => {
   const data = await c.req.json();
-  const { topic, category, job_id, notes } = data;
+  const { topic, category, style, prompt: customPrompt, job_id, notes } = data;
   
   // Get job context if provided
   let jobContext = '';
@@ -1287,10 +1287,25 @@ adminApi.post('/blog/generate', async (c) => {
     }
   }
   
+  // Style descriptions
+  const styleGuides: Record<string, string> = {
+    'educational': 'Write a detailed how-to guide with step-by-step instructions.',
+    'listicle': 'Write a "Top 5" or "Top 10" list article with clear sections.',
+    'story': 'Write a customer success story format, telling the journey from problem to solution.',
+    'guide': 'Write a comprehensive guide covering all aspects of the topic.',
+    'comparison': 'Write a comparison or review style article helping readers choose.',
+  };
+  
+  const styleGuide = styleGuides[style] || styleGuides['educational'];
+  
   // Use Workers AI to generate blog post
   if (c.env.AI) {
     try {
-      const prompt = `You are a blog writer for The Handy Beaver, a professional handyman service in Southeast Oklahoma. Write a helpful, SEO-friendly blog post about: ${topic || category || 'home improvement'}
+      const prompt = `You are a blog writer for The Handy Beaver, a professional handyman service in Southeast Oklahoma (Broken Bow, Hochatown area). 
+
+${customPrompt ? `Topic/Request: ${customPrompt}` : `Write about: ${topic || category || 'home improvement'}`}
+
+Style: ${styleGuide}
 
 ${jobContext ? `Context from a recent project:\n${jobContext}\n` : ''}
 ${notes ? `Additional notes:\n${notes}\n` : ''}
@@ -1315,26 +1330,32 @@ Format the response as JSON with: title, excerpt (1-2 sentences), content (HTML 
         const match = result.response?.match(/\{[\s\S]*\}/);
         if (match) {
           const parsed = JSON.parse(match[0]);
+          const title = parsed.title || topic || 'Home Improvement Tips';
+          const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          
           return c.json({
             success: true,
-            draft: {
-              title: parsed.title,
-              excerpt: parsed.excerpt,
-              content: parsed.content,
-              category: category || 'Tips',
-            }
+            title: parsed.title,
+            slug,
+            excerpt: parsed.excerpt,
+            content: parsed.content,
+            category: category || 'tips',
+            tags: topic ? `${topic}, home improvement, oklahoma` : 'home improvement, oklahoma',
           });
         }
       } catch {
         // If JSON parse fails, return raw content
+        const title = topic || 'Home Improvement Tips';
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        
         return c.json({
           success: true,
-          draft: {
-            title: topic || 'Home Improvement Tips',
-            excerpt: '',
-            content: result.response || '',
-            category: category || 'General',
-          }
+          title,
+          slug,
+          excerpt: '',
+          content: result.response || '',
+          category: category || 'tips',
+          tags: 'home improvement, oklahoma',
         });
       }
     } catch (e) {
@@ -1343,14 +1364,17 @@ Format the response as JSON with: title, excerpt (1-2 sentences), content (HTML 
   }
   
   // Fallback template
+  const title = topic || customPrompt || 'Home Improvement Tips';
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  
   return c.json({
     success: true,
-    draft: {
-      title: topic || 'Home Improvement Tips',
-      excerpt: 'Helpful advice from your local handyman.',
-      content: `<h2>${topic || 'Getting Started'}</h2>\n\n<p>${notes || 'Your content here...'}</p>\n\n<p><strong>Need help with your next project?</strong> Contact The Handy Beaver for a free quote!</p>`,
-      category: category || 'General',
-    }
+    title,
+    slug,
+    excerpt: 'Helpful advice from your local handyman.',
+    content: `## ${title}\n\n${notes || 'Your content here...'}\n\n**Need help with your next project?** Contact The Handy Beaver for a free quote!`,
+    category: category || 'tips',
+    tags: 'home improvement, oklahoma',
   });
 });
 
