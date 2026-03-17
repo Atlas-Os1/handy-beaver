@@ -360,8 +360,54 @@ Enhanced prompt:`
       }
     }
     
+    // If CF Workers AI failed, try Gemini as fallback
     if (!imageData || imageData.length < 100) {
-      throw new Error(`All AI models failed. Last error: ${lastError?.message || 'No valid image generated'}`);
+      const geminiKey = (c.env as any).GEMINI_API_KEY;
+      if (geminiKey) {
+        try {
+          console.log('Trying Gemini image generation as fallback...');
+          
+          // Use Imagen 4 (Google's dedicated image model)
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                instances: [{ 
+                  prompt: `Professional home improvement visualization: ${enhancedPrompt}. Photorealistic, high quality, natural lighting.`
+                }],
+                parameters: {
+                  sampleCount: 1,
+                  aspectRatio: '1:1',
+                  personGeneration: 'dont_allow',
+                  safetySetting: 'block_low_and_above'
+                }
+              })
+            }
+          );
+          
+          const geminiData = await geminiRes.json() as any;
+          
+          if (geminiData.predictions?.[0]?.bytesBase64Encoded) {
+            const binaryString = atob(geminiData.predictions[0].bytesBase64Encoded);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            imageData = bytes;
+            generationMethod = 'imagen-4';
+            console.log(`Success with Imagen 4, size: ${imageData.length} bytes`);
+          }
+        } catch (geminiErr) {
+          console.error('Gemini fallback failed:', geminiErr);
+          lastError = geminiErr as Error;
+        }
+      }
+    }
+    
+    if (!imageData || imageData.length < 100) {
+      throw new Error(`All AI models failed (CF + Gemini). Last error: ${lastError?.message || 'No valid image generated'}`);
     }
     
     // Use the image data directly (no unnecessary base64 conversion)

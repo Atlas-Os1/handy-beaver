@@ -359,9 +359,11 @@ api.route('/content', contentQueueApi);
 // Social content engine for Lil Beaver's creative posts
 import { socialContentApi } from './routes/social-content-api';
 api.route('/social', socialContentApi);
+api.route('/flier', flierApi);
 
 // Image generator with text overlays for marketing posts
 import { imageGeneratorApi } from './routes/image-generator-api';
+import { flierApi } from './routes/flier-api';
 api.route('/image', imageGeneratorApi);
 
 // Debug endpoint to check secrets
