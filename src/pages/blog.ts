@@ -1,8 +1,20 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
 
-// Placeholder blog posts - will be dynamic from D1 later
-const blogPosts = [
+type BlogPost = {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  featured_image?: string;
+  published_at?: number;
+  created_at: number;
+};
+
+// Fallback static posts (used when DB is empty)
+const staticBlogPosts = [
   {
     id: 5,
     title: 'Tornado Season Prep: Securing Your Outdoor Spaces in Southeast Oklahoma',
@@ -231,7 +243,30 @@ If your deck hasn't been sealed in the last 2-3 years, early spring is the perfe
   }
 ];
 
-export const blogPage = (c: Context) => {
+export const blogPage = async (c: Context) => {
+  // Try to get posts from database first
+  let posts: any[] = [];
+  try {
+    const dbPosts = await c.env.DB.prepare(
+      "SELECT id, title, slug, excerpt, category, featured_image, published_at, created_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 20"
+    ).all<BlogPost>();
+    posts = dbPosts.results || [];
+  } catch (e) {
+    console.error('Failed to fetch blog posts from DB:', e);
+  }
+  
+  // Fallback to static posts if DB is empty
+  if (posts.length === 0) {
+    posts = staticBlogPosts.map(p => ({
+      ...p,
+      created_at: new Date(p.date).getTime() / 1000,
+    }));
+  }
+  
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+  
   const content = `
     <section style="padding: 4rem 2rem; text-align: center; background: linear-gradient(180deg, rgba(139, 69, 19, 0.3) 0%, transparent 100%);">
       <h1 class="section-title" style="font-size: 3rem;">Blog</h1>
@@ -240,19 +275,20 @@ export const blogPage = (c: Context) => {
     
     <section class="container">
       <div class="grid grid-3">
-        ${blogPosts.map(post => `
+        ${posts.map(post => `
           <article class="card">
+            ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px 8px 0 0; margin: -1.5rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">` : ''}
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <span style="background: var(--secondary); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem;">
                 ${post.category}
               </span>
-              <span style="color: #999; font-size: 0.85rem;">${post.date}</span>
+              <span style="color: #999; font-size: 0.85rem;">${formatDate(post.published_at || post.created_at)}</span>
             </div>
             <h2 style="color: var(--primary); font-family: 'Playfair Display', serif; font-size: 1.25rem; margin-bottom: 0.75rem;">
               ${post.title}
             </h2>
             <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.6;">
-              ${post.excerpt}
+              ${post.excerpt || ''}
             </p>
             <a href="/blog/${post.slug}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
               Read More →
@@ -273,9 +309,23 @@ export const blogPage = (c: Context) => {
   return c.html(layout('Blog', content, 'blog'));
 };
 
-export const blogPostPage = (c: Context) => {
+export const blogPostPage = async (c: Context) => {
   const slug = c.req.param('slug');
-  const post = blogPosts.find(p => p.slug === slug);
+  
+  // Try database first
+  let post: any = null;
+  try {
+    post = await c.env.DB.prepare(
+      "SELECT * FROM blog_posts WHERE slug = ? AND status = 'published'"
+    ).bind(slug).first<BlogPost>();
+  } catch (e) {
+    console.error('Failed to fetch blog post from DB:', e);
+  }
+  
+  // Fallback to static posts
+  if (!post) {
+    post = staticBlogPosts.find(p => p.slug === slug);
+  }
   
   if (!post) {
     return c.html(layout('Post Not Found', `
@@ -287,7 +337,11 @@ export const blogPostPage = (c: Context) => {
     `), 404);
   }
   
-  // Placeholder content - will come from D1 later
+  // Format date from timestamp or string
+  const postDate = post.published_at 
+    ? new Date(post.published_at * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+    : post.date || new Date(post.created_at * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  
   const content = `
     <article style="padding: 4rem 2rem;">
       <div class="container" style="max-width: 800px;">
@@ -296,11 +350,12 @@ export const blogPostPage = (c: Context) => {
         </a>
         
         <div class="card">
+          ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" style="width: calc(100% + 3rem); height: 300px; object-fit: cover; margin: -1.5rem -1.5rem 1.5rem -1.5rem; border-radius: 8px 8px 0 0;">` : ''}
           <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
             <span style="background: var(--secondary); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem;">
               ${post.category}
             </span>
-            <span style="color: #999; font-size: 0.85rem;">${post.date}</span>
+            <span style="color: #999; font-size: 0.85rem;">${postDate}</span>
           </div>
           
           <h1 style="color: var(--primary); font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 1.5rem;">

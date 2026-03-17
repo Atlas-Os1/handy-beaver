@@ -479,6 +479,7 @@ export const layout = (title: string, content: string, activeNav?: string) => `
       <li><a href="/" ${activeNav === 'home' ? 'style="color: var(--secondary)"' : ''}>Home</a></li>
       <li><a href="/services" ${activeNav === 'services' ? 'style="color: var(--secondary)"' : ''}>Services</a></li>
       <li><a href="/gallery" ${activeNav === 'gallery' ? 'style="color: var(--secondary)"' : ''}>Gallery</a></li>
+      <li><a href="/blog" ${activeNav === 'blog' ? 'style="color: var(--secondary)"' : ''}>Blog</a></li>
       <li><a href="/social" ${activeNav === 'social' ? 'style="color: var(--secondary)"' : ''}>Social</a></li>
       <li><a href="/about" ${activeNav === 'about' ? 'style="color: var(--secondary)"' : ''}>About</a></li>
       <li><a href="/contact" ${activeNav === 'contact' ? 'style="color: var(--secondary)"' : ''}>Contact</a></li>

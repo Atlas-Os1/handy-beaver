@@ -1107,41 +1107,208 @@ adminApi.get('/summary', async (c) => {
   });
 });
 
-// ============ CONTENT ============
+// ============ BLOG POSTS ============
 
-adminApi.post('/content/blog', async (c) => {
+// List all blog posts
+adminApi.get('/blog', async (c) => {
+  const status = c.req.query('status'); // draft, published, all
+  
+  let query = 'SELECT * FROM blog_posts';
+  const params: any[] = [];
+  
+  if (status && status !== 'all') {
+    query += ' WHERE status = ?';
+    params.push(status);
+  }
+  
+  query += ' ORDER BY created_at DESC';
+  
+  const posts = await c.env.DB.prepare(query).bind(...params).all();
+  return c.json({ posts: posts.results });
+});
+
+// Get single blog post
+adminApi.get('/blog/:id', async (c) => {
+  const id = c.req.param('id');
+  const post = await c.env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(id).first();
+  
+  if (!post) {
+    return c.json({ error: 'Post not found' }, 404);
+  }
+  
+  return c.json({ post });
+});
+
+// Create blog post
+adminApi.post('/blog', async (c) => {
   const data = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
   
-  // Get job details and notes
-  let jobDetails = null;
-  let notes: any[] = [];
+  // Generate slug from title
+  const slug = data.slug || data.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   
-  if (data.job_id) {
-    jobDetails = await c.env.DB.prepare(`
+  const result = await c.env.DB.prepare(`
+    INSERT INTO blog_posts (title, slug, excerpt, content, category, tags, featured_image, meta_title, meta_description, status, author, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING id
+  `).bind(
+    data.title,
+    slug,
+    data.excerpt || null,
+    data.content,
+    data.category || 'General',
+    data.tags ? JSON.stringify(data.tags) : null,
+    data.featured_image || null,
+    data.meta_title || data.title,
+    data.meta_description || data.excerpt,
+    data.status || 'draft',
+    data.author || 'lil-beaver',
+    now,
+    now
+  ).first<{ id: number }>();
+  
+  return c.json({ success: true, id: result?.id, slug });
+});
+
+// Update blog post
+adminApi.patch('/blog/:id', async (c) => {
+  const id = c.req.param('id');
+  const data = await c.req.json();
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Build dynamic update
+  const updates: string[] = ['updated_at = ?'];
+  const params: any[] = [now];
+  
+  if (data.title) { updates.push('title = ?'); params.push(data.title); }
+  if (data.slug) { updates.push('slug = ?'); params.push(data.slug); }
+  if (data.excerpt !== undefined) { updates.push('excerpt = ?'); params.push(data.excerpt); }
+  if (data.content) { updates.push('content = ?'); params.push(data.content); }
+  if (data.category) { updates.push('category = ?'); params.push(data.category); }
+  if (data.tags) { updates.push('tags = ?'); params.push(JSON.stringify(data.tags)); }
+  if (data.featured_image !== undefined) { updates.push('featured_image = ?'); params.push(data.featured_image); }
+  if (data.meta_title) { updates.push('meta_title = ?'); params.push(data.meta_title); }
+  if (data.meta_description) { updates.push('meta_description = ?'); params.push(data.meta_description); }
+  if (data.status) {
+    updates.push('status = ?');
+    params.push(data.status);
+    // Set published_at when publishing
+    if (data.status === 'published') {
+      updates.push('published_at = ?');
+      params.push(now);
+    }
+  }
+  
+  params.push(id);
+  
+  await c.env.DB.prepare(`UPDATE blog_posts SET ${updates.join(', ')} WHERE id = ?`).bind(...params).run();
+  
+  return c.json({ success: true });
+});
+
+// Delete blog post
+adminApi.delete('/blog/:id', async (c) => {
+  const id = c.req.param('id');
+  await c.env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(id).run();
+  return c.json({ success: true });
+});
+
+// Generate AI blog post
+adminApi.post('/blog/generate', async (c) => {
+  const data = await c.req.json();
+  const { topic, category, job_id, notes } = data;
+  
+  // Get job context if provided
+  let jobContext = '';
+  if (job_id) {
+    const job = await c.env.DB.prepare(`
       SELECT b.*, c.name as customer_name 
       FROM bookings b
       JOIN customers c ON b.customer_id = c.id
       WHERE b.id = ?
-    `).bind(data.job_id).first();
+    `).bind(job_id).first<any>();
     
-    const notesResult = await c.env.DB.prepare(
-      'SELECT * FROM job_notes WHERE booking_id = ? ORDER BY created_at ASC'
-    ).bind(data.job_id).all();
-    notes = notesResult.results as any[];
+    if (job) {
+      jobContext = `Project: ${job.title}\nCustomer: ${job.customer_name}\nDescription: ${job.description || ''}`;
+    }
+    
+    const jobNotes = await c.env.DB.prepare(
+      'SELECT content FROM job_notes WHERE booking_id = ? ORDER BY created_at ASC'
+    ).bind(job_id).all<{ content: string }>();
+    
+    if (jobNotes.results?.length) {
+      jobContext += '\n\nNotes:\n' + jobNotes.results.map(n => `- ${n.content}`).join('\n');
+    }
   }
   
-  // TODO: Use Workers AI to generate blog post
-  const blogDraft = `
-# ${data.topic || jobDetails?.title || 'Project Update'}
+  // Use Workers AI to generate blog post
+  if (c.env.AI) {
+    try {
+      const prompt = `You are a blog writer for The Handy Beaver, a professional handyman service in Southeast Oklahoma. Write a helpful, SEO-friendly blog post about: ${topic || category || 'home improvement'}
 
-${data.notes || notes.map((n: any) => n.content).join('\n\n')}
+${jobContext ? `Context from a recent project:\n${jobContext}\n` : ''}
+${notes ? `Additional notes:\n${notes}\n` : ''}
 
----
+The blog should:
+- Be 500-800 words
+- Include practical tips for homeowners
+- Mention Southeast Oklahoma / Broken Bow area naturally
+- Have clear headings (use ## for H2)
+- End with a call to action to contact The Handy Beaver
+- Be friendly but professional in tone
 
-*Need similar work done? Contact The Handy Beaver for a free quote!*
-  `.trim();
+Format the response as JSON with: title, excerpt (1-2 sentences), content (HTML with proper tags)`;
+
+      const result = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000,
+      }) as { response?: string };
+      
+      // Try to parse JSON response
+      try {
+        const match = result.response?.match(/\{[\s\S]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          return c.json({
+            success: true,
+            draft: {
+              title: parsed.title,
+              excerpt: parsed.excerpt,
+              content: parsed.content,
+              category: category || 'Tips',
+            }
+          });
+        }
+      } catch {
+        // If JSON parse fails, return raw content
+        return c.json({
+          success: true,
+          draft: {
+            title: topic || 'Home Improvement Tips',
+            excerpt: '',
+            content: result.response || '',
+            category: category || 'General',
+          }
+        });
+      }
+    } catch (e) {
+      console.error('AI generation failed:', e);
+    }
+  }
   
-  return c.json({ draft: blogDraft });
+  // Fallback template
+  return c.json({
+    success: true,
+    draft: {
+      title: topic || 'Home Improvement Tips',
+      excerpt: 'Helpful advice from your local handyman.',
+      content: `<h2>${topic || 'Getting Started'}</h2>\n\n<p>${notes || 'Your content here...'}</p>\n\n<p><strong>Need help with your next project?</strong> Contact The Handy Beaver for a free quote!</p>`,
+      category: category || 'General',
+    }
+  });
 });
 
 // ============ INVOICE LINE ITEMS ============
