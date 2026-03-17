@@ -828,22 +828,39 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
         const fbPageId = env.FACEBOOK_PAGE_ID || '1040910635768535';
         
         if (fbToken && (post.platform === 'facebook' || post.platform === 'both')) {
-          const fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/feed`;
-          const fbPayload: any = { message: post.caption, access_token: fbToken };
+          let fbUrl: string;
+          let fbParams: Record<string, string>;
           
-          // Add image if available
+          // Build the message with hashtags if present
+          const message = post.caption + (post.hashtags ? `\n\n${post.hashtags}` : '');
+          
+          // If we have an image, use /photos endpoint
           if (post.image_url) {
-            // If it's a local URL, convert to full URL
+            // Convert relative URLs to absolute
             const imageUrl = post.image_url.startsWith('/') 
               ? `https://handybeaver.co${post.image_url}` 
               : post.image_url;
-            fbPayload.link = imageUrl;
+            
+            fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/photos`;
+            fbParams = {
+              access_token: fbToken,
+              url: imageUrl,
+              caption: message,
+            };
+          } else {
+            // Text-only post to /feed
+            fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/feed`;
+            fbParams = {
+              access_token: fbToken,
+              message: message,
+            };
           }
           
+          // Facebook requires application/x-www-form-urlencoded, NOT JSON
           const fbRes = await fetch(fbUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fbPayload)
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(fbParams),
           });
           
           const fbData = await fbRes.json() as any;
