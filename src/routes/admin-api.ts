@@ -1151,8 +1151,8 @@ adminApi.post('/blog', async (c) => {
     .replace(/^-|-$/g, '');
   
   const result = await c.env.DB.prepare(`
-    INSERT INTO blog_posts (title, slug, excerpt, content, category, tags, featured_image, meta_title, meta_description, status, author, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO blog_posts (title, slug, excerpt, content, category, tags, featured_image, meta_title, meta_description, status, author, created_at, updated_at, published_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING id
   `).bind(
     data.title,
@@ -1167,8 +1167,25 @@ adminApi.post('/blog', async (c) => {
     data.status || 'draft',
     data.author || 'lil-beaver',
     now,
-    now
+    now,
+    data.status === 'published' ? now : null
   ).first<{ id: number }>();
+  
+  // Auto-queue to social media if published
+  if (data.status === 'published' && result?.id) {
+    const blogUrl = `https://handybeaver.co/blog/${slug}`;
+    const socialCaption = `📝 New Blog Post!\n\n${data.title}\n\n${data.excerpt || ''}\n\n🔗 Read more: ${blogUrl}\n\n#HandyBeaver #Hochatown #BrokenBow #HomeImprovement #OklahomaHandyman`;
+    
+    // Queue for Facebook and Instagram
+    await c.env.DB.prepare(`
+      INSERT INTO content_queue (caption, image_url, content_type, platform, scheduled_for, status, created_by, theme)
+      VALUES (?, ?, 'blog_share', 'both', ?, 'pending', 'auto-blog', 'blog')
+    `).bind(
+      socialCaption,
+      data.featured_image || null,
+      now + 300  // Schedule 5 minutes from now
+    ).run();
+  }
   
   return c.json({ success: true, id: result?.id, slug });
 });
@@ -1205,6 +1222,32 @@ adminApi.patch('/blog/:id', async (c) => {
   params.push(id);
   
   await c.env.DB.prepare(`UPDATE blog_posts SET ${updates.join(', ')} WHERE id = ?`).bind(...params).run();
+  
+  // Auto-queue to social media if just published
+  if (data.status === 'published') {
+    // Get the post details for social sharing
+    const post = await c.env.DB.prepare('SELECT title, slug, excerpt, featured_image FROM blog_posts WHERE id = ?').bind(id).first<any>();
+    if (post) {
+      const blogUrl = `https://handybeaver.co/blog/${post.slug}`;
+      const socialCaption = `📝 New Blog Post!\n\n${post.title}\n\n${post.excerpt || ''}\n\n🔗 Read more: ${blogUrl}\n\n#HandyBeaver #Hochatown #BrokenBow #HomeImprovement #OklahomaHandyman`;
+      
+      // Check if already queued for this post
+      const existing = await c.env.DB.prepare(
+        "SELECT id FROM content_queue WHERE caption LIKE ? AND theme = 'blog' AND created_at > ?"
+      ).bind(`%${post.slug}%`, now - 3600).first();
+      
+      if (!existing) {
+        await c.env.DB.prepare(`
+          INSERT INTO content_queue (caption, image_url, content_type, platform, scheduled_for, status, created_by, theme)
+          VALUES (?, ?, 'blog_share', 'both', ?, 'pending', 'auto-blog', 'blog')
+        `).bind(
+          socialCaption,
+          post.featured_image || null,
+          now + 300  // Schedule 5 minutes from now
+        ).run();
+      }
+    }
+  }
   
   return c.json({ success: true });
 });
