@@ -533,3 +533,31 @@ curl -X POST "https://handybeaver.co/api/social/engagement/123" \
 
 **Customer tools** = Answer questions, schedule callbacks, provide quotes verbally
 **Admin tools** = Create/edit records in database, send invoices, manage customers
+
+---
+
+## Pricing Reference (Per Sq.Ft.)
+
+### Tiny Cabin / Portable Shed Packages
+| Package | Price | Description |
+|---------|-------|-------------|
+| **Rustic Premium** | $110/sq.ft. | Detailed rustic finish, specialty wood, custom details (see Rustic-Cabin gallery) |
+| **Basic Package** | $75/sq.ft. | Quality finish, standard materials (see Tiny-Home gallery) |
+
+### Individual Services
+| Service | Price | Notes |
+|---------|-------|-------|
+| Tongue & Groove | $4.00+/sq.ft. | Walls, accent walls |
+| T&G Ceilings | $6.00/sq.ft. | Standard height |
+| T&G Ceilings (10ft+) | $5.00/sq.ft. | High ceilings |
+| Laminate Flooring | $1.75/sq.ft. | Installation only |
+| Hardwood Flooring | $10-12/sq.ft. | Sealed and sanded |
+
+### Quick Quote Formula
+```
+Example: 400 sq.ft. tiny cabin, basic package
+= 400 × $75 = $30,000 base
++ Add-ons as needed
+```
+
+Use `/api/quotes` to create formal estimates with these rates.
