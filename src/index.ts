@@ -362,6 +362,48 @@ app.post('/portal/subscription/add-task', requirePortalAuth, async (c) => {
     photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
   ).run();
   
+  // Send email notification to admin
+  if (c.env.RESEND_API_KEY) {
+    const urgencyEmoji = { urgent: '🔴', high: '🟠', normal: '🟢', low: '🔵' }[urgency] || '🟢';
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Handy Beaver <notifications@handybeaver.co>',
+          to: 'ccogburn85@gmail.com', // Admin email
+          subject: `${urgencyEmoji} New Task: ${customer.name} (${urgency})`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #8B4513;">🦫 New Subscription Task</h2>
+              <p><strong>Customer:</strong> ${customer.name}</p>
+              <p><strong>Urgency:</strong> ${urgencyEmoji} ${urgency.toUpperCase()}</p>
+              <p><strong>Description:</strong></p>
+              <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                ${description}
+              </div>
+              ${photoUrls.length > 0 ? `<p><strong>Photos:</strong> ${photoUrls.length} attached</p>` : ''}
+              <a href="https://handybeaver.co/admin/subscriptions" style="
+                display: inline-block;
+                background: #8B4513;
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 8px;
+                margin: 16px 0;
+              ">View Task Queue</a>
+            </div>
+          `,
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to send task notification email:', e);
+    }
+  }
+  
   return c.redirect('/portal/subscription?success=task_added');
 });
 app.post('/portal/messages', requirePortalAuth, async (c) => {
