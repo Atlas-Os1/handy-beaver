@@ -42,7 +42,7 @@ socialContentApi.use('/*', async (c, next) => {
   await next();
 });
 
-// Generate a content idea
+// Generate a content idea (with knowledge base context)
 socialContentApi.get('/idea', async (c) => {
   // Get recent styles to avoid repetition
   const recentPosts = await c.env.DB.prepare(`
@@ -62,6 +62,25 @@ socialContentApi.get('/idea', async (c) => {
     imageUrl = socialEngine.getImageUrl(idea.galleryImage);
   }
   
+  // Fetch knowledge base for relevant context
+  const knowledge = await getKnowledgeBase(c.env.IMAGES);
+  
+  // Add relevant pricing/service info based on content theme
+  let contextualInfo: any = null;
+  if (knowledge) {
+    if (idea.theme === 'promo' || idea.theme === 'subscription') {
+      contextualInfo = {
+        pricing: knowledge.pricing,
+        cta: knowledge.socialContent?.ctaOptions || ['handybeaver.co', 'Get a free quote!']
+      };
+    } else if (idea.theme === 'educational') {
+      contextualInfo = {
+        services: knowledge.services,
+        serviceArea: knowledge.business?.serviceArea
+      };
+    }
+  }
+  
   return c.json({
     idea: {
       ...idea,
@@ -73,10 +92,12 @@ socialContentApi.get('/idea', async (c) => {
         description: idea.galleryImage.description,
         category: idea.galleryImage.category,
         tags: idea.galleryImage.tags
-      } : null
+      } : null,
+      contextualInfo
     },
     season: socialEngine.getCurrentSeason(),
-    dayOfWeek: socialEngine.getDayOfWeek()
+    dayOfWeek: socialEngine.getDayOfWeek(),
+    hashtags: knowledge?.socialContent?.primaryHashtags || ['#HandyBeaverCo', '#SoutheastOklahoma', '#Handyman']
   });
 });
 
@@ -151,16 +172,53 @@ socialContentApi.get('/featured', async (c) => {
   });
 });
 
-// Generate caption with AI
+// Fetch knowledge base for accurate pricing/service info
+async function getKnowledgeBase(bucket: R2Bucket): Promise<any> {
+  try {
+    const obj = await bucket.get('knowledge/site-info.json');
+    if (obj) {
+      return await obj.json();
+    }
+  } catch (e) {
+    console.error('Failed to fetch knowledge base:', e);
+  }
+  return null;
+}
+
+// Generate caption with AI (with knowledge base context)
 socialContentApi.post('/generate-caption', async (c) => {
   const body = await c.req.json<{
     prompt: string;
     style?: PostStyle;
     tone?: string;
+    includePricing?: boolean;
+    includeServices?: boolean;
   }>();
   
   if (!body.prompt) {
     return c.json({ error: 'Prompt is required' }, 400);
+  }
+  
+  // Fetch knowledge base for accurate info
+  const knowledge = await getKnowledgeBase(c.env.IMAGES);
+  
+  // Build context from knowledge base
+  let contextInfo = '';
+  if (knowledge) {
+    if (body.includePricing || body.prompt.toLowerCase().includes('pric') || body.prompt.toLowerCase().includes('cost')) {
+      contextInfo += `\n\nPRICING INFO:
+- Service Blocks: Quick Fix $175 (2-3hrs), Half Day $300 (4-5hrs), Full Day $500 (8+hrs), Project Block $650 (10+hrs)
+- Subscriptions: Starter $75/mo (1hr), Standard $140/mo (2hrs + 10% off), Premium $280/mo (4hrs + 15% off)
+- Labor: Under 6hrs = $175, Full day = $300. Helper: Under 6hrs = $100, Full day = $225`;
+    }
+    if (body.includeServices || body.prompt.toLowerCase().includes('service')) {
+      const services = knowledge.services?.map((s: any) => s.category).join(', ') || 'carpentry, flooring, deck work, maintenance';
+      contextInfo += `\n\nSERVICES: ${services}`;
+    }
+    if (knowledge.socialContent?.mascotPhrases) {
+      contextInfo += `\n\nMAIN HASHTAGS: ${knowledge.socialContent.primaryHashtags?.join(' ') || '#HandyBeaverCo #SoutheastOklahoma #Handyman'}`;
+    }
+    contextInfo += `\n\nSERVICE AREA: Southeast Oklahoma (Broken Bow, Hochatown, Idabel, Hugo)`;
   }
   
   try {
@@ -168,11 +226,14 @@ socialContentApi.post('/generate-caption', async (c) => {
       messages: [
         {
           role: 'system',
-          content: `You are Lil Beaver, the social media manager for The Handy Beaver - a traveling craftsman service in Southeast Oklahoma. 
+          content: `You are Lil Beaver, the social media manager for The Handy Beaver - a traveling craftsman service in Southeast Oklahoma.
+
 Write engaging, authentic social media captions that sound human, not like a marketing bot.
 Keep captions concise (under 280 characters ideally, max 500).
-Don't include hashtags - they're added separately.
-Sound like a real tradesperson who takes pride in their work.`
+Don't include hashtags in the caption - they're added separately.
+Sound like a real tradesperson who takes pride in their work.
+Use the beaver emoji 🦫 naturally but not excessively.
+${contextInfo}`
         },
         {
           role: 'user',
@@ -185,6 +246,7 @@ Sound like a real tradesperson who takes pride in their work.`
     return c.json({ 
       caption: response.response?.trim() || '',
       style: body.style,
+      hashtags: knowledge?.socialContent?.primaryHashtags || ['#HandyBeaverCo', '#SoutheastOklahoma', '#Handyman'],
       generatedAt: Date.now()
     });
   } catch (error) {
