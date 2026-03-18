@@ -14,7 +14,7 @@ import { blogPage, blogPostPage } from './pages/blog';
 import { visualizePage } from './pages/visualize';
 import { agentPage } from './pages/agent';
 // Old portal imports removed - using new portal pages
-import { adminDashboard } from './pages/admin';
+import { adminDashboard, adminSubscriptionsPage } from './pages/admin';
 import { adminVisualizerPage } from './pages/admin-visualizer';
 import { adminLoginPage } from './pages/admin-login';
 import { portalVisualizerPage, portalGalleryPage } from './pages/portal-visualizer';
@@ -135,6 +135,7 @@ app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/messages/:customerId', requireAdmin, adminMessagesPage); // Handle direct links
 app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/customers/:id', requireAdmin, adminCustomerDetail);
+app.get('/admin/subscriptions', requireAdmin, adminSubscriptionsPage);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
 app.get('/admin/quotes/:id', requireAdmin, adminQuoteDetail);
 app.get('/admin/quotes/:id/edit', requireAdmin, adminQuoteEdit);
