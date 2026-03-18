@@ -34,6 +34,8 @@ import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
 import { quotePage } from './pages/quote';
+import { pricingPage } from './pages/pricing';
+import { howItWorksPage } from './pages/how-it-works';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -103,6 +105,8 @@ app.get('/gallery', galleryPage);
 app.get('/gallery/:slug', galleryCategoryPage);
 app.get('/social', socialPage);
 app.get('/quote', quotePage); // Instant quote calculator
+app.get('/pricing', pricingPage); // Service blocks + subscriptions
+app.get('/how-it-works', howItWorksPage); // 3-step process
 
 // Shareable quote page (public - customer can view and accept)
 app.get('/quote/:id', quoteSharePage);

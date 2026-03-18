@@ -55,6 +55,61 @@ export const siteConfig = {
     notes: "Customer pays all materials, consumables, and equipment rental",
   },
 
+  // Service Blocks (one-time handyman bookings)
+  serviceBlocks: {
+    serviceCall: { hours: 2, price: 175, label: "Service Call" },
+    halfDay: { hours: 4, price: 350, label: "Half Day" },
+    fullDay: { hours: 8, price: 650, label: "Full Day" },
+  },
+
+  // Subscription Plans (monthly recurring maintenance)
+  subscriptionPlans: {
+    basic: { 
+      hours: 1, 
+      price: 75, 
+      label: "Basic",
+      features: ["1 hour/month", "Priority scheduling", "Photo task queue"]
+    },
+    standard: { 
+      hours: 2, 
+      price: 140, 
+      label: "Standard",
+      features: ["2 hours/month", "Priority scheduling", "Photo task queue", "10% off projects"]
+    },
+    premium: { 
+      hours: 4, 
+      price: 280, 
+      label: "Premium",
+      features: ["4 hours/month", "Same-week scheduling", "Photo task queue", "15% off projects", "Seasonal home checkup"]
+    },
+  },
+
+  // Tiny Home Finish Packages (price per sq.ft.)
+  tinyHomePackages: {
+    modernMinimal: {
+      pricePerSqft: 75,
+      label: "Modern Minimal",
+      description: "Clean drywall, basic trim, LVP flooring, painted cabinets",
+      includes: ["Interior walls/ceiling", "LVP flooring", "Basic trim", "Painted cabinet area"],
+    },
+    rusticCabin: {
+      pricePerSqft: 110,
+      label: "Rustic Cabin",
+      description: "Pine tongue-and-groove, corrugated metal accents, exposed beams",
+      includes: ["Pine T&G walls/ceiling", "Rustic flooring", "Exposed beam finish", "Metal accent features"],
+    },
+  },
+
+  // Residential Services (per sq.ft. ranges for quotes)
+  residentialServices: {
+    wallboard: { min: 3, max: 5, unit: "sq.ft.", label: "Wallboard/Drywall" },
+    trim: { min: 2, max: 4, unit: "linear ft.", label: "Trim/Molding" },
+    flooringLvp: { min: 4, max: 8, unit: "sq.ft.", label: "Flooring (LVP/Laminate)" },
+    flooringHardwood: { min: 8, max: 15, unit: "sq.ft.", label: "Flooring (Hardwood)" },
+    tile: { min: 8, max: 15, unit: "sq.ft.", label: "Tile" },
+    decking: { min: 15, max: 25, unit: "sq.ft.", label: "Decking" },
+  },
+
   // Google/Email Integration
   integrations: {
     googleCalendar: {
