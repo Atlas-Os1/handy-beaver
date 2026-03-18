@@ -92,19 +92,22 @@ app.use('/api/*', cors());
 
 // Sitemap for SEO and AI Search indexing
 app.get('/sitemap.xml', async (c) => {
+  const today = new Date().toISOString().split('T')[0];
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://handybeaver.co/</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod><priority>1.0</priority></url>
-  <url><loc>https://handybeaver.co/services</loc><priority>0.9</priority></url>
-  <url><loc>https://handybeaver.co/pricing</loc><priority>0.9</priority></url>
+  <url><loc>https://handybeaver.co/</loc><lastmod>${today}</lastmod><priority>1.0</priority></url>
+  <url><loc>https://handybeaver.co/services</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>
+  <url><loc>https://handybeaver.co/pricing</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>
   <url><loc>https://handybeaver.co/about</loc><priority>0.7</priority></url>
   <url><loc>https://handybeaver.co/contact</loc><priority>0.8</priority></url>
-  <url><loc>https://handybeaver.co/blog</loc><priority>0.7</priority></url>
+  <url><loc>https://handybeaver.co/blog</loc><lastmod>${today}</lastmod><priority>0.7</priority></url>
   <url><loc>https://handybeaver.co/visualize</loc><priority>0.6</priority></url>
   <url><loc>https://handybeaver.co/gallery</loc><priority>0.7</priority></url>
   <url><loc>https://handybeaver.co/social</loc><priority>0.6</priority></url>
   <url><loc>https://handybeaver.co/quote</loc><priority>0.8</priority></url>
-  <url><loc>https://handybeaver.co/service-area</loc><priority>0.6</priority></url>
+  <url><loc>https://handybeaver.co/service-area</loc><priority>0.7</priority></url>
+  <url><loc>https://handybeaver.co/tiny-homes</loc><priority>0.8</priority></url>
+  <url><loc>https://handybeaver.co/how-it-works</loc><priority>0.7</priority></url>
   <url><loc>https://handybeaver.co/agent</loc><priority>0.5</priority></url>
 </urlset>`;
   return new Response(sitemap, { headers: { 'Content-Type': 'application/xml' } });
