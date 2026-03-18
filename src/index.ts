@@ -29,7 +29,7 @@ import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { adminBlogPage } from './pages/admin-blog';
 import { adminFliersPage } from './pages/admin-fliers';
 import { adminCompetitorsPage } from './pages/admin-competitors';
-import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
+import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
@@ -298,6 +298,71 @@ app.get('/portal/invoices', requirePortalAuth, portalInvoices);
 app.get('/portal/invoices/:id', requirePortalAuth, portalInvoiceDetail);
 app.get('/portal/jobs', requirePortalAuth, portalJobs);
 app.get('/portal/messages', requirePortalAuth, portalMessages);
+app.get('/portal/subscription', requirePortalAuth, portalSubscription);
+
+// Subscription task submission
+app.post('/portal/subscription/add-task', requirePortalAuth, async (c) => {
+  const customer = c.get('customer');
+  const formData = await c.req.formData();
+  
+  const description = formData.get('description') as string;
+  const urgency = formData.get('urgency') as string || 'normal';
+  const estimatedHours = parseFloat(formData.get('estimated_hours') as string) || null;
+  
+  if (!description) {
+    return c.redirect('/portal/subscription?error=description_required');
+  }
+  
+  // Check for active subscription
+  const subscription = await c.env.DB.prepare(`
+    SELECT id FROM customer_subscriptions
+    WHERE customer_id = ? AND status = 'active'
+    LIMIT 1
+  `).bind(customer.customer_id).first<any>();
+  
+  if (!subscription) {
+    return c.redirect('/portal/subscription?error=no_subscription');
+  }
+  
+  // Handle photo uploads
+  const photoUrls: string[] = [];
+  const photos = formData.getAll('photos') as File[];
+  
+  for (const photo of photos) {
+    if (photo && photo.size > 0) {
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
+      const ext = photo.name.split('.').pop() || 'jpg';
+      const key = `uploads/tasks/${customer.customer_id}/${timestamp}-${random}.${ext}`;
+      
+      try {
+        const arrayBuffer = await photo.arrayBuffer();
+        await c.env.IMAGES.put(key, arrayBuffer, {
+          httpMetadata: { contentType: photo.type },
+        });
+        photoUrls.push(`https://handybeaver.co/api/assets/${key}`);
+      } catch (e) {
+        console.error('Photo upload failed:', e);
+      }
+    }
+  }
+  
+  // Create task
+  await c.env.DB.prepare(`
+    INSERT INTO subscription_tasks 
+    (subscription_id, customer_id, description, urgency, estimated_hours, photos, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending')
+  `).bind(
+    subscription.id,
+    customer.customer_id,
+    description,
+    urgency,
+    estimatedHours,
+    photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
+  ).run();
+  
+  return c.redirect('/portal/subscription?success=task_added');
+});
 app.post('/portal/messages', requirePortalAuth, async (c) => {
   const customer = c.get('customer');
   const { message } = await c.req.parseBody();

@@ -290,6 +290,7 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
       <a href="/portal/invoices"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
       <a href="/portal/jobs"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon"> Job History</a>
       <a href="/portal/messages"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
+      <a href="/portal/subscription">🦫 Subscription</a>
       <a href="/portal/visualizer">✨ AI Visualizer</a>
       <a href="/portal/gallery">🖼️ My Gallery</a>
     </aside>
@@ -298,9 +299,9 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
   <nav class="bottom-nav">
     <a href="/portal"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon">Home</a>
     <a href="/portal/quotes"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon">Quotes</a>
+    <a href="/portal/subscription" style="font-size: 1.2rem;">🦫<span style="font-size: 0.7rem;">Plan</span></a>
     <a href="/portal/invoices"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon">Pay</a>
     <a href="/portal/messages"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon">Chat</a>
-    <a href="/portal/jobs"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon">Jobs</a>
   </nav>
     
     <main class="main-content">
@@ -903,4 +904,218 @@ export const portalJobs = async (c: Context) => {
   `;
   
   return c.html(portalLayout('Job History', content, customer));
+};
+
+// Subscription management page
+export const portalSubscription = async (c: Context) => {
+  const customer = c.get('customer');
+  const db = c.env.DB;
+  
+  // Get active subscription
+  const subscription = await db.prepare(`
+    SELECT 
+      cs.*,
+      sp.display_name as plan_name,
+      sp.hours_per_month,
+      sp.monthly_price,
+      sp.features
+    FROM customer_subscriptions cs
+    JOIN subscription_plans sp ON cs.plan_id = sp.id
+    WHERE cs.customer_id = ? AND cs.status = 'active'
+    ORDER BY cs.created_at DESC
+    LIMIT 1
+  `).bind(customer.customer_id).first<any>();
+  
+  // Get tasks for subscriber
+  const tasks = subscription ? await db.prepare(`
+    SELECT * FROM subscription_tasks
+    WHERE subscription_id = ?
+    ORDER BY 
+      CASE status
+        WHEN 'pending' THEN 1
+        WHEN 'scheduled' THEN 2
+        WHEN 'in_progress' THEN 3
+        WHEN 'completed' THEN 4
+      END,
+      created_at DESC
+    LIMIT 20
+  `).bind(subscription.id).all<any>() : { results: [] };
+  
+  // Calculate hours
+  const hoursUsed = subscription?.hours_used_this_period || 0;
+  const hoursTotal = subscription?.hours_per_month || 0;
+  const hoursRemaining = Math.max(0, hoursTotal - hoursUsed);
+  const hoursPercent = hoursTotal > 0 ? Math.round((hoursUsed / hoursTotal) * 100) : 0;
+  
+  // Period info
+  const periodEnd = subscription?.current_period_end 
+    ? new Date(subscription.current_period_end * 1000).toLocaleDateString() 
+    : 'N/A';
+  
+  const urgencyColors: Record<string, string> = {
+    urgent: '#dc2626',
+    high: '#f59e0b',
+    normal: '#3b82f6',
+    low: '#6b7280',
+  };
+  
+  const statusColors: Record<string, string> = {
+    pending: '#f59e0b',
+    scheduled: '#3b82f6',
+    in_progress: '#8b5cf6',
+    completed: '#22c55e',
+    cancelled: '#ef4444',
+  };
+  
+  const content = subscription ? `
+    <h1 style="margin-bottom: 1.5rem;">My Subscription 🦫</h1>
+    
+    <!-- Subscription Status Card -->
+    <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div style="font-size: 0.9rem; opacity: 0.9;">Current Plan</div>
+          <div style="font-size: 1.75rem; font-weight: 600;">${subscription.plan_name}</div>
+          <div style="font-size: 1.1rem; opacity: 0.9;">$${subscription.monthly_price}/month</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.9rem; opacity: 0.9;">Period Ends</div>
+          <div style="font-size: 1.1rem;">${periodEnd}</div>
+        </div>
+      </div>
+      
+      <!-- Hours Progress Bar -->
+      <div style="margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span>Hours Used</span>
+          <span>${hoursUsed} / ${hoursTotal} hours</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 12px; overflow: hidden;">
+          <div style="background: white; height: 100%; width: ${hoursPercent}%; border-radius: 10px; transition: width 0.3s;"></div>
+        </div>
+        <div style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">
+          ${hoursRemaining} hours remaining this period
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Task Form -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h2 style="margin-bottom: 1rem;">➕ Add a Task</h2>
+      <form action="/portal/subscription/add-task" method="POST" enctype="multipart/form-data">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">What do you need done?</label>
+          <textarea name="description" required rows="3" 
+            placeholder="Describe the task... e.g., Fix squeaky door hinge in master bedroom"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"></textarea>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Urgency</label>
+            <select name="urgency" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+              <option value="normal">Normal</option>
+              <option value="low">Low - whenever you can</option>
+              <option value="high">High - this week if possible</option>
+              <option value="urgent">Urgent - ASAP!</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Estimated Hours</label>
+            <input type="number" name="estimated_hours" min="0.5" max="10" step="0.5" 
+              placeholder="Optional"
+              style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">📸 Photos (optional)</label>
+          <input type="file" name="photos" accept="image/*" multiple 
+            style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+          <small style="color: #666;">Upload photos to help us understand the task</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Add to My Queue →
+        </button>
+      </form>
+    </div>
+    
+    <!-- Task Queue -->
+    <div class="card">
+      <h2 style="margin-bottom: 1rem;">📋 My Task Queue</h2>
+      
+      ${tasks.results?.length ? `
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          ${tasks.results.map((task: any) => {
+            const photos = task.photos ? JSON.parse(task.photos) : [];
+            return `
+              <div style="padding: 1rem; border: 1px solid #e5e5e5; border-radius: 12px; border-left: 4px solid ${statusColors[task.status] || '#ddd'};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                  <span style="background: ${urgencyColors[task.urgency]}; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase;">
+                    ${task.urgency}
+                  </span>
+                  <span style="background: ${statusColors[task.status]}22; color: ${statusColors[task.status]}; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 500;">
+                    ${task.status?.replace('_', ' ')}
+                  </span>
+                </div>
+                <p style="margin: 0.5rem 0; color: #333;">${task.description}</p>
+                ${task.scheduled_date ? `
+                  <div style="font-size: 0.85rem; color: #666;">
+                    📅 Scheduled: ${new Date(task.scheduled_date).toLocaleDateString()}
+                  </div>
+                ` : ''}
+                ${task.hours_spent ? `
+                  <div style="font-size: 0.85rem; color: #666;">
+                    ⏱️ Hours used: ${task.hours_spent}
+                  </div>
+                ` : ''}
+                ${photos.length > 0 ? `
+                  <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                    ${photos.map((url: string) => `
+                      <img src="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                    `).join('')}
+                  </div>
+                ` : ''}
+                ${task.notes ? `
+                  <div style="font-size: 0.85rem; color: #666; margin-top: 0.5rem; padding: 0.5rem; background: #f9f9f9; border-radius: 8px;">
+                    💬 ${task.notes}
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : `
+        <div class="empty">
+          No tasks in your queue yet. Add one above! 👆
+        </div>
+      `}
+    </div>
+    
+    <!-- Features included -->
+    <div class="card" style="margin-top: 1.5rem;">
+      <h2 style="margin-bottom: 1rem;">✨ Your Plan Includes</h2>
+      <ul style="list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+        ${(subscription.features ? JSON.parse(subscription.features) : []).map((f: string) => `
+          <li style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: var(--secondary);">✓</span> ${f}
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  ` : `
+    <h1 style="margin-bottom: 1.5rem;">Subscription</h1>
+    
+    <div class="card" style="text-align: center; padding: 3rem 2rem;">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">🦫</div>
+      <h2 style="color: var(--primary); margin-bottom: 1rem;">No Active Subscription</h2>
+      <p style="color: #666; margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+        Get unlimited task queuing, priority scheduling, and rollover hours with a Handy Beaver subscription.
+      </p>
+      <a href="/pricing" class="btn btn-primary">View Plans →</a>
+    </div>
+  `;
+  
+  return c.html(portalLayout('My Subscription', content, customer));
 };
