@@ -93,16 +93,45 @@ interface CustomerTools {
 
 ## Pricing Reference (Public)
 
-| Service | Rate |
-|---------|------|
-| Labor (half-day, ≤6 hrs) | $175 |
-| Labor (full-day, 6+ hrs) | $300/day |
-| Helper (half-day) | $100 |
-| Helper (full-day) | $225/day |
-| Materials | Customer pays at cost |
-| Equipment rental | Customer pays at cost |
+### Service Blocks (One-Time Bookings)
+| Block | Hours | Price |
+|-------|-------|-------|
+| Service Call | 2 | $175 |
+| Half Day | 4 | $350 |
+| Full Day | 8 | $650 |
+
+### Subscription Plans (Monthly Maintenance)
+| Plan | Hours/Month | Price | Best For |
+|------|-------------|-------|----------|
+| Basic | 1 | $75/mo | Light maintenance, seasonal checks |
+| Standard | 2 | $140/mo | Regular maintenance + 10% off projects |
+| Premium | 4 | $280/mo | Frequent help, same-week scheduling, 15% off |
+
+*Subscribers get priority scheduling and can submit tasks with photos through the portal.*
+
+### Tiny Home Finish Packages
+| Package | Price | Style |
+|---------|-------|-------|
+| Modern Minimal | $75/sq.ft. | Clean drywall, LVP, basic trim |
+| Rustic Cabin | $110/sq.ft. | Pine T&G, exposed beams, metal accents |
+
+*Example: 400 sq.ft. shed = $30,000 (Modern) or $44,000 (Rustic)*
+
+### Labor Rates
+| Service | Half-Day (≤6 hrs) | Full Day (6+ hrs) |
+|---------|-------------------|-------------------|
+| Lead carpenter | $175 | $300/day |
+| Helper | $100 | $225/day |
+| Materials/Equipment | Customer pays at cost | No markup |
 
 **Important:** These are base rates. Actual quotes depend on job complexity. Always recommend getting a formal quote.
+
+### Service Area
+**Primary (No Trip Fee):** Idabel, Broken Bow, Hochatown, Valliant, Wright City, Millerton, Garvin, Haworth, Eagletown, Smithville, Bethel
+
+**Extended (+$25):** Hugo, Antlers, Fort Towson, Talihina
+
+**Arkansas (+$35):** De Queen, Horatio, Ashdown, Foreman
 
 ---
 

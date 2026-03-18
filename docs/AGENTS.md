@@ -169,6 +169,10 @@ Both agents read/write to the same D1 database:
 - `job_notes`
 - `agent_conversations`
 - `agent_actions`
+- `subscription_plans`
+- `customer_subscriptions`
+- `subscription_tasks`
+- `tiny_home_projects`
 
 ---
 
