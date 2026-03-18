@@ -643,3 +643,69 @@ Example: 400 sq.ft. tiny cabin, basic package
 ```
 
 Use `/api/quotes` to create formal estimates with these rates.
+
+---
+
+## Site Knowledge Base
+
+Lil Beaver has access to indexed site knowledge for answering customer questions and generating content.
+
+### Knowledge Source
+
+**R2 Bucket:** `handy-beaver-images`  
+**Path:** `knowledge/site-info.json`  
+**Public URL:** `https://handybeaver.co/api/assets/knowledge/site-info.json`
+
+### How to Query Knowledge
+
+**Fetch all knowledge:**
+```bash
+curl -s "https://handybeaver.co/api/assets/knowledge/site-info.json" | jq '.'
+```
+
+**Get specific section:**
+```bash
+# Pricing info
+curl -s "https://handybeaver.co/api/assets/knowledge/site-info.json" | jq '.pricing'
+
+# Services
+curl -s "https://handybeaver.co/api/assets/knowledge/site-info.json" | jq '.services'
+
+# Social content themes
+curl -s "https://handybeaver.co/api/assets/knowledge/site-info.json" | jq '.socialContent'
+```
+
+### Knowledge Topics Available
+
+| Topic | Content |
+|-------|---------|
+| `business` | Name, tagline, contact, service area |
+| `services` | Carpentry, flooring, deck, maintenance, tiny home |
+| `pricing` | Service blocks, labor rates, subscriptions, project pricing |
+| `socialContent` | Themes, hashtags, CTAs, mascot phrases |
+
+### Use Cases
+
+1. **Customer Questions:** "How much does deck staining cost?" → Query `.pricing.projectPricing.decking`
+2. **Social Media:** Generate posts using `.socialContent.themes` and `.socialContent.hashtags`
+3. **Quotes:** Reference `.pricing.serviceBlocks` when creating estimates
+4. **Service Area:** Check `.business.serviceArea` for coverage questions
+
+### Social Media Content Generation
+
+When creating social content:
+1. Fetch knowledge: `curl -s https://handybeaver.co/api/assets/knowledge/site-info.json`
+2. Pick a theme from `socialContent.themes`
+3. Use accurate pricing from `pricing` section
+4. Include hashtags from `socialContent.hashtags`
+5. End with a CTA from `socialContent.ctaOptions`
+
+**Example prompt flow:**
+```
+User: Create a deck staining post
+→ Fetch knowledge JSON
+→ Get deck service info: .services.deck
+→ Get pricing: .pricing.projectPricing.decking ($15-25/sq.ft.)
+→ Get hashtags: .socialContent.hashtags
+→ Generate post with accurate info
+```
