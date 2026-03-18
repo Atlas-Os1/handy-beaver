@@ -36,6 +36,8 @@ import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-shar
 import { quotePage } from './pages/quote';
 import { pricingPage } from './pages/pricing';
 import { howItWorksPage } from './pages/how-it-works';
+import { serviceAreaPage } from './pages/service-area';
+import { tinyHomesPage } from './pages/tiny-homes';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -58,6 +60,7 @@ import { paymentPage } from './pages/payment';
 import { visualizeApi } from './routes/visualize-api';
 import { squareInvoicesApi } from './routes/square-invoices';
 import { lilBeaverChatApi } from './routes/lil-beaver-chat';
+import { subscriptionApi } from './routes/subscription-api';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -107,6 +110,8 @@ app.get('/social', socialPage);
 app.get('/quote', quotePage); // Instant quote calculator
 app.get('/pricing', pricingPage); // Service blocks + subscriptions
 app.get('/how-it-works', howItWorksPage); // 3-step process
+app.get('/service-area', serviceAreaPage); // Coverage map + towns
+app.get('/tiny-homes', tinyHomesPage); // Tiny home finish packages
 
 // Shareable quote page (public - customer can view and accept)
 app.get('/quote/:id', quoteSharePage);
@@ -359,6 +364,7 @@ api.route('/calendar/notes', calendarNotesApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
+api.route('/subscriptions', subscriptionApi);
 
 // Content queue for social media publishing
 import { contentQueueApi } from './routes/content-queue-api';
