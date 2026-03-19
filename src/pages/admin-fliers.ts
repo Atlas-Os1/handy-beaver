@@ -5,7 +5,7 @@ import { adminLayout } from './admin';
 const BRAND = {
   name: 'Handy Beaver',
   tagline: 'Dam Good Work, Every Time',
-  phone: '(580) 566-7017',
+  phone: '+1 (555) 797-2503',  // ElevenLabs WhatsApp number
   website: 'handybeaver.co',
 };
 
