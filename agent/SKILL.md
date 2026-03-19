@@ -833,3 +833,56 @@ User: Create a deck staining post
 → Get hashtags: .socialContent.hashtags
 → Generate post with accurate info
 ```
+
+---
+
+## Flier Generation API
+
+Create promotional fliers programmatically with guaranteed accurate text.
+
+### POST /api/flier/generate
+
+**Request:**
+```json
+{
+  "headline": "Spring Deck Special",
+  "subtext": "10% OFF Through April",
+  "cta": "Book Your Free Quote!",
+  "template": "promo",
+  "imageUrl": "/api/assets/portfolio/Decking/BluePineTG.png",
+  "includePhone": true,
+  "includeWebsite": true
+}
+```
+
+**Templates:** `promo`, `seasonal`, `service`, `testimonial`
+
+**Response:**
+```json
+{
+  "success": true,
+  "flierId": 10,
+  "backgroundUrl": "/api/assets/...",
+  "svgOverlay": "<svg>...</svg>"
+}
+```
+
+### GET /api/portfolio/r2-images?folder=Decking
+
+Get gallery images by folder for use as backgrounds.
+
+**Folders:** Barndo, Decking, Flooring, Rustic-Cabin, Tiny-Home, bath-remodel
+
+### Example: Create and queue a flier
+
+```bash
+curl -X POST "https://handybeaver.co/api/flier/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headline": "Deck Maintenance",
+    "cta": "Call Today!",
+    "imageUrl": "/api/assets/portfolio/Decking/BluePineTG.png"
+  }'
+```
+
+The flier is automatically added to the content queue as a draft.

@@ -378,7 +378,10 @@ export const adminFliersPage = async (c: Context) => {
         document.getElementById('previewBg').src = url;
         // Enable buttons when gallery image is selected
         document.getElementById('downloadBtn').disabled = false;
+        document.getElementById('queueBtn').disabled = false;
+        document.getElementById('queueBtn').textContent = '📋 Add to Queue';
         generatedBgUrl = url;
+        console.log('Selected gallery image:', url);
         updatePreview();
       }
 
@@ -575,10 +578,19 @@ export const adminFliersPage = async (c: Context) => {
         }
         
         const bgUrl = generatedBgUrl || selectedGalleryImage;
+        console.log('Add to queue - bgUrl:', bgUrl);
+        console.log('generatedBgUrl:', generatedBgUrl);
+        console.log('selectedGalleryImage:', selectedGalleryImage);
+        
         if (!bgUrl) {
           alert('Select or generate a background image first');
           return;
         }
+        
+        // Disable button and show loading
+        const queueBtn = document.getElementById('queueBtn');
+        queueBtn.disabled = true;
+        queueBtn.textContent = '⏳ Adding...';
         
         try {
           // Create flier in content queue via API
@@ -592,22 +604,30 @@ export const adminFliersPage = async (c: Context) => {
             includeWebsite: document.getElementById('includeWebsite').checked,
           };
           
+          console.log('Payload:', JSON.stringify(payload));
+          
           const res = await fetch('/api/flier/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
           
+          console.log('Response status:', res.status);
           const data = await res.json();
+          console.log('Response data:', data);
           
           if (data.success) {
+            queueBtn.textContent = '✅ Added #' + data.flierId;
             alert('Flier #' + data.flierId + ' added to content queue!');
-            document.getElementById('queueBtn').textContent = '✅ Added to Queue';
-            document.getElementById('queueBtn').disabled = true;
           } else {
-            alert('Error: ' + data.error);
+            queueBtn.textContent = '📋 Add to Queue';
+            queueBtn.disabled = false;
+            alert('Error: ' + (data.error || 'Unknown error'));
           }
         } catch (err) {
+          console.error('Queue error:', err);
+          queueBtn.textContent = '📋 Add to Queue';
+          queueBtn.disabled = false;
           alert('Failed to add to queue: ' + err.message);
         }
       }
