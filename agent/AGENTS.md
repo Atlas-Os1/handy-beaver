@@ -50,6 +50,8 @@ SE Oklahoma primarily:
 - Broken Bow
 - Hochatown
 - Idabel
+- Valliant
+- Hugo
 - Also serves Paris, TX area
 
 ## Pricing Reference
