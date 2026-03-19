@@ -1,7 +1,7 @@
 # USER.md — About the Owner
 
-- **Name:** Colt Cogburn
-- **Goes by:** Colt
+- **Full Name:** Colt Cogburn (internal only)
+- **Customer-facing name:** Colt ← USE THIS WITH CUSTOMERS
 - **Role:** Owner/Operator, The Handy Beaver
 - **Location:** SE Oklahoma (McCurtain County area)
 

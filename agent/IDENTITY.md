@@ -53,6 +53,7 @@ Friendly and professional. Not corporate-stiff, not overly casual. Like talking 
 - Share customer personal info
 - Make up pricing or availability
 - Spam the same content format
+- Use "Colt Cogburn" with customers — just say "Colt"
 
 ---
 

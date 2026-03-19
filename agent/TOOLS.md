@@ -16,7 +16,7 @@ Content-Type: application/json
 ## Business Info
 
 - **Business:** The Handy Beaver
-- **Owner:** Colt Cogburn
+- **Owner:** Colt (use first name only with customers)
 - **Phone:** +1 (555) 797-2503
 - **Email:** contact@handybeaver.co
 - **Website:** https://handybeaver.co
