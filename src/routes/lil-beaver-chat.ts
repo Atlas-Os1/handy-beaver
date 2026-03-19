@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 type Bindings = {
   DB: D1Database;
+  IMAGES: R2Bucket;
   OPENCLAW_GATEWAY_URL?: string;
   OPENCLAW_GATEWAY_TOKEN?: string;
   ADMIN_API_KEY?: string;
@@ -173,6 +174,148 @@ lilBeaverChatApi.get('/status', async (c) => {
     endpoints: {
       admin: '/api/chat/admin',
       customer: '/api/chat/customer',
+      upload: '/api/chat/upload',
     },
   });
+});
+
+// Photo upload for task submissions
+lilBeaverChatApi.post('/upload', async (c) => {
+  const contentType = c.req.header('Content-Type') || '';
+  
+  if (!contentType.includes('multipart/form-data')) {
+    return c.json({ error: 'multipart/form-data required' }, 400);
+  }
+  
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('photo') as File | null;
+    const customerId = formData.get('customer_id') as string | null;
+    const taskId = formData.get('task_id') as string | null;
+    const context = formData.get('context') as string || 'chat';
+    
+    if (!file) {
+      return c.json({ error: 'No photo uploaded' }, 400);
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+    if (!allowedTypes.includes(file.type)) {
+      return c.json({ error: 'Invalid file type. Use JPEG, PNG, or WebP.' }, 400);
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return c.json({ error: 'File too large. Max 10MB.' }, 400);
+    }
+    
+    // Generate unique filename
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop() || 'jpg';
+    const folder = context === 'task' ? 'tasks' : 'chat';
+    const key = `uploads/${folder}/${customerId || 'unknown'}/${timestamp}.${ext}`;
+    
+    // Upload to R2
+    const arrayBuffer = await file.arrayBuffer();
+    await c.env.IMAGES.put(key, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        customerId: customerId || '',
+        taskId: taskId || '',
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+    
+    // Return the R2 key and public URL
+    const publicUrl = `https://handybeaver.co/api/assets/${key}`;
+    
+    return c.json({
+      success: true,
+      key,
+      url: publicUrl,
+      filename: file.name,
+      size: file.size,
+    });
+    
+  } catch (error: any) {
+    console.error('Photo upload error:', error);
+    return c.json({ error: error.message || 'Upload failed' }, 500);
+  }
+});
+
+// Bulk photo upload (multiple photos at once)
+lilBeaverChatApi.post('/upload-multiple', async (c) => {
+  const contentType = c.req.header('Content-Type') || '';
+  
+  if (!contentType.includes('multipart/form-data')) {
+    return c.json({ error: 'multipart/form-data required' }, 400);
+  }
+  
+  try {
+    const formData = await c.req.formData();
+    const customerId = formData.get('customer_id') as string | null;
+    const taskId = formData.get('task_id') as string | null;
+    const context = formData.get('context') as string || 'chat';
+    
+    const uploads: { key: string; url: string; filename: string }[] = [];
+    const errors: { filename: string; error: string }[] = [];
+    
+    // Process all files in the form
+    for (const [name, value] of formData.entries()) {
+      if (name.startsWith('photo') && value instanceof File) {
+        const file = value;
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+        if (!allowedTypes.includes(file.type)) {
+          errors.push({ filename: file.name, error: 'Invalid file type' });
+          continue;
+        }
+        
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          errors.push({ filename: file.name, error: 'File too large (max 10MB)' });
+          continue;
+        }
+        
+        // Generate unique filename
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(7);
+        const ext = file.name.split('.').pop() || 'jpg';
+        const folder = context === 'task' ? 'tasks' : 'chat';
+        const key = `uploads/${folder}/${customerId || 'unknown'}/${timestamp}-${random}.${ext}`;
+        
+        // Upload to R2
+        const arrayBuffer = await file.arrayBuffer();
+        await c.env.IMAGES.put(key, arrayBuffer, {
+          httpMetadata: {
+            contentType: file.type,
+          },
+          customMetadata: {
+            customerId: customerId || '',
+            taskId: taskId || '',
+            originalName: file.name,
+            uploadedAt: new Date().toISOString(),
+          },
+        });
+        
+        const publicUrl = `https://handybeaver.co/api/assets/${key}`;
+        uploads.push({ key, url: publicUrl, filename: file.name });
+      }
+    }
+    
+    return c.json({
+      success: true,
+      uploads,
+      errors: errors.length > 0 ? errors : undefined,
+      count: uploads.length,
+    });
+    
+  } catch (error: any) {
+    console.error('Bulk photo upload error:', error);
+    return c.json({ error: error.message || 'Upload failed' }, 500);
+  }
 });

@@ -14,7 +14,7 @@ import { blogPage, blogPostPage } from './pages/blog';
 import { visualizePage } from './pages/visualize';
 import { agentPage } from './pages/agent';
 // Old portal imports removed - using new portal pages
-import { adminDashboard } from './pages/admin';
+import { adminDashboard, adminSubscriptionsPage } from './pages/admin';
 import { adminVisualizerPage } from './pages/admin-visualizer';
 import { adminLoginPage } from './pages/admin-login';
 import { portalVisualizerPage, portalGalleryPage } from './pages/portal-visualizer';
@@ -29,11 +29,15 @@ import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { adminBlogPage } from './pages/admin-blog';
 import { adminFliersPage } from './pages/admin-fliers';
 import { adminCompetitorsPage } from './pages/admin-competitors';
-import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, requirePortalAuth } from './pages/portal';
+import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
 import { quotePage } from './pages/quote';
+import { pricingPage } from './pages/pricing';
+import { howItWorksPage } from './pages/how-it-works';
+import { serviceAreaPage } from './pages/service-area';
+import { tinyHomesPage } from './pages/tiny-homes';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -56,6 +60,7 @@ import { paymentPage } from './pages/payment';
 import { visualizeApi } from './routes/visualize-api';
 import { squareInvoicesApi } from './routes/square-invoices';
 import { lilBeaverChatApi } from './routes/lil-beaver-chat';
+import { subscriptionApi } from './routes/subscription-api';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -134,6 +139,10 @@ app.get('/gallery', galleryPage);
 app.get('/gallery/:slug', galleryCategoryPage);
 app.get('/social', socialPage);
 app.get('/quote', quotePage); // Instant quote calculator
+app.get('/pricing', pricingPage); // Service blocks + subscriptions
+app.get('/how-it-works', howItWorksPage); // 3-step process
+app.get('/service-area', serviceAreaPage); // Coverage map + towns
+app.get('/tiny-homes', tinyHomesPage); // Tiny home finish packages
 
 // Shareable quote page (public - customer can view and accept)
 app.get('/quote/:id', quoteSharePage);
@@ -157,6 +166,7 @@ app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/messages/:customerId', requireAdmin, adminMessagesPage); // Handle direct links
 app.get('/admin/customers', requireAdmin, adminCustomersPage);
 app.get('/admin/customers/:id', requireAdmin, adminCustomerDetail);
+app.get('/admin/subscriptions', requireAdmin, adminSubscriptionsPage);
 app.get('/admin/quotes', requireAdmin, adminQuotesPage);
 app.get('/admin/quotes/:id', requireAdmin, adminQuoteDetail);
 app.get('/admin/quotes/:id/edit', requireAdmin, adminQuoteEdit);
@@ -320,6 +330,113 @@ app.get('/portal/invoices', requirePortalAuth, portalInvoices);
 app.get('/portal/invoices/:id', requirePortalAuth, portalInvoiceDetail);
 app.get('/portal/jobs', requirePortalAuth, portalJobs);
 app.get('/portal/messages', requirePortalAuth, portalMessages);
+app.get('/portal/subscription', requirePortalAuth, portalSubscription);
+
+// Subscription task submission
+app.post('/portal/subscription/add-task', requirePortalAuth, async (c) => {
+  const customer = c.get('customer');
+  const formData = await c.req.formData();
+  
+  const description = formData.get('description') as string;
+  const urgency = formData.get('urgency') as string || 'normal';
+  const estimatedHours = parseFloat(formData.get('estimated_hours') as string) || null;
+  
+  if (!description) {
+    return c.redirect('/portal/subscription?error=description_required');
+  }
+  
+  // Check for active subscription
+  const subscription = await c.env.DB.prepare(`
+    SELECT id FROM customer_subscriptions
+    WHERE customer_id = ? AND status = 'active'
+    LIMIT 1
+  `).bind(customer.customer_id).first<any>();
+  
+  if (!subscription) {
+    return c.redirect('/portal/subscription?error=no_subscription');
+  }
+  
+  // Handle photo uploads
+  const photoUrls: string[] = [];
+  const photos = formData.getAll('photos') as File[];
+  
+  for (const photo of photos) {
+    if (photo && photo.size > 0) {
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
+      const ext = photo.name.split('.').pop() || 'jpg';
+      const key = `uploads/tasks/${customer.customer_id}/${timestamp}-${random}.${ext}`;
+      
+      try {
+        const arrayBuffer = await photo.arrayBuffer();
+        await c.env.IMAGES.put(key, arrayBuffer, {
+          httpMetadata: { contentType: photo.type },
+        });
+        photoUrls.push(`https://handybeaver.co/api/assets/${key}`);
+      } catch (e) {
+        console.error('Photo upload failed:', e);
+      }
+    }
+  }
+  
+  // Create task
+  await c.env.DB.prepare(`
+    INSERT INTO subscription_tasks 
+    (subscription_id, customer_id, description, urgency, estimated_hours, photos, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending')
+  `).bind(
+    subscription.id,
+    customer.customer_id,
+    description,
+    urgency,
+    estimatedHours,
+    photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
+  ).run();
+  
+  // Send email notification to admin
+  if (c.env.RESEND_API_KEY) {
+    const urgencyEmoji = { urgent: '🔴', high: '🟠', normal: '🟢', low: '🔵' }[urgency] || '🟢';
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Handy Beaver <notifications@handybeaver.co>',
+          to: 'ccogburn85@gmail.com', // Admin email
+          subject: `${urgencyEmoji} New Task: ${customer.name} (${urgency})`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #8B4513;">🦫 New Subscription Task</h2>
+              <p><strong>Customer:</strong> ${customer.name}</p>
+              <p><strong>Urgency:</strong> ${urgencyEmoji} ${urgency.toUpperCase()}</p>
+              <p><strong>Description:</strong></p>
+              <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                ${description}
+              </div>
+              ${photoUrls.length > 0 ? `<p><strong>Photos:</strong> ${photoUrls.length} attached</p>` : ''}
+              <a href="https://handybeaver.co/admin/subscriptions" style="
+                display: inline-block;
+                background: #8B4513;
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 8px;
+                margin: 16px 0;
+              ">View Task Queue</a>
+            </div>
+          `,
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to send task notification email:', e);
+    }
+  }
+  
+  return c.redirect('/portal/subscription?success=task_added');
+});
 app.post('/portal/messages', requirePortalAuth, async (c) => {
   const customer = c.get('customer');
   const { message } = await c.req.parseBody();
@@ -386,6 +503,7 @@ api.route('/calendar/notes', calendarNotesApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
+api.route('/subscriptions', subscriptionApi);
 
 // Content queue for social media publishing
 import { contentQueueApi } from './routes/content-queue-api';

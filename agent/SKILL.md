@@ -665,13 +665,77 @@ curl -X POST "https://handybeaver.co/api/image/generate" \
 
 ---
 
-## Pricing Reference (Per Sq.Ft.)
+## Subscription Management
 
-### Tiny Cabin / Portable Shed Packages
+### List Subscriptions
+```bash
+curl -X GET "https://handybeaver.co/api/subscriptions/admin/subscriptions" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+### List Pending Tasks
+```bash
+curl -X GET "https://handybeaver.co/api/subscriptions/admin/tasks?status=pending" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+# Status options: pending, scheduled, in_progress, completed
+```
+
+### Update Task Status
+```bash
+curl -X PATCH "https://handybeaver.co/api/subscriptions/admin/tasks/{id}" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "scheduled",
+    "scheduled_date": "2026-03-20",
+    "notes": "Will complete during afternoon route"
+  }'
+```
+
+### Complete Task (Records Hours)
+```bash
+curl -X PATCH "https://handybeaver.co/api/subscriptions/admin/tasks/{id}" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "completed",
+    "hours_spent": 0.5,
+    "notes": "Fixed squeaky door, adjusted hinges"
+  }'
+```
+
+### View Task Photos
+Tasks may include customer-uploaded photos at:
+`https://handybeaver.co/api/assets/uploads/tasks/{customer_id}/{filename}`
+
+---
+
+## Pricing Reference
+
+### Service Blocks (One-Time)
+| Block | Hours | Price |
+|-------|-------|-------|
+| Service Call | 2 | $175 |
+| Half Day | 4 | $350 |
+| Full Day | 8 | $650 |
+
+### Subscription Plans (Monthly)
+| Plan | Hours/Month | Price | Features |
+|------|-------------|-------|----------|
+| Basic | 1 | $75 | Priority scheduling, Photo task queue |
+| Standard | 2 | $140 | + 10% off projects |
+| Premium | 4 | $280 | + Same-week scheduling, 15% off, Seasonal checkup |
+
+### Labor Rates
+- Under 6 hours: $175 (lead) / $100 (helper)
+- Full day (6+ hours): $300 (lead) / $225 (helper)
+- Materials: Customer pays at cost, no markup
+
+### Tiny Home Packages (Per Sq.Ft.)
 | Package | Price | Description |
 |---------|-------|-------------|
-| **Rustic Premium** | $110/sq.ft. | Detailed rustic finish, specialty wood, custom details (see Rustic-Cabin gallery) |
-| **Basic Package** | $75/sq.ft. | Quality finish, standard materials (see Tiny-Home gallery) |
+| **Rustic Cabin** | $110/sq.ft. | Pine T&G, exposed beams, metal accents (see Rustic-Cabin gallery) |
+| **Modern Minimal** | $75/sq.ft. | Clean drywall, LVP flooring, basic trim (see Tiny-Home gallery) |
 
 ### Individual Services
 | Service | Price | Notes |
@@ -684,12 +748,25 @@ curl -X POST "https://handybeaver.co/api/image/generate" \
 
 ### Quick Quote Formula
 ```
-Example: 400 sq.ft. tiny cabin, basic package
+Example: 400 sq.ft. tiny cabin, Modern Minimal
 = 400 × $75 = $30,000 base
 + Add-ons as needed
 ```
 
 Use `/api/quotes` to create formal estimates with these rates.
+
+---
+
+## Service Area
+
+**Primary (No Trip Fee):**
+Idabel, Broken Bow, Hochatown, Valliant, Wright City, Millerton, Garvin, Haworth, Eagletown, Smithville, Bethel
+
+**Extended (+$25 trip):**
+Hugo, Antlers, Fort Towson, Talihina
+
+**Arkansas (+$35 trip):**
+De Queen, Horatio, Ashdown, Foreman
 
 ---
 

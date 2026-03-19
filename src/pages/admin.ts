@@ -345,6 +345,7 @@ export const adminLayout = (title: string, content: string, activePage: string =
       <a href="/admin/calendar" class="${activePage === 'calendar' ? 'active' : ''}"><img src="/api/assets/icons/calendar.png" alt="" class="nav-icon"> Calendar</a>
       <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}"><img src="/api/assets/icons/customers.png" alt="" class="nav-icon"> Customers</a>
       <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
+      <a href="/admin/subscriptions" class="${activePage === 'subscriptions' ? 'active' : ''}">🦫 Subscriptions</a>
       <div class="divider"></div>
       <a href="/admin/visualizer" class="${activePage === 'visualizer' ? 'active' : ''}">✨ AI Visualizer</a>
       <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
@@ -745,4 +746,193 @@ export const adminMessages = async (c: Context) => {
   `;
   
   return c.html(adminLayout('Messages', content, 'messages', admin));
+};
+
+// Admin Subscriptions & Task Management
+export const adminSubscriptionsPage = async (c: Context) => {
+  const admin = c.get('admin') as Admin;
+  const db = c.env.DB;
+  
+  // Get all active subscriptions with customer info
+  const subscriptions = await db.prepare(`
+    SELECT cs.*, c.name as customer_name, c.email, c.phone,
+           sp.display_name as plan_name, sp.hours_per_month
+    FROM customer_subscriptions cs
+    JOIN customers c ON cs.customer_id = c.id
+    JOIN subscription_plans sp ON cs.plan_id = sp.id
+    WHERE cs.status = 'active'
+    ORDER BY cs.created_at DESC
+  `).all();
+  
+  // Get pending tasks
+  const pendingTasks = await db.prepare(`
+    SELECT st.*, c.name as customer_name, sp.display_name as plan_name
+    FROM subscription_tasks st
+    JOIN customers c ON st.customer_id = c.id
+    JOIN customer_subscriptions cs ON st.subscription_id = cs.id
+    JOIN subscription_plans sp ON cs.plan_id = sp.id
+    WHERE st.status IN ('pending', 'scheduled')
+    ORDER BY 
+      CASE st.urgency WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END,
+      st.created_at ASC
+  `).all();
+  
+  // Stats
+  const stats = await db.prepare(`
+    SELECT 
+      (SELECT COUNT(*) FROM customer_subscriptions WHERE status = 'active') as active_subs,
+      (SELECT COUNT(*) FROM subscription_tasks WHERE status = 'pending') as pending_tasks,
+      (SELECT COUNT(*) FROM subscription_tasks WHERE status = 'in_progress') as in_progress,
+      (SELECT SUM(monthly_price) FROM subscription_plans sp 
+       JOIN customer_subscriptions cs ON sp.id = cs.plan_id WHERE cs.status = 'active') as mrr
+  `).first<any>();
+  
+  const urgencyBadge = (urgency: string) => {
+    const colors: Record<string, string> = {
+      urgent: 'background: #fecaca; color: #991b1b;',
+      high: 'background: #fed7aa; color: #9a3412;',
+      normal: 'background: #e5e7eb; color: #374151;',
+      low: 'background: #d1fae5; color: #065f46;'
+    };
+    return `<span class="badge" style="${colors[urgency] || colors.normal}">${urgency}</span>`;
+  };
+  
+  const statusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: 'background: #fef3c7; color: #92400e;',
+      scheduled: 'background: #dbeafe; color: #1e40af;',
+      in_progress: 'background: #fae8ff; color: #86198f;',
+      completed: 'background: #d1fae5; color: #065f46;'
+    };
+    return `<span class="badge" style="${colors[status] || ''}">${status.replace('_', ' ')}</span>`;
+  };
+  
+  const content = `
+    <h1 style="margin-bottom: 1.5rem; color: #333;">🦫 Subscription Management</h1>
+    
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="value">${stats?.active_subs || 0}</div>
+        <div class="label">Active Subscriptions</div>
+      </div>
+      <div class="stat">
+        <div class="value">${stats?.pending_tasks || 0}</div>
+        <div class="label">Pending Tasks</div>
+      </div>
+      <div class="stat">
+        <div class="value">${stats?.in_progress || 0}</div>
+        <div class="label">In Progress</div>
+      </div>
+      <div class="stat">
+        <div class="value">$${stats?.mrr || 0}</div>
+        <div class="label">Monthly Revenue</div>
+      </div>
+    </div>
+    
+    <!-- Task Queue -->
+    <div class="card">
+      <h2>📋 Task Queue</h2>
+      ${(pendingTasks.results as any[])?.length > 0 ? `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Task</th>
+              <th>Urgency</th>
+              <th>Status</th>
+              <th>Est. Hours</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(pendingTasks.results as any[]).map((task: any) => `
+              <tr>
+                <td>
+                  <strong>${task.customer_name}</strong>
+                  <div style="font-size: 0.8rem; color: #666;">${task.plan_name}</div>
+                </td>
+                <td style="max-width: 300px;">
+                  ${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}
+                  ${task.photos ? `<div style="margin-top: 0.25rem;"><a href="#" onclick="showPhotos(${task.id})" style="font-size: 0.8rem;">📷 View photos</a></div>` : ''}
+                </td>
+                <td>${urgencyBadge(task.urgency)}</td>
+                <td>${statusBadge(task.status)}</td>
+                <td>${task.estimated_hours || '-'}</td>
+                <td>${new Date(task.created_at * 1000).toLocaleDateString()}</td>
+                <td>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-primary" onclick="updateTaskStatus(${task.id}, 'scheduled')">Schedule</button>
+                    <button class="btn btn-sm btn-secondary" onclick="updateTaskStatus(${task.id}, 'in_progress')">Start</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : '<p style="text-align: center; color: #666; padding: 2rem;">No pending tasks 🎉</p>'}
+    </div>
+    
+    <!-- Active Subscriptions -->
+    <div class="card">
+      <h2>📊 Active Subscriptions</h2>
+      ${(subscriptions.results as any[])?.length > 0 ? `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Plan</th>
+              <th>Hours Used</th>
+              <th>Period Ends</th>
+              <th>Contact</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(subscriptions.results as any[]).map((sub: any) => {
+              const hoursUsed = sub.hours_used_this_period || 0;
+              const hoursTotal = sub.hours_per_month;
+              const pct = Math.min(100, (hoursUsed / hoursTotal) * 100);
+              return `
+              <tr>
+                <td><strong>${sub.customer_name}</strong></td>
+                <td>${sub.plan_name}</td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="flex: 1; background: #e5e7eb; border-radius: 4px; height: 8px; max-width: 100px;">
+                      <div style="width: ${pct}%; background: ${pct > 80 ? '#ef4444' : '#8B4513'}; height: 100%; border-radius: 4px;"></div>
+                    </div>
+                    <span style="font-size: 0.85rem;">${hoursUsed}/${hoursTotal}h</span>
+                  </div>
+                </td>
+                <td>${sub.current_period_end ? new Date(sub.current_period_end * 1000).toLocaleDateString() : '-'}</td>
+                <td>
+                  <a href="tel:${sub.phone}" style="font-size: 0.85rem;">${sub.phone || sub.email}</a>
+                </td>
+              </tr>
+            `}).join('')}
+          </tbody>
+        </table>
+      ` : '<p style="text-align: center; color: #666; padding: 2rem;">No active subscriptions yet</p>'}
+    </div>
+    
+    <script>
+      async function updateTaskStatus(taskId, newStatus) {
+        const res = await fetch('/api/subscriptions/admin/tasks/' + taskId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) location.reload();
+        else alert('Failed to update task');
+      }
+      
+      function showPhotos(taskId) {
+        // TODO: modal with photos
+        alert('Photo viewer coming soon');
+      }
+    </script>
+  `;
+  
+  return c.html(adminLayout('Subscriptions', content, 'subscriptions', admin));
 };
