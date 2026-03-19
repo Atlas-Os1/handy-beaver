@@ -376,6 +376,9 @@ export const adminFliersPage = async (c: Context) => {
         el.classList.add('selected');
         selectedGalleryImage = url;
         document.getElementById('previewBg').src = url;
+        // Enable buttons when gallery image is selected
+        document.getElementById('downloadBtn').disabled = false;
+        generatedBgUrl = url;
         updatePreview();
       }
 
@@ -473,29 +476,78 @@ export const adminFliersPage = async (c: Context) => {
       }
 
       async function downloadFlier() {
-        // Create canvas and composite layers
-        const canvas = document.createElement('canvas');
-        canvas.width = 1080;
-        canvas.height = 1080;
-        const ctx = canvas.getContext('2d');
-        
-        // Load background
-        const bgImg = new Image();
-        bgImg.crossOrigin = 'anonymous';
-        bgImg.src = document.getElementById('previewBg').src;
-        
-        bgImg.onload = () => {
-          ctx.drawImage(bgImg, 0, 0, 1080, 1080);
+        try {
+          // Create canvas and composite layers
+          const canvas = document.createElement('canvas');
+          canvas.width = 1080;
+          canvas.height = 1080;
+          const ctx = canvas.getContext('2d');
           
-          // Draw SVG overlay
-          const svg = generateSvgOverlay();
-          const svgBlob = new Blob([svg], { type: 'image/svg+xml' });
-          const svgUrl = URL.createObjectURL(svgBlob);
+          // Load background
+          const bgImg = new Image();
+          bgImg.crossOrigin = 'anonymous';
+          const bgSrc = document.getElementById('previewBg').src;
           
-          const svgImg = new Image();
-          svgImg.onload = () => {
-            ctx.drawImage(svgImg, 0, 0, 1080, 1080);
-            URL.revokeObjectURL(svgUrl);
+          // Fetch the image as blob to avoid CORS issues
+          const response = await fetch(bgSrc);
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          
+          bgImg.onload = async () => {
+            ctx.drawImage(bgImg, 0, 0, 1080, 1080);
+            URL.revokeObjectURL(blobUrl);
+            
+            // Draw text directly on canvas (more reliable than SVG)
+            const headline = document.getElementById('headline').value || 'Your Headline';
+            const subtext = document.getElementById('subtext').value;
+            const cta = document.getElementById('cta').value;
+            const includePhone = document.getElementById('includePhone').checked;
+            const includeWebsite = document.getElementById('includeWebsite').checked;
+            
+            const colors = currentTemplate === 'testimonial' 
+              ? { bg: 'rgba(255,255,255,0.9)', text: '#333333', accent: '#8B4513' }
+              : { bg: 'rgba(139,69,19,0.85)', text: '#FFFFFF', accent: '#F5DEB3' };
+            
+            // Top banner
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 0, 1080, 120);
+            ctx.fillStyle = colors.text;
+            ctx.font = 'bold 48px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(BRAND.name, 540, 70);
+            ctx.fillStyle = colors.accent;
+            ctx.font = '20px Arial, sans-serif';
+            if (includeWebsite) ctx.fillText(BRAND.website, 540, 100);
+            
+            // Headline
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 400, 1080, 140);
+            ctx.fillStyle = colors.text;
+            ctx.font = 'bold 56px Georgia, serif';
+            ctx.fillText(headline, 540, 490);
+            
+            // Subtext
+            if (subtext) {
+              ctx.fillStyle = colors.bg;
+              ctx.fillRect(0, 540, 1080, 80);
+              ctx.fillStyle = colors.accent;
+              ctx.font = '32px Arial, sans-serif';
+              ctx.fillText(subtext, 540, 590);
+            }
+            
+            // Bottom CTA
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 920, 1080, 160);
+            if (cta) {
+              ctx.fillStyle = colors.text;
+              ctx.font = 'bold 36px Arial, sans-serif';
+              ctx.fillText(cta, 540, 980);
+            }
+            if (includePhone) {
+              ctx.fillStyle = colors.accent;
+              ctx.font = 'bold 44px Arial, sans-serif';
+              ctx.fillText(BRAND.phone, 540, 1040);
+            }
             
             // Download
             const link = document.createElement('a');
@@ -503,20 +555,61 @@ export const adminFliersPage = async (c: Context) => {
             link.href = canvas.toDataURL('image/png');
             link.click();
           };
-          svgImg.src = svgUrl;
-        };
+          
+          bgImg.onerror = () => {
+            alert('Failed to load background image. Try generating a new one.');
+          };
+          
+          bgImg.src = blobUrl;
+        } catch (err) {
+          console.error('Download error:', err);
+          alert('Download failed: ' + err.message);
+        }
       }
 
       async function addToQueue() {
-        if (!flierId) {
-          alert('Generate a flier first');
+        const headline = document.getElementById('headline').value;
+        if (!headline) {
+          alert('Add a headline first');
           return;
         }
         
-        // Update the content queue status to 'ready'
-        alert('Flier #' + flierId + ' added to content queue as ready for posting!');
-        document.getElementById('queueBtn').textContent = '✅ Added to Queue';
-        document.getElementById('queueBtn').disabled = true;
+        const bgUrl = generatedBgUrl || selectedGalleryImage;
+        if (!bgUrl) {
+          alert('Select or generate a background image first');
+          return;
+        }
+        
+        try {
+          // Create flier in content queue via API
+          const payload = {
+            headline: headline,
+            subtext: document.getElementById('subtext').value || undefined,
+            cta: document.getElementById('cta').value || undefined,
+            template: currentTemplate,
+            imageUrl: bgUrl,
+            includePhone: document.getElementById('includePhone').checked,
+            includeWebsite: document.getElementById('includeWebsite').checked,
+          };
+          
+          const res = await fetch('/api/flier/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          const data = await res.json();
+          
+          if (data.success) {
+            alert('Flier #' + data.flierId + ' added to content queue!');
+            document.getElementById('queueBtn').textContent = '✅ Added to Queue';
+            document.getElementById('queueBtn').disabled = true;
+          } else {
+            alert('Error: ' + data.error);
+          }
+        } catch (err) {
+          alert('Failed to add to queue: ' + err.message);
+        }
       }
 
       // Initial preview
