@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { portfolioManifest, getImagesByCategory, getFeaturedImages, getBeforeAfterPairs, type PortfolioCategory } from '../../config/portfolio-manifest';
+import { r2PortfolioImages } from '../../config/r2-portfolio';
 
 type Bindings = {
   DB: D1Database;
@@ -19,6 +20,36 @@ portfolioApi.get('/categories', async (c) => {
   `).all();
   
   return c.json(categories.results || []);
+});
+
+/**
+ * Get R2 portfolio images (public, for admin gallery picker)
+ */
+portfolioApi.get('/r2-images', async (c) => {
+  const folder = c.req.query('folder');
+  
+  if (folder) {
+    const images = r2PortfolioImages.filter(img => img.folder === folder);
+    return c.json({ 
+      folder, 
+      count: images.length, 
+      images: images.map(img => ({
+        ...img,
+        url: `/api/assets/${img.r2Path}`
+      }))
+    });
+  }
+  
+  // Group by folder
+  const byFolder: Record<string, number> = {};
+  r2PortfolioImages.forEach(img => {
+    byFolder[img.folder] = (byFolder[img.folder] || 0) + 1;
+  });
+  
+  return c.json({
+    total: r2PortfolioImages.length,
+    folders: byFolder
+  });
 });
 
 /**

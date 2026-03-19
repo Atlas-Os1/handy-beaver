@@ -358,7 +358,7 @@ export const adminFliersPage = async (c: Context) => {
         container.innerHTML = '<p>Loading...</p>';
         
         try {
-          const res = await fetch('/api/social/r2-images?folder=' + category);
+          const res = await fetch('/api/portfolio/r2-images?folder=' + category);
           const data = await res.json();
           
           container.innerHTML = data.images.map(img => 
