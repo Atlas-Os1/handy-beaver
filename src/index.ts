@@ -675,7 +675,36 @@ api.post('/quotes', async (c) => {
       }
     }
     
-    // Send notification email (optional - could add later)
+    // Send Discord notification
+    if (c.env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+      try {
+        await fetch(c.env.DISCORD_WEBHOOK_NOTIFICATIONS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: null,
+            embeds: [{
+              title: '🧮 New Quote Calculator Request!',
+              color: 0x8B4513, // Handy Beaver brown
+              fields: [
+                { name: '👤 Customer', value: name, inline: true },
+                { name: '📧 Email', value: email, inline: true },
+                { name: '📱 Phone', value: phone || 'Not provided', inline: true },
+                { name: '🔧 Service', value: service, inline: true },
+                { name: '📐 Size', value: size, inline: true },
+                { name: '⏰ Timeline', value: timeline || 'Flexible', inline: true },
+                { name: '💰 Estimate', value: estimated_cost || 'Not calculated', inline: true },
+                { name: '📝 Details', value: details?.substring(0, 200) || 'No additional details', inline: false },
+              ],
+              timestamp: new Date().toISOString(),
+            }],
+          }),
+        });
+      } catch (e) {
+        console.error('Discord notification failed:', e);
+      }
+    }
+    
     console.log('New quote request:', { name, email, service, size, timeline, estimated_cost });
     
     return c.json({ success: true, id: result.meta?.last_row_id || 1 });
