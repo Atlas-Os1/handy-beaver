@@ -247,12 +247,40 @@ export const quotePage = (c: Context) => {
                 <span class="icon">🎨</span>
                 <strong>Painting</strong>
               </div>
+              <div class="service-option" data-service="cabin_sign" onclick="selectService(this)">
+                <span class="icon">🪵</span>
+                <strong>Cabin Sign</strong>
+              </div>
               <div class="service-option" data-service="other" onclick="selectService(this)">
                 <span class="icon">📋</span>
                 <strong>Other</strong>
               </div>
             </div>
-            
+
+            <!-- Cabin Sign extra fields (shown when cabin_sign selected) -->
+            <div id="cabin-sign-fields" style="display: none; background: #faf8f5; border: 1.5px solid #e8ddd0; border-radius: 12px; padding: 1.25rem; margin-top: 0.5rem;">
+              <p style="font-weight: 600; color: var(--primary); margin-bottom: 0.75rem;">🪵 Custom Cabin Sign Details</p>
+              <div style="margin-bottom: 0.75rem;">
+                <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 0.4rem;">Cabin / Property Name *</label>
+                <input type="text" id="cabin-name" placeholder='e.g. "The Lakeview Lodge" or "Smith Family Retreat"' style="width: 100%; padding: 0.75rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.95rem;">
+              </div>
+              <div style="margin-bottom: 0.75rem;">
+                <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 0.4rem;">Preferred Size</label>
+                <select id="sign-size" style="width: 100%; padding: 0.75rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.95rem; background: white;">
+                  <option value="">Not sure yet (we'll help)</option>
+                  <option value="12x18">12"×18" — Address/Name Sign ($125–150)</option>
+                  <option value="18x24">18"×24" — Standard Cabin Sign ($200–250) ⭐ Most Popular</option>
+                  <option value="24x36">24"×36" — Statement Sign ($300–375)</option>
+                  <option value="36x48">36"×48" — Premium Large Sign ($425–525)</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 0.4rem;">Any design notes? (optional)</label>
+                <input type="text" id="sign-notes" placeholder='e.g. "dark walnut stain, rustic font, add address numbers"' style="width: 100%; padding: 0.75rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.95rem;">
+              </div>
+              <p style="font-size: 0.8rem; color: #888; margin-top: 0.75rem; margin-bottom: 0;">We'll generate a free AI mockup and send it to you before cutting anything.</p>
+            </div>
+
             <div class="quote-nav">
               <div></div>
               <button class="btn btn-primary" onclick="nextStep()" id="next-1" disabled>Next →</button>
@@ -417,6 +445,9 @@ export const quotePage = (c: Context) => {
         el.classList.add('selected');
         quoteData.service = el.dataset.service;
         document.getElementById('next-1').disabled = false;
+        // Show/hide cabin sign extra fields
+        const cabinFields = document.getElementById('cabin-sign-fields');
+        if (cabinFields) cabinFields.style.display = el.dataset.service === 'cabin_sign' ? 'block' : 'none';
       }
       
       function selectSize(el) {
@@ -526,11 +557,20 @@ export const quotePage = (c: Context) => {
         btn.disabled = true;
         btn.textContent = 'Submitting...';
         
+        const cabinName = document.getElementById('cabin-name') ? document.getElementById('cabin-name').value : '';
+        const signSize = document.getElementById('sign-size') ? document.getElementById('sign-size').value : '';
+        const signNotes = document.getElementById('sign-notes') ? document.getElementById('sign-notes').value : '';
+        const cabinSignDetails = quoteData.service === 'cabin_sign' && cabinName
+          ? 'CABIN SIGN | Name: ' + cabinName + ' | Size: ' + (signSize || 'TBD') + ' | Notes: ' + (signNotes || 'none')
+          : '';
+
         const formData = {
           name: document.getElementById('name').value,
           email: document.getElementById('email').value,
           phone: document.getElementById('phone').value,
-          details: document.getElementById('details').value,
+          details: cabinSignDetails
+            ? cabinSignDetails + (document.getElementById('details').value ? ' | ' + document.getElementById('details').value : '')
+            : document.getElementById('details').value,
           service: quoteData.service,
           size: quoteData.size,
           timeline: quoteData.timeline,

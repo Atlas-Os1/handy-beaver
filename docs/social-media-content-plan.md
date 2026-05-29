@@ -40,7 +40,7 @@ This plan outlines a comprehensive social media strategy for The Handy Beaver Co
 |-----|---------------|---------------|
 | **Monday** | Trim Carpentry | "Fresh week, fresh trim" — Crown molding, baseboards, custom built-ins |
 | **Tuesday** | Flooring | "Transformation Tuesday" — Before/after floor installations |
-| **Wednesday** | Deck Repair | "Deck Day Wednesday" — Staining, restoration, outdoor living |
+| **Wednesday** | Deck Repair / Cabin Signs (alternating) | "Deck Day Wednesday" — Staining, restoration, outdoor living OR "Sign Wednesday" — CNC process video, name reveal, finished sign showcase |
 | **Thursday** | General Maintenance | "Fix-It Thursday" — Doors, drywall, cabinets, small repairs |
 | **Friday** | Customer Spotlight | "Friday Feature" — Completed projects, testimonials |
 | **Saturday** | DIY Tips | "Saturday Skills" — Tips homeowners can try, with disclaimer to call for bigger jobs |
@@ -393,6 +393,57 @@ Post in each group 1x per week (rotate days to avoid spam flags):
 - Minor plumbing fixes
 - General home repairs
 
+### Custom Cabin Signs *(New Department — May 2026)*
+- CNC-carved cedar or pine signs, 1.5"+ thick
+- AI mockup preview before cutting
+- Custom cabin names, family names, address signs
+- Dark walnut, natural, or custom stain
+- Double-coat exterior sealer
+- Sizes: 12"×18" ($125–150) · 18"×24" ($200–250) · 24"×36" ($300–375) · 36"×48" ($425–525)
+- Add-ons: post mounting kit (+$75), post installation (+$100), address numbers (+$25), rush (+15%)
+- Volume discounts for property managers (3–5 signs: 10% off, 6–10: 15% off, 10+: custom)
+- Local delivery & installation, 5–7 day turnaround
+
+---
+
+## Cabin Signs Social Content Strategy *(Added May 2026)*
+
+### "Sign Wednesday" Content Rotation (alternates with Deck Day)
+
+Every other Wednesday is dedicated to cabin sign content. The CNC cutting process is uniquely photogenic and performs extremely well as short-form video.
+
+**Post types for Sign Wednesday:**
+1. **CNC Process Video** — 15–30 sec overhead time-lapse of the router carving a cabin name. Add music. Post as a Reel + Facebook native video. No narration needed — the sawdust flying does the work.
+2. **Name Reveal** — Photo of finished sign mounted on a cabin exterior. Caption reveals the cabin name. Tag the cabin's rental page if they have one. Organic reach to their audience.
+3. **Before/After** — Cabin entrance with no sign vs. same entrance with custom sign installed.
+4. **AI Mockup → Reality** — Side-by-side of the AI design mockup and the finished physical sign.
+
+### Sign-Specific Caption Voice
+Same Lil Beaver voice, but lean into craftsmanship and local pride:
+> "Every cabin deserves a name. 🪵 We cut, stain, seal, and install — all local, all custom. handybeaver.co/signs"
+
+> "Sign Wednesday ✂️ Watch the CNC carve out a fresh cabin name. Cedar + dark walnut stain = perfect. Order yours at handybeaver.co/signs"
+
+> "We'll show you an AI mockup of your sign before we ever touch the machine. You approve it, we cut it. That's how we do it. handybeaver.co/signs"
+
+### Facebook Marketplace Strategy ($0)
+- List every completed sign as a Marketplace product (free to list)
+- Title: "Custom CNC Cabin Sign — Cedar, Weatherproof, Personalized — Hochatown/Broken Bow"
+- Re-list every 7 days (free bump back to top)
+- Include full listing copy in `content-templates.json` under `cabin_signs.facebook_marketplace_listing`
+
+### Additional Hashtags for Signs Posts
+```
+#CabinSigns #CustomWoodSigns #CNCWoodworking #CabinLife #HochatownCabins
+#BrokenBowCabin #CustomSigns #WoodSign #OutdoorSign #CabinDecor
+#VacationRentalHost #AirbnbHost #ShortTermRental #OklahomaWoodworking
+```
+
+### Outreach Cadence (Weeks 3–4 after launch)
+- DM 5 local cabin rental pages per week: "We make custom cabin signs — want to see a free AI mockup of what yours would look like?"
+- Identify 1–2 property managers for partnership deal (free sign → testimonial + social tag)
+- Post in Hochatown/Broken Bow cabin owner Facebook groups 1x/week
+
 ---
 
 ## Next Steps
@@ -402,7 +453,8 @@ Post in each group 1x per week (rotate days to avoid spam flags):
 3. **Image Generation:** Create initial batch of service images with atlas-warhol
 4. **Content Queue:** Draft first two weeks of content
 5. **Launch:** Begin posting on agreed start date
+6. **Signs Launch (May 2026):** Make 1–2 sample signs, film CNC process video, list on Facebook Marketplace, begin Sign Wednesday rotation
 
 ---
 
-*"Quality craftsmanship for Southeast Oklahoma homes"* 🦫
+*"Quality craftsmanship for Southeast Oklahoma homes — and the signs that name them."* 🦫

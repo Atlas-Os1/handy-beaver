@@ -34,6 +34,28 @@ AI coding agents working in this repository should follow these rules.
 | Modern Minimal | $75 | Clean drywall, LVP flooring, basic trim |
 | Rustic Cabin | $110 | Pine T&G, exposed beams, metal accents |
 
+### Custom Cabin Signs (New — May 2026)
+CNC-carved, hand-finished, weatherproof outdoor signs. Cedar or pine. AI mockup before cutting. 5–7 day turnaround. Local delivery + install.
+
+| Size | Product | Price |
+|------|---------|-------|
+| 12"×18" | Address / Name Sign | $125–150 |
+| 18"×24" | Standard Cabin Sign (most popular) | $200–250 |
+| 24"×36" | Statement Sign | $300–375 |
+| 36"×48" | Premium Large Sign | $425–525 |
+
+**Add-ons:** Post Mounting Kit +$75 · Post Installation +$100 · Address Numbers +$25 · Rush (3–4 days) +15%
+
+**Volume discounts:** 3–5 signs 10% off · 6–10 signs 15% off · 10+ custom quote
+
+**Square SKUs:** SIGN-12X18 · SIGN-18X24 · SIGN-24X36 · SIGN-36X48 · SIGN-ADDON-POST-KIT · SIGN-ADDON-POST-INSTALL · SIGN-ADDON-ADDRESS
+
+**Key pages:** `/signs` (public product page) · `/quote?service=cabin_sign` (quote form with sign fields)
+
+**Square catalog setup:** `POST /api/signs/setup-catalog` with `x-admin-key` header seeds all products into Square.
+
+**Static sign photos:** `public/portfolio/signs/` served at `/portfolio/signs/` via `[assets]` binding in wrangler.toml. To add more photos, drop files in that folder and redeploy.
+
 ### Labor Rates
 - Under 6 hours: $175 (lead) / $100 (helper)
 - Full day (6+ hours): $300 (lead) / $225 (helper)

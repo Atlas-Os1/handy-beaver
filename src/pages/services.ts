@@ -56,6 +56,19 @@ const services = [
       'Minor plumbing fixes',
       'General home repairs'
     ]
+  },
+  {
+    icon: '/api/assets/icons/carpentry.png',
+    name: 'Custom Cabin Signs 🪵',
+    description: 'CNC-carved, hand-finished, weatherproof outdoor signs — built for Hochatown & Broken Bow cabin owners.',
+    items: [
+      'AI mockup preview before we cut',
+      'Cedar or pine, 1.5"+ thick',
+      'Choice of stain & finish',
+      'Exterior sealed (2 coats)',
+      'Local delivery & installation',
+      'Property manager discounts'
+    ]
   }
 ];
 
@@ -69,7 +82,8 @@ export const servicesPage = (c: Context) => {
     <section class="container">
       <div class="grid grid-2">
         ${services.map(service => `
-          <div class="card">
+          <div class="card" style="${service.name.includes('Cabin Signs') ? 'border: 2px solid var(--secondary); position: relative;' : ''}">
+            ${service.name.includes('Cabin Signs') ? '<span style="position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--secondary); color: white; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 1rem; border-radius: 20px; white-space: nowrap;">✨ NEW SERVICE</span>' : ''}
             <img src="${service.icon}" alt="${service.name}" style="width: 80px; height: 80px; margin-bottom: 1rem;">
             <h3 style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">${service.name}</h3>
             <p style="color: #666; margin-bottom: 1.5rem;">${service.description}</p>
@@ -80,6 +94,7 @@ export const servicesPage = (c: Context) => {
                 </li>
               `).join('')}
             </ul>
+            ${service.name.includes('Cabin Signs') ? '<a href="/signs" class="btn btn-primary" style="display: block; text-align: center; margin-top: 1.5rem;">See Cabin Signs Pricing →</a>' : ''}
           </div>
         `).join('')}
       </div>

@@ -38,6 +38,7 @@ import { pricingPage } from './pages/pricing';
 import { howItWorksPage } from './pages/how-it-works';
 import { serviceAreaPage } from './pages/service-area';
 import { tinyHomesPage } from './pages/tiny-homes';
+import { signsPage } from './pages/signs';
 
 // Routes
 import { authRoutes } from './routes/auth';
@@ -61,6 +62,7 @@ import { visualizeApi } from './routes/visualize-api';
 import { squareInvoicesApi } from './routes/square-invoices';
 import { lilBeaverChatApi } from './routes/lil-beaver-chat';
 import { subscriptionApi } from './routes/subscription-api';
+import { signsCatalogApi } from './routes/signs-catalog-api';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -112,6 +114,7 @@ app.get('/sitemap.xml', async (c) => {
   <url><loc>https://handybeaver.co/quote</loc><priority>0.8</priority></url>
   <url><loc>https://handybeaver.co/service-area</loc><priority>0.7</priority></url>
   <url><loc>https://handybeaver.co/tiny-homes</loc><priority>0.8</priority></url>
+  <url><loc>https://handybeaver.co/signs</loc><priority>0.9</priority></url>
   <url><loc>https://handybeaver.co/how-it-works</loc><priority>0.7</priority></url>
   <url><loc>https://handybeaver.co/agent</loc><priority>0.5</priority></url>
 </urlset>`;
@@ -143,6 +146,7 @@ app.get('/pricing', pricingPage); // Service blocks + subscriptions
 app.get('/how-it-works', howItWorksPage); // 3-step process
 app.get('/service-area', serviceAreaPage); // Coverage map + towns
 app.get('/tiny-homes', tinyHomesPage); // Tiny home finish packages
+app.get('/signs', signsPage); // Custom cabin signs
 
 // Shareable quote page (public - customer can view and accept)
 app.get('/quote/:id', quoteSharePage);
@@ -504,6 +508,7 @@ api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
 api.route('/subscriptions', subscriptionApi);
+api.route('/signs', signsCatalogApi); // Signs catalog + Square product setup
 
 // Content queue for social media publishing
 import { contentQueueApi } from './routes/content-queue-api';

@@ -2126,6 +2126,46 @@ export const r2PortfolioImages = [
       "finished"
     ],
     "r2Path": "portfolio/Rustic-Cabin/rustic-barnwood-floor.jpg"
+  },
+  {
+    "filename": "handy-beaver-business-sign.png",
+    "folder": "Signs",
+    "title": "HandyBeaver.Co Business Sign",
+    "description": "CNC-carved HandyBeaver.Co business sign with mascot, services, phone number, and QR code. Cedar, natural finish.",
+    "category": "signs",
+    "type": "gallery",
+    "tags": ["Signs", "cnc", "business-sign", "finished"],
+    "r2Path": "portfolio/Signs/handy-beaver-business-sign.png"
+  },
+  {
+    "filename": "happy_fall_porch_sign.jpeg",
+    "folder": "Signs",
+    "title": "Happy Fall Y'All Porch Sign",
+    "description": "Large vertical porch sign CNC-carved on pine. Natural wood, dark stain lettering. Great example of seasonal cabin decor.",
+    "category": "signs",
+    "type": "gallery",
+    "tags": ["Signs", "cnc", "porch-sign", "seasonal", "finished"],
+    "r2Path": "portfolio/Signs/happy_fall_porch_sign.jpeg"
+  },
+  {
+    "filename": "house_marker.jpeg",
+    "folder": "Signs",
+    "title": "Address Marker Signs — 305 Slim Rd.",
+    "description": "CNC-carved address signs with custom sunflower design. Cedar/pine, angled top corners. Shows two identical signs — perfect for property manager volume orders.",
+    "category": "signs",
+    "type": "gallery",
+    "tags": ["Signs", "cnc", "address-sign", "finished"],
+    "r2Path": "portfolio/Signs/house_marker.jpeg"
+  },
+  {
+    "filename": "wavy_american_flag.jpeg",
+    "folder": "Signs",
+    "title": "Rustic Wooden American Flag",
+    "description": "Hand-finished American flag on wood slat. Torched, stained red and blue, hand-painted stars. Wall art piece — shows range of custom woodwork.",
+    "category": "signs",
+    "type": "gallery",
+    "tags": ["Signs", "custom-woodwork", "flag", "wall-art", "finished"],
+    "r2Path": "portfolio/Signs/wavy_american_flag.jpeg"
   }
 ];
 

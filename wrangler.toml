@@ -3,6 +3,12 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Static assets served directly from filesystem (no R2 needed)
+# Files in public/ are served at their natural paths, e.g.:
+#   public/portfolio/signs/foo.jpeg  →  /portfolio/signs/foo.jpeg
+[assets]
+directory = "./public"
+
 # Observability - logs and traces
 [observability]
 enabled = true

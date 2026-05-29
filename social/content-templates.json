@@ -4,11 +4,12 @@
   "brand_voice": "Lil Beaver - friendly Oklahoma handyman, says y'all, no corporate jargon, 1-2 emojis max",
   "services": [
     "trim carpentry",
-    "flooring installation", 
+    "flooring installation",
     "deck repair & restoration",
     "baseboard installation",
     "custom built-ins",
-    "general maintenance"
+    "general maintenance",
+    "custom cabin signs"
   ],
   "service_areas": [
     "Hochatown", "Broken Bow", "Idabel", "Valliant", "Hugo", "Antlers", "Paris TX"
@@ -17,9 +18,9 @@
     {
       "theme": "deck",
       "captions": [
-        "Nothing beats a fresh deck stain job. 🦫 If your deck's looking rough, let's talk → handybeaver.co",
+        "Nothing beats a fresh deck stain job. If your deck's looking rough, let's talk. handybeaver.co",
         "Deck season is coming — make sure yours is ready. We do staining, sealing, and repairs across Southeast Oklahoma.",
-        "Just wrapped another deck restoration in {area}. That weathered gray? Gone. 🪵 handybeaver.co"
+        "Just wrapped another deck restoration in {area}. That weathered gray? Gone. handybeaver.co"
       ],
       "image_prompts": [
         "Cute cartoon beaver mascot in hard hat and flannel shirt standing proudly on a freshly stained wooden deck overlooking scenic Oklahoma forest, sunset lighting, photorealistic background"
@@ -28,7 +29,7 @@
     {
       "theme": "flooring",
       "captions": [
-        "New floors can transform a whole room. We install hardwood, laminate, and vinyl plank. 🦫 handybeaver.co",
+        "New floors can transform a whole room. We install hardwood, laminate, and vinyl plank. handybeaver.co",
         "That feeling when the last plank clicks into place... chef's kiss. Flooring installs across SE Oklahoma.",
         "Thinking about new floors? We've got you covered — hardwood to vinyl plank. Message us or visit handybeaver.co"
       ],
@@ -39,7 +40,7 @@
     {
       "theme": "trim",
       "captions": [
-        "Baseboards make the room. We do trim carpentry that actually looks right. 🦫 handybeaver.co",
+        "Baseboards make the room. We do trim carpentry that actually looks right. handybeaver.co",
         "Custom trim work in {area} today. Those clean corners? That's the good stuff.",
         "It's the details that matter — baseboards, crown molding, door trim. We handle it all."
       ],
@@ -50,16 +51,57 @@
     {
       "theme": "general",
       "captions": [
-        "Got a project you've been putting off? Let's knock it out. 🦫 handybeaver.co",
+        "Got a project you've been putting off? Let's knock it out. handybeaver.co",
         "No job too small, no attitude too big. That's how we do it at Handy Beaver Co.",
         "Something broken? We can probably fix it. Serving {area} and surrounding areas."
       ],
       "image_prompts": [
         "Cute cartoon beaver mascot in hard hat and flannel shirt holding tools, standing in front of beautiful Oklahoma home, friendly pose, photorealistic setting"
       ]
+    },
+    {
+      "theme": "cabin_signs",
+      "captions": [
+        "Every cabin deserves a name. We cut, stain, seal, and install — all local, all custom. handybeaver.co/signs",
+        "Just delivered a custom sign for a Hochatown cabin owner. Cedar, dark walnut stain, exterior sealed. That's a statement.",
+        "Cabin owners — your sign is the first impression your guests get. Make it count. Custom signs starting at $125. handybeaver.co/signs",
+        "We let the CNC do the hard part, but the finishing? That's all craftsmanship. Custom cabin signs, SE Oklahoma.",
+        "Know a cabin owner who needs a sign? Send this their way. We do custom orders year-round. handybeaver.co/signs",
+        "We'll show you an AI mockup of your sign before we ever touch the machine. You approve it, we cut it. That's how we do it. handybeaver.co/signs",
+        "Sign Wednesday — watch the CNC carve out a fresh cabin name. Cedar + dark walnut stain = perfect. Order yours at handybeaver.co/signs"
+      ],
+      "image_prompts": [
+        "Rustic cedar wood cabin sign carved with Lakeview Lodge mounted on a beautiful Oklahoma cabin exterior, warm evening light, photorealistic",
+        "CNC router carving a custom wood cabin sign, sawdust flying, warm workshop lighting, overhead time-lapse style shot",
+        "Cute cartoon beaver mascot holding a large wooden cabin sign reading The Family Retreat, forest background, warm friendly style",
+        "Before and after split image: plain cabin exterior with no sign vs same cabin with a beautiful hand-finished carved cedar sign installed, Oklahoma forest setting",
+        "Close-up of freshly carved cedar cabin sign with dark walnut stain, exterior sealer sheen, rustic rope hanging hardware, warm natural lighting",
+        "Flat lay of CNC cabin sign design mockup on screen next to finished physical sign, showing the AI design to real-life process"
+      ],
+      "facebook_marketplace_listing": {
+        "title": "Custom CNC Cabin Sign — Cedar, Weatherproof, Personalized — Hochatown/Broken Bow",
+        "description": "Handcrafted CNC-carved cabin signs made local in Southeast Oklahoma. Cedar or pine, dark walnut stain, double-coat exterior sealer. We send you an AI mockup before we cut — you approve the design, then we build it.\n\nSizes and pricing:\n12x18 Address/Name Sign — $125-150\n18x24 Standard Cabin Sign — $200-250\n24x36 Statement Sign — $300-375\n36x48 Premium Large Sign — $425-525\nAdd cedar post installation: +$100\n\n5-7 business day turnaround. Local delivery and installation available.\n\nOrder at handybeaver.co/signs or message us here.",
+        "renew_every_days": 7
+      }
     }
   ],
-  "hashtags": ["#HandyBeaverCo", "#SoutheastOklahoma", "#Handyman", "#HomeImprovement", "#BrokenBow", "#Hochatown", "#OklahomaHandyman"],
+  "hashtags": [
+    "#HandyBeaverCo", "#SoutheastOklahoma", "#Handyman", "#HomeImprovement",
+    "#BrokenBow", "#Hochatown", "#OklahomaHandyman",
+    "#CabinSigns", "#CustomWoodSigns", "#CNCWoodworking", "#CabinLife",
+    "#HochatownCabins", "#BrokenBowCabin", "#CustomSigns", "#WoodSign",
+    "#OutdoorSign", "#CabinDecor", "#VacationRentalHost", "#AirbnbHost",
+    "#ShortTermRental", "#OklahomaWoodworking"
+  ],
+  "hashtags_by_theme": {
+    "core": ["#HandyBeaverCo", "#SoutheastOklahoma", "#Handyman", "#BrokenBow", "#Hochatown"],
+    "cabin_signs": ["#CabinSigns", "#CustomWoodSigns", "#CNCWoodworking", "#CabinLife", "#HochatownCabins", "#BrokenBowCabin", "#CustomSigns", "#WoodSign", "#OutdoorSign", "#CabinDecor", "#VacationRentalHost", "#AirbnbHost", "#OklahomaWoodworking"],
+    "deck": ["#DeckRestoration", "#DeckStaining", "#OutdoorLiving", "#DeckRepair"],
+    "flooring": ["#HardwoodFloors", "#FlooringInstallation", "#VinylPlank", "#FloorRefinishing"],
+    "trim": ["#TrimCarpentry", "#CrownMolding", "#CustomWoodwork", "#Baseboards"],
+    "general": ["#HomeRepair", "#HomeMaintenance", "#FixerUpper", "#HomeImprovement"],
+    "location": ["#McCurtainCounty", "#SEOklahoma", "#BeaversBend", "#CabinLife"]
+  },
   "posting_schedule": {
     "frequency": "3x per week",
     "times": ["10:00 CST", "14:00 CST", "18:00 CST"],

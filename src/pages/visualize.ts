@@ -29,6 +29,7 @@ export const visualizePage = (c: Context) => {
               <li>Flooring material changes</li>
               <li>Paint color visualization</li>
               <li>Before/after comparisons</li>
+              <li>🪵 <strong>Custom cabin sign mockups</strong> — upload a photo of your cabin entrance, describe the sign you want, and see it placed on your actual cabin</li>
             </ul>
           </div>
         </div>
@@ -156,6 +157,14 @@ export const visualizePage = (c: Context) => {
           <p style="color: #666; font-size: 0.9rem;">
             "Replace carpet with light oak hardwood flooring"
           </p>
+        </div>
+        <div class="card" style="text-align: center; border: 2px solid var(--secondary);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🪵</div>
+          <h3 style="color: var(--primary);">Cabin Sign Preview</h3>
+          <p style="color: #666; font-size: 0.9rem;">
+            "Add a carved cedar cabin sign reading 'The Lakeview Lodge' above the front door of this cabin"
+          </p>
+          <a href="/signs" style="font-size: 0.85rem; color: var(--secondary); text-decoration: none; font-weight: 600;">See sign pricing →</a>
         </div>
       </div>
     </section>
