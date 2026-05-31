@@ -16,21 +16,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Prepare wrangler.toml for CI
         run: |
-          # Strip bindings/triggers that require extra CF permissions to validate.
-          # These are already configured on the live worker and are preserved
-          # across deploys — wrangler only updates what is explicitly in the toml.
-          sed -i "/^\[\[r2_buckets\]\]/,/^$/d" wrangler.toml
-          sed -i "/^\[browser\]/,/^$/d" wrangler.toml
           sed -i "/^\[triggers\]/,/^$/d" wrangler.toml
-          echo "--- wrangler.toml bindings after strip ---"
-          grep -E "^\[|^name|^main|^binding|^database" wrangler.toml
 
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy
