@@ -534,19 +534,15 @@ api.get('/debug/secrets', async (c) => {
   });
 });
 
-// Serve assets from R2
+// Serve assets from R2 (graceful fallback when R2 not bound)
 api.get('/assets/:key{.+}', async (c) => {
+  if (!c.env.IMAGES) return c.notFound();  // R2 not configured
   const key = c.req.param('key');
   const object = await c.env.IMAGES.get(key);
-  
-  if (!object) {
-    return c.notFound();
-  }
-  
+  if (!object) return c.notFound();
   const headers = new Headers();
   headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
   headers.set('Cache-Control', 'public, max-age=86400');
-  
   return new Response(object.body, { headers });
 });
 
