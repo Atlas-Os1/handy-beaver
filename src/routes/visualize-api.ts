@@ -5,7 +5,8 @@ import { getCookie } from 'hono/cookie';
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;   // Optional — R2 pending
+  KV: KVNamespace;     // Primary image store
   AI: Ai;
 };
 
@@ -56,6 +57,31 @@ const IMAGE_MODELS = [
 ] as const;
 
 const HERMES_MODEL = '@cf/nousresearch/hermes-2-pro-mistral-7b';
+
+// ─── KV TTLs ──────────────────────────────────────────────────────────────────
+const KV_TTL_VISUALIZER = 7 * 24 * 60 * 60;   // 7 days — generated images
+const KV_TTL_UPLOAD     = 30 * 24 * 60 * 60;  // 30 days — user uploads
+
+/** Store binary asset in KV (primary) with R2 as fallback */
+async function storeAsset(
+  env: Bindings,
+  key: string,
+  data: ArrayBuffer | Uint8Array,
+  contentType: string,
+  ttl = KV_TTL_VISUALIZER
+): Promise<string> {
+  const buf = data instanceof Uint8Array ? data.buffer : data;
+  if (env.KV) {
+    await env.KV.put(key, buf, { metadata: { contentType }, expirationTtl: ttl });
+    return `/api/assets/${key}`;
+  }
+  if (env.IMAGES) {
+    await env.IMAGES.put(key, buf, { httpMetadata: { contentType } });
+    return `/api/assets/${key}`;
+  }
+  throw new Error('No storage configured — add KV or R2 binding');
+}
+
 const CHAT_MODEL   = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 // Labor rates from pricing config
@@ -385,7 +411,7 @@ visualizeApi.post('/generate', async (c) => {
     if (imageFile) {
       const buf = await imageFile.arrayBuffer();
       inputKey = `visualizer/input/${sessionId}.${imageFile.type.split('/')[1] || 'jpg'}`;
-      await c.env.IMAGES.put(inputKey, buf, { httpMetadata: { contentType: imageFile.type } });
+      await storeAsset(c.env, inputKey, buf, imageFile.type, KV_TTL_UPLOAD);
     }
 
     // Enhance prompt via Hermes
@@ -400,12 +426,9 @@ visualizeApi.post('/generate', async (c) => {
 
     const { data: imageData, model: usedModel } = await generateImage(c.env.AI, genPrompt);
 
-    // Store result
+    // Store result in KV (7-day TTL) — falls back to R2 if bound
     const resultKey = `visualizer/output/${sessionId}.jpg`;
-    await c.env.IMAGES.put(resultKey, imageData, {
-      httpMetadata: { contentType: 'image/jpeg' },
-      customMetadata: { sessionId, mode, style: stylePreset },
-    });
+    await storeAsset(c.env, resultKey, imageData, 'image/jpeg', KV_TTL_VISUALIZER);
 
     // Save design session
     await c.env.DB.prepare(`
