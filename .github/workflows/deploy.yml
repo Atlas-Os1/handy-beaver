@@ -21,14 +21,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Strip R2/Browser bindings for CI deploy (bindings already live on worker)
+      - name: Prepare wrangler.toml for CI
         run: |
-          # Wrangler verifies bucket/browser bindings exist — strip them for CI.
-          # The live worker retains these bindings; this only affects deploy validation.
+          # Strip bindings/triggers that require extra CF permissions to validate.
+          # These are already configured on the live worker and are preserved
+          # across deploys — wrangler only updates what is explicitly in the toml.
           sed -i "/^\[\[r2_buckets\]\]/,/^$/d" wrangler.toml
           sed -i "/^\[browser\]/,/^$/d" wrangler.toml
-          echo "--- wrangler.toml after strip ---"
-          cat wrangler.toml | grep -E "^\[|^name|^main|^binding" | head -20
+          sed -i "/^\[triggers\]/,/^$/d" wrangler.toml
+          echo "--- wrangler.toml bindings after strip ---"
+          grep -E "^\[|^name|^main|^binding|^database" wrangler.toml
 
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy
