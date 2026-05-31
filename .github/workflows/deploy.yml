@@ -12,17 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install dependencies
         run: npm install
 
       - name: Prepare wrangler.toml for CI
-        run: |
-          sed -i "/^\[triggers\]/,/^$/d" wrangler.toml
+        run: sed -i "/^\[triggers\]/,/^$/d" wrangler.toml
 
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy
