@@ -69,7 +69,8 @@ import { getSession, requireCustomer, requireAdmin } from './lib/auth';
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;          // Optional — R2 pending
+  KV: KVNamespace;             // Primary asset store while R2 is off
   ENVIRONMENT: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
@@ -534,16 +535,37 @@ api.get('/debug/secrets', async (c) => {
   });
 });
 
-// Serve assets from R2 (graceful fallback when R2 not bound)
+// Serve assets — KV primary, R2 fallback, 404 if neither has the key
 api.get('/assets/:key{.+}', async (c) => {
-  if (!c.env.IMAGES) return c.notFound();  // R2 not configured
   const key = c.req.param('key');
-  const object = await c.env.IMAGES.get(key);
-  if (!object) return c.notFound();
-  const headers = new Headers();
-  headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
-  headers.set('Cache-Control', 'public, max-age=86400');
-  return new Response(object.body, { headers });
+
+  // 1. Try KV first (primary store while R2 is being set up)
+  if (c.env.KV) {
+    const { value, metadata } = await c.env.KV.getWithMetadata<{ contentType: string }>(key, 'arrayBuffer');
+    if (value) {
+      return new Response(value, {
+        headers: {
+          'Content-Type': metadata?.contentType ?? 'application/octet-stream',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
+  }
+
+  // 2. Fall back to R2 if bound
+  if (c.env.IMAGES) {
+    const object = await c.env.IMAGES.get(key);
+    if (object) {
+      return new Response(object.body, {
+        headers: {
+          'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
+  }
+
+  return c.notFound();
 });
 
 // Contact form submission
