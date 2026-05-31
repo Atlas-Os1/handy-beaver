@@ -21,6 +21,12 @@ database_id = "20a0e8d8-37eb-4445-af1a-3e295d724abd"
 # Workers AI
 [ai]
 binding = "AI"
+# KV Storage — image/asset store while R2 is being set up
+# Replaces R2 for visualizer output, uploaded photos, portfolio assets
+[[kv_namespaces]]
+binding = "KV"
+id = "46d20a7cccba4092a742b320fcdb1643"
+
 
 # Environment Variables
 [vars]
