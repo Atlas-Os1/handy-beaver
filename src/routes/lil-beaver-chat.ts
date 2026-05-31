@@ -17,7 +17,8 @@ import { Hono } from 'hono';
 type Bindings = {
   DB: D1Database;
   AI: Ai;
-  IMAGES?: R2Bucket;           // Optional until R2 is enabled
+  KV?: KVNamespace;            // Primary upload store
+  IMAGES?: R2Bucket;          // R2 fallback when enabled
   ADMIN_API_KEY?: string;
 };
 
@@ -204,26 +205,65 @@ Keep replies short and friendly. End with a call to action if relevant. Use 🦫
   }
 });
 
-// ── Photo upload — requires R2 ─────────────────────────────────────────────────
-lilBeaverChatApi.post('/upload', async (c) => {
-  if (!c.env.IMAGES) {
-    return c.json({
-      error: 'Photo uploads are coming soon — R2 storage not yet configured.',
-      workaround: 'Email photos to contact@handybeaver.co or text them to (580) 392-9061',
-    }, 503);
+// ── Photo upload — KV primary, R2 fallback ────────────────────────────────────
+const UPLOAD_TTL = 30 * 24 * 60 * 60; // 30 days
+
+async function saveUpload(env: Bindings, key: string, data: ArrayBuffer, contentType: string): Promise<string> {
+  if (env.KV) {
+    await env.KV.put(key, data, { metadata: { contentType }, expirationTtl: UPLOAD_TTL });
+  } else if (env.IMAGES) {
+    await env.IMAGES.put(key, data, { httpMetadata: { contentType } });
+  } else {
+    throw new Error('No storage available');
   }
-  // Full upload logic re-enabled once R2 is available
-  return c.json({ error: 'Upload handler pending R2 setup' }, 503);
+  return `https://handybeaver.co/api/assets/${key}`;
+}
+
+lilBeaverChatApi.post('/upload', async (c) => {
+  if (!c.env.KV && !c.env.IMAGES) {
+    return c.json({ error: 'Storage not configured', workaround: 'Text photos to (580) 392-9061' }, 503);
+  }
+  const formData = await c.req.formData();
+  const file = formData.get('photo') as File | null;
+  const customerId = formData.get('customer_id') as string ?? 'unknown';
+  const context = formData.get('context') as string ?? 'chat';
+
+  if (!file) return c.json({ error: 'No photo uploaded' }, 400);
+  if (!file.type.startsWith('image/')) return c.json({ error: 'Images only (JPEG, PNG, WebP)' }, 400);
+  if (file.size > 10 * 1024 * 1024) return c.json({ error: 'Max 10MB' }, 400);
+
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const key = `uploads/${context}/${customerId}/${Date.now()}-${crypto.randomUUID().slice(0,8)}.${ext}`;
+  const buf = await file.arrayBuffer();
+  const url = await saveUpload(c.env, key, buf, file.type);
+
+  return c.json({ success: true, key, url, filename: file.name, size: file.size });
 });
 
 lilBeaverChatApi.post('/upload-multiple', async (c) => {
-  if (!c.env.IMAGES) {
-    return c.json({
-      error: 'Photo uploads are coming soon — R2 storage not yet configured.',
-      workaround: 'Email photos to contact@handybeaver.co or text to (580) 392-9061',
-    }, 503);
+  if (!c.env.KV && !c.env.IMAGES) {
+    return c.json({ error: 'Storage not configured', workaround: 'Text photos to (580) 392-9061' }, 503);
   }
-  return c.json({ error: 'Upload handler pending R2 setup' }, 503);
+  const formData = await c.req.formData();
+  const customerId = formData.get('customer_id') as string ?? 'unknown';
+  const context = formData.get('context') as string ?? 'chat';
+  const uploads: { key: string; url: string; filename: string }[] = [];
+  const errors: { filename: string; error: string }[] = [];
+
+  for (const [, value] of formData.entries()) {
+    if (!(value instanceof File) || !value.name) continue;
+    if (!value.type.startsWith('image/')) { errors.push({ filename: value.name, error: 'Not an image' }); continue; }
+    if (value.size > 10 * 1024 * 1024) { errors.push({ filename: value.name, error: 'Too large (max 10MB)' }); continue; }
+    const ext = value.name.split('.').pop() ?? 'jpg';
+    const key = `uploads/${context}/${customerId}/${Date.now()}-${crypto.randomUUID().slice(0,8)}.${ext}`;
+    try {
+      const url = await saveUpload(c.env, key, await value.arrayBuffer(), value.type);
+      uploads.push({ key, url, filename: value.name });
+    } catch (e) {
+      errors.push({ filename: value.name, error: String(e) });
+    }
+  }
+  return c.json({ success: true, uploads, errors: errors.length ? errors : undefined, count: uploads.length });
 });
 
 // ── Status ────────────────────────────────────────────────────────────────────
