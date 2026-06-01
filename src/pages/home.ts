@@ -38,7 +38,7 @@ export const homePage = (c: Context) => {
       background: linear-gradient(180deg, rgba(139, 69, 19, 0.3) 0%, transparent 100%);
     ">
       <img 
-        src="/beaver-avatar.png" 
+        src="/handy-beaver-avatar-v2.png" 
         alt="${business.name} mascot"
         style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--secondary); box-shadow: 0 0 40px var(--card-glow);"
       >
