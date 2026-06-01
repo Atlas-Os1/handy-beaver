@@ -299,7 +299,7 @@ export const adminJobDetail = async (c: Context) => {
           <span style="background: ${statusColors[job.status] || '#6b7280'}; color: white; padding: 4px 12px; border-radius: 4px;">${job.status}</span>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-          <select id="status-select" onchange="updateStatus()" style="padding: 0.5rem; border-radius: 4px; background: #222; color: white; border: 1px solid #444;">
+          <select id="status-select" onchange="updateStatus()" style="padding: 0.5rem; border-radius: 4px; background: white; color: #333; border: 1px solid #d1d5db;">
             <option value="pending" ${job.status === 'pending' ? 'selected' : ''}>Pending</option>
             <option value="confirmed" ${job.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
             <option value="in_progress" ${job.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
@@ -312,7 +312,7 @@ export const adminJobDetail = async (c: Context) => {
       
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
         <div>
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px; margin-bottom: 1rem;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 1rem;">
             <h3 style="margin-top: 0;">Job Details</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div><strong>Service:</strong> ${job.service_type}</div>
@@ -327,25 +327,25 @@ export const adminJobDetail = async (c: Context) => {
             ${job.description ? `<div style="margin-top: 1rem;"><strong>Description:</strong><br>${job.description}</div>` : ''}
           </div>
           
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb;">
             <h3 style="margin-top: 0;">Notes</h3>
             <div id="notes-list" style="max-height: 300px; overflow-y: auto;">
               ${notes.results?.length ? notes.results.map((n: any) => `
-                <div style="padding: 0.75rem; background: #111; border-radius: 6px; margin-bottom: 0.5rem;">
+                <div style="padding: 0.75rem; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb; margin-bottom: 0.5rem;">
                   <div style="font-size: 0.8rem; color: #666;">${formatDate(n.created_at)}</div>
                   <div>${n.content}</div>
                 </div>
               `).join('') : '<p style="color: #666;">No notes yet.</p>'}
             </div>
             <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-              <input type="text" id="new-note" placeholder="Add a note..." style="flex: 1; padding: 0.5rem; border-radius: 4px; background: #222; color: white; border: 1px solid #444;">
+              <input type="text" id="new-note" placeholder="Add a note..." style="flex: 1; padding: 0.5rem; border-radius: 4px; background: white; color: #333; border: 1px solid #d1d5db;">
               <button class="btn-primary" onclick="addNote()">Add</button>
             </div>
           </div>
         </div>
         
         <div>
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px; margin-bottom: 1rem;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 1rem;">
             <h3 style="margin-top: 0;">Customer</h3>
             <p><strong>${job.customer_name}</strong></p>
             <p><a href="mailto:${job.customer_email}">${job.customer_email}</a></p>
@@ -354,7 +354,7 @@ export const adminJobDetail = async (c: Context) => {
             <a href="/admin/customers/${job.customer_id}" class="btn-secondary" style="margin-top: 0.5rem; display: inline-block;">View Customer</a>
           </div>
           
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb;">
             <h3 style="margin-top: 0;">Financials</h3>
             <p><strong>Deposit Paid:</strong> ${formatMoney(job.deposit_paid)}</p>
             <p><strong>Total Paid:</strong> ${formatMoney(job.total_paid)}</p>
