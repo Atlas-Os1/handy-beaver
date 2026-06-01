@@ -59,6 +59,28 @@ GOOGLE_CALENDAR_ID = "primary"
 # [browser]
 # binding = "BROWSER"
 
+
+# ── Cloudflare Workflows — durable background tasks ──────────────────────────
+# Each workflow runs independently; a failure in one doesn't affect the others.
+
+[[workflows]]
+name = "handy-beaver-calendar-sync"
+binding = "CALENDAR_SYNC_WORKFLOW"
+class_name = "CalendarSyncWorkflow"
+script_name = "handy-beaver"
+
+[[workflows]]
+name = "handy-beaver-voice-sync"
+binding = "VOICE_SYNC_WORKFLOW"
+class_name = "VoiceLeadSyncWorkflow"
+script_name = "handy-beaver"
+
+[[workflows]]
+name = "handy-beaver-content-publish"
+binding = "CONTENT_PUBLISH_WORKFLOW"
+class_name = "ContentPublishWorkflow"
+script_name = "handy-beaver"
+
 # Email routing (Cloudflare Email Routing must be configured in dashboard)
 send_email = [
   { name = "SEND_EMAIL" }
