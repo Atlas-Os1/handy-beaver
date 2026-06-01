@@ -274,7 +274,7 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
 <body>
   <nav class="portal-nav">
     <div class="brand">
-      <img src="/api/assets/beaver-avatar.png" alt="Beaver">
+      <img src="/beaver-avatar.png" alt="Beaver">
       <span>My Account</span>
     </div>
     <div class="user">
@@ -285,11 +285,11 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
   
   <div class="portal-layout">
     <aside class="sidebar">
-      <a href="/portal"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
-      <a href="/portal/quotes"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon"> My Quotes</a>
-      <a href="/portal/invoices"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
-      <a href="/portal/jobs"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon"> Job History</a>
-      <a href="/portal/messages"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
+      <a href="/portal"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a href="/portal/quotes"><span class="nav-icon">📋</span> My Quotes</a>
+      <a href="/portal/invoices"><span class="nav-icon">💰</span> Invoices</a>
+      <a href="/portal/jobs"><span class="nav-icon">🔨</span> Job History</a>
+      <a href="/portal/messages"><span class="nav-icon">💬</span> Messages</a>
       <a href="/portal/subscription">🦫 Subscription</a>
       <a href="/portal/visualizer">✨ AI Visualizer</a>
       <a href="/portal/gallery">🖼️ My Gallery</a>
@@ -297,11 +297,11 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
   
   <!-- Mobile Bottom Navigation -->
   <nav class="bottom-nav">
-    <a href="/portal"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon">Home</a>
-    <a href="/portal/quotes"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon">Quotes</a>
+    <a href="/portal"><span class="nav-icon">🏠</span>Home</a>
+    <a href="/portal/quotes"><span class="nav-icon">📋</span>Quotes</a>
     <a href="/portal/subscription" style="font-size: 1.2rem;">🦫<span style="font-size: 0.7rem;">Plan</span></a>
-    <a href="/portal/invoices"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon">Pay</a>
-    <a href="/portal/messages"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon">Chat</a>
+    <a href="/portal/invoices"><span class="nav-icon">💰</span>Pay</a>
+    <a href="/portal/messages"><span class="nav-icon">💬</span>Chat</a>
   </nav>
     
     <main class="main-content">
@@ -388,7 +388,7 @@ export const portalLoginPage = async (c: Context) => {
 <body>
   <div class="login-card">
     <div class="logo">
-      <img src="/api/assets/beaver-avatar.png" alt="${business.name}">
+      <img src="/beaver-avatar.png" alt="${business.name}">
       <h1>Customer Portal</h1>
       <p>View your quotes, invoices, and job history</p>
     </div>
