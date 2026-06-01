@@ -94,7 +94,7 @@ async function chat(
     messages,
     max_tokens: 800,
     temperature: 0.7,
-  });
+  }, { gateway: { id: 'handy-beaver' } });
   return (result as any)?.response?.trim() ?? 'Sorry, I had trouble responding. Try again!';
 }
 
