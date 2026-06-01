@@ -176,7 +176,7 @@ export const adminLayout = (title: string, content: string, activePage: string =
         z-index: 1000;
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-        background: #1a1a2e;
+        background: #f8fafc;
         flex-direction: column;
         overflow-y: auto;
         overflow-x: hidden;
@@ -250,7 +250,7 @@ export const adminLayout = (title: string, content: string, activePage: string =
         z-index: 1000;
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-        background: #1a1a2e !important;
+        background: #f8fafc !important;
         flex-direction: column !important;
         overflow-y: auto;
         overflow-x: hidden;
@@ -268,7 +268,7 @@ export const adminLayout = (title: string, content: string, activePage: string =
         white-space: nowrap;
         padding: 0.75rem 1rem !important;
         display: flex !important;
-        color: #ccc !important;
+        color: #374151 !important;
       }
       .sidebar a:hover {
         background: rgba(255,255,255,0.1) !important;
@@ -332,7 +332,7 @@ export const adminLayout = (title: string, content: string, activePage: string =
     <div class="user">
       <span>${admin?.name || admin?.github_username || 'Admin'}</span>
       <img src="${admin?.avatar_url || '/beaver-avatar.png'}" alt="Avatar">
-      <a href="/api/auth/logout" style="color: #ccc; margin-left: 1rem;">Logout</a>
+      <a href="/api/auth/logout" style="color: #6b7280; margin-left: 1rem;">Logout</a>
     </div>
   </nav>
   
