@@ -140,7 +140,7 @@ async function generateImage(ai: Ai, prompt: string): Promise<{ data: Uint8Array
       const result = await (ai as any).run(model, {
         prompt: `${prompt}. Photorealistic, high quality, professional photography, natural lighting, ultra-detailed.`,
         num_steps: model.includes('flux-2') ? 4 : 20,
-      });
+      }, { gateway: { id: 'handy-beaver', skipCache: false } });
 
       let buffer: ArrayBuffer | null = null;
 
@@ -270,7 +270,7 @@ Include realistic quantities for all materials, prep work, and labor. Break labo
       ],
       max_tokens: 1200,
       temperature: 0.3,
-    });
+    }, { gateway: { id: 'handy-beaver' } });
 
     const text = (result as any)?.response ?? '';
     // Extract JSON from response (may have surrounding text)
