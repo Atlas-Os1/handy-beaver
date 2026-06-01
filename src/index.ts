@@ -67,6 +67,12 @@ import { signsCatalogApi } from './routes/signs-catalog-api';
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
 
+
+// Workflows
+import { CalendarSyncWorkflow } from './workflows/CalendarSyncWorkflow';
+import { VoiceLeadSyncWorkflow } from './workflows/VoiceLeadSyncWorkflow';
+import { ContentPublishWorkflow } from './workflows/ContentPublishWorkflow';
+
 type Bindings = {
   DB: D1Database;
   IMAGES?: R2Bucket;          // Optional — R2 pending
@@ -84,6 +90,10 @@ type Bindings = {
   GOOGLE_CALENDAR_ID?: string;
   CALENDAR_WEBHOOK_SECRET?: string;
   SEND_EMAIL?: any; // Cloudflare Email binding
+  // Workflows
+  CALENDAR_SYNC_WORKFLOW?: Workflow;
+  VOICE_SYNC_WORKFLOW?: Workflow;
+  CONTENT_PUBLISH_WORKFLOW?: Workflow;
   FACEBOOK_PAGE_ACCESS_TOKEN?: string;
   FACEBOOK_PAGE_ID?: string;
   ANTHROPIC_API_KEY?: string;
@@ -996,125 +1006,29 @@ async function syncElevenLabsConversations(env: Bindings) {
 
 // Scheduled handler for cron triggers (Facebook group scanning)
 async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-  console.log('Cron triggered: periodic background jobs');
+  console.log('Cron triggered — launching Workflows');
 
-  // Keep existing placeholder Facebook session check
-  const session = await env.DB.prepare(
-    'SELECT cookies FROM facebook_sessions WHERE id = 1'
-  ).first<{ cookies: string }>();
+  // Each workflow runs as an independent durable execution.
+  // A failure in one does not affect the others.
+  // Steps inside each workflow are checkpointed and retried automatically.
+  const triggered: string[] = [];
 
-  if (!session?.cookies) {
-    console.log('No Facebook session stored, skipping Facebook scan');
+  if (env.CALENDAR_SYNC_WORKFLOW) {
+    await env.CALENDAR_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
+    triggered.push('calendar-sync');
   }
 
-  // Calendar back-sync: pull Google changes and apply to bookings
-  const calendarSync = await backSyncGoogleCalendarToBookings(env);
-  if (calendarSync.success) {
-    console.log(`Calendar sync complete. Synced ${calendarSync.synced} booking(s).`);
-  } else {
-    console.log(`Calendar sync failed: ${calendarSync.error}`);
-  }
-  
-  // Sync ElevenLabs voice conversations
-  const elevenLabsSync = await syncElevenLabsConversations(env);
-  console.log(`ElevenLabs sync: ${elevenLabsSync.synced} conversation(s) synced`);
-
-  // Publish ready posts from content queue
-  const now = Math.floor(Date.now() / 1000);
-  const readyPosts = await env.DB.prepare(`
-    SELECT * FROM content_queue 
-    WHERE status = 'ready' 
-    AND scheduled_for <= ?
-    ORDER BY scheduled_for ASC
-    LIMIT 3
-  `).bind(now).all<any>();
-  
-  if (readyPosts.results && readyPosts.results.length > 0) {
-    console.log(`Found ${readyPosts.results.length} posts ready to publish`);
-    
-    for (const post of readyPosts.results) {
-      try {
-        // Post to Facebook if we have a token
-        const fbToken = env.FACEBOOK_PAGE_ACCESS_TOKEN;
-        const fbPageId = env.FACEBOOK_PAGE_ID || '1040910635768535';
-        
-        if (fbToken && (post.platform === 'facebook' || post.platform === 'both')) {
-          let fbUrl: string;
-          let fbParams: Record<string, string>;
-          
-          // Build the message with hashtags if present
-          const message = post.caption + (post.hashtags ? `\n\n${post.hashtags}` : '');
-          
-          // If we have an image, use /photos endpoint
-          if (post.image_url) {
-            // Convert relative URLs to absolute
-            const imageUrl = post.image_url.startsWith('/') 
-              ? `https://handybeaver.co${post.image_url}` 
-              : post.image_url;
-            
-            fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/photos`;
-            fbParams = {
-              access_token: fbToken,
-              url: imageUrl,
-              caption: message,
-            };
-          } else {
-            // Text-only post to /feed
-            fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/feed`;
-            fbParams = {
-              access_token: fbToken,
-              message: message,
-            };
-          }
-          
-          // Facebook requires application/x-www-form-urlencoded, NOT JSON
-          const fbRes = await fetch(fbUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(fbParams),
-          });
-          
-          const fbData = await fbRes.json() as any;
-          
-          if (fbData.id) {
-            await env.DB.prepare(`
-              UPDATE content_queue 
-              SET status = 'published', 
-                  fb_post_id = ?, 
-                  published_at = ?,
-                  updated_at = ?
-              WHERE id = ?
-            `).bind(fbData.id, now, now, post.id).run();
-            console.log(`Published post ${post.id} to Facebook: ${fbData.id}`);
-          } else {
-            await env.DB.prepare(`
-              UPDATE content_queue 
-              SET status = 'failed', 
-                  error_message = ?,
-                  updated_at = ?
-              WHERE id = ?
-            `).bind(JSON.stringify(fbData.error || fbData), now, post.id).run();
-            console.error(`Failed to publish post ${post.id}:`, fbData);
-          }
-        } else if (!fbToken) {
-          console.log('No FACEBOOK_PAGE_ACCESS_TOKEN set, skipping Facebook publish');
-        }
-      } catch (err) {
-        console.error(`Error publishing post ${post.id}:`, err);
-        await env.DB.prepare(`
-          UPDATE content_queue 
-          SET status = 'failed', 
-              error_message = ?,
-              updated_at = ?
-          WHERE id = ?
-        `).bind(String(err), now, post.id).run();
-      }
-    }
-  } else {
-    console.log('No posts ready to publish');
+  if (env.VOICE_SYNC_WORKFLOW) {
+    await env.VOICE_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
+    triggered.push('voice-lead-sync');
   }
 
-  console.log('Cron completed');
+  if (env.CONTENT_PUBLISH_WORKFLOW) {
+    await env.CONTENT_PUBLISH_WORKFLOW.create({ params: { triggered_by: 'cron', limit: 3 } });
+    triggered.push('content-publish');
+  }
+
+  console.log('Workflows triggered:', triggered.join(', ') || 'none (bindings not configured)');
 }
 
 // Email handler for inbound emails
@@ -1151,3 +1065,6 @@ export default {
   scheduled,
   email,
 };
+
+// Workflow class exports (required by Cloudflare Workflows runtime)
+export { CalendarSyncWorkflow, VoiceLeadSyncWorkflow, ContentPublishWorkflow };
