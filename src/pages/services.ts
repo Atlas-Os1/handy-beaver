@@ -6,7 +6,7 @@ const { pricing } = siteConfig;
 
 const services = [
   {
-    icon: '/api/assets/icons/carpentry.png',
+    icon: '/icons/carpentry.png',
     name: 'Trim Carpentry',
     description: 'Expert woodwork that adds character and value to your home.',
     items: [
@@ -19,7 +19,7 @@ const services = [
     ]
   },
   {
-    icon: '/api/assets/icons/flooring.png',
+    icon: '/icons/flooring.png',
     name: 'Flooring Services',
     description: 'From installation to repair, we handle all your flooring needs.',
     items: [
@@ -32,7 +32,7 @@ const services = [
     ]
   },
   {
-    icon: '/api/assets/icons/deck.png',
+    icon: '/icons/deck.png',
     name: 'Deck Repair & Restoration',
     description: 'Bring your outdoor space back to life.',
     items: [
@@ -45,7 +45,7 @@ const services = [
     ]
   },
   {
-    icon: '/api/assets/icons/maintenance.png',
+    icon: '/icons/maintenance.png',
     name: 'General Maintenance',
     description: 'Handyman services for all your home repair needs.',
     items: [
@@ -58,7 +58,7 @@ const services = [
     ]
   },
   {
-    icon: '/api/assets/icons/carpentry.png',
+    icon: '/icons/carpentry.png',
     name: 'Custom Cabin Signs 🪵',
     description: 'CNC-carved, hand-finished, weatherproof outdoor signs — built for Hochatown & Broken Bow cabin owners.',
     items: [
@@ -156,7 +156,7 @@ export const servicesPage = (c: Context) => {
       <div class="grid grid-3">
         <div class="card" style="border: 2px solid var(--secondary); text-align: center;">
           <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-            <img src="/api/assets/icons/new-badge.png" alt="New" style="width: 24px; height: 24px;">
+            <img src="/icons/new-badge.png" alt="New" style="width: 24px; height: 24px;">
             NEW CUSTOMERS
           </div>
           <h3 style="color: var(--primary); font-size: 1.75rem;">10% OFF</h3>
@@ -166,7 +166,7 @@ export const servicesPage = (c: Context) => {
         
         <div class="card" style="border: 2px solid var(--secondary); text-align: center;">
           <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-            <img src="/api/assets/icons/schedule.png" alt="Schedule" style="width: 24px; height: 24px;">
+            <img src="/icons/schedule.png" alt="Schedule" style="width: 24px; height: 24px;">
             FLEXIBLE SCHEDULING
           </div>
           <h3 style="color: var(--primary); font-size: 1.75rem;">5% OFF</h3>
@@ -176,7 +176,7 @@ export const servicesPage = (c: Context) => {
         
         <div class="card" style="border: 2px solid var(--secondary); text-align: center;">
           <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1.5rem; border-radius: 14px 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-            <img src="/api/assets/icons/discount.png" alt="Discount" style="width: 24px; height: 24px;">
+            <img src="/icons/discount.png" alt="Discount" style="width: 24px; height: 24px;">
             REFERRAL BONUS
           </div>
           <h3 style="color: var(--primary); font-size: 1.75rem;">$25 OFF</h3>
