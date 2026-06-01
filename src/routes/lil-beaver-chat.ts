@@ -272,12 +272,14 @@ lilBeaverChatApi.get('/status', async (c) => {
     status: 'ok',
     model: CHAT_MODEL,
     hermes: HERMES_MODEL,
-    r2_uploads: !!c.env.IMAGES,
+    storage: c.env.KV ? 'kv' : c.env.IMAGES ? 'r2' : 'none',
+    uploads_enabled: !!(c.env.KV || c.env.IMAGES),
     endpoints: {
       admin:    'POST /api/lilbeaver/admin',
       customer: 'POST /api/lilbeaver/customer',
       public:   'POST /api/lilbeaver/public',
-      upload:   'POST /api/lilbeaver/upload (requires R2)',
+      upload:   'POST /api/lilbeaver/upload',
+      upload_multiple: 'POST /api/lilbeaver/upload-multiple',
     },
   });
 });
