@@ -9,7 +9,6 @@
  */
 
 import { portfolioManifest, getImageUrl, getFeaturedImages, getBeforeAfterPairs, PortfolioImage, PortfolioCategory } from '../../config/portfolio-manifest';
-import { r2PortfolioImages } from '../../config/r2-portfolio';
 
 // Post styles to rotate through
 export type PostStyle = 
@@ -79,12 +78,12 @@ export interface GeneratedPost {
 }
 
 // Seasonal context
-function getCurrentSeason(): 'spring' | 'summer' | 'fall' | 'winter' {
-  const month = new Date().getMonth();
-  if (month >= 2 && month <= 4) return 'spring';
-  if (month >= 5 && month <= 7) return 'summer';
-  if (month >= 8 && month <= 10) return 'fall';
-  return 'winter';
+function getCurrentSeason(): string {
+  const month = new Date().getMonth() + 1;
+  if (month >= 3 && month <= 5)  return 'spring (SE Oklahoma — warming fast, dogwoods blooming, green forest, NO snow)';
+  if (month >= 6 && month <= 8)  return 'summer (SE Oklahoma — hot, humid, full green pine forest, NO snow, peak cabin season in Hochatown)';
+  if (month >= 9 && month <= 11) return 'fall (SE Oklahoma — peak fall foliage in Hochatown, cool evenings, fire pit season, NO snow)';
+  return 'winter (SE Oklahoma mild winter — some cold nights, fire pit and hot tub season, minimal snow if any)';
 }
 
 function getDayOfWeek(): string {
@@ -358,10 +357,7 @@ export function updatePostHistory(
 
 // Export for Lil Beaver to use
 // Combined portfolio: original manifest + R2 uploads (160 images)
-const fullPortfolio = [...portfolioManifest, ...r2PortfolioImages.map(img => ({
-  ...img,
-  getUrl: () => `/api/assets/${img.r2Path}`
-}))];
+const fullPortfolio = portfolioManifest;
 
 // Get random R2 image for a category
 function getR2Image(category?: string): { url: string; title: string; folder: string } | null {
