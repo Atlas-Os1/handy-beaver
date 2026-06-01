@@ -23,6 +23,12 @@ jobs:
         working-directory: workers/social-worker
         run: npm install
 
+      - name: Strip R2 and triggers for CI
+        working-directory: workers/social-worker
+        run: |
+          sed -i "/^\[\[r2_buckets\]\]/,/^$/d" wrangler.toml
+          sed -i "/^\[triggers\]/,/^$/d" wrangler.toml
+
       - name: Deploy social worker
         working-directory: workers/social-worker
         run: npx wrangler deploy
