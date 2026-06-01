@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getCookie } from 'hono/cookie';
 import { siteConfig } from '../config/site.config';
-import { sendGmail } from './utils/gmail';
+import { sendEmail } from './utils/email';
 
 // Pages
 import { homePage } from './pages/home';
@@ -238,21 +238,19 @@ app.post('/portal/login', async (c) => {
       </div>
     `;
     
-    // Send via Gmail API (using existing Google OAuth)
-    const result = await sendGmail(
+    // Send via CF Email Service (falls back to Gmail OAuth)
+    const result = await sendEmail(
       c.env,
       email as string,
       'Your Login Link 🦫',
-      htmlContent,
-      'The Handy Beaver'
+      htmlContent
     );
     
     if (result.success) {
-      console.log('Magic link email sent via Gmail to', email);
+      console.log('Magic link email sent via', result.method, 'to', email);
     } else {
-      console.error('Gmail send failed:', result.error);
-      // Fallback: log magic link for manual testing
-      console.log('Magic link (fallback):', magicLink);
+      console.error('Email send failed:', result.error);
+      console.log('Magic link (fallback for dev):', magicLink);
     }
   } catch (e) {
     console.error('Email error:', e);
