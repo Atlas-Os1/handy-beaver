@@ -29,7 +29,8 @@ import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { adminBlogPage } from './pages/admin-blog';
 import { adminFliersPage } from './pages/admin-fliers';
 import { adminCompetitorsPage } from './pages/admin-competitors';
-import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, requirePortalAuth } from './pages/portal';
+import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, portalPhotos, requirePortalAuth } from './pages/portal';
+import { adminJobMediaPage } from './pages/admin-job-media';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
@@ -70,6 +71,9 @@ import { getSession, requireCustomer, requireAdmin } from './lib/auth';
 type Bindings = {
   DB: D1Database;
   IMAGES: R2Bucket;
+  BROWSER: any;
+  AI?: any;
+  LEAD_SCAN_WORKFLOW: Workflow;
   ENVIRONMENT: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
@@ -165,6 +169,7 @@ app.get('/admin/login', adminLoginPage);
 // Admin routes (protected)
 app.get('/admin', requireAdmin, adminDashboard);
 app.get('/admin/gallery', requireAdmin, adminGalleryPage);
+app.get('/admin/job-media', requireAdmin, adminJobMediaPage);
 app.get('/admin/visualizer', requireAdmin, adminVisualizerPage);
 app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/messages/:customerId', requireAdmin, adminMessagesPage); // Handle direct links
@@ -335,6 +340,7 @@ app.get('/portal/invoices/:id', requirePortalAuth, portalInvoiceDetail);
 app.get('/portal/jobs', requirePortalAuth, portalJobs);
 app.get('/portal/messages', requirePortalAuth, portalMessages);
 app.get('/portal/subscription', requirePortalAuth, portalSubscription);
+app.get('/portal/photos', requirePortalAuth, portalPhotos);
 
 // Subscription task submission
 app.post('/portal/subscription/add-task', requirePortalAuth, async (c) => {
@@ -494,6 +500,30 @@ api.route('/facebook', facebookSession);
 api.route('/facebook', facebookScraper);
 api.route('/facebook', facebookComment);
 
+// Manual trigger for lead scan workflow (since cron is at account limit)
+api.post('/facebook/lead-scan/trigger', async (c) => {
+  try {
+    const instance = await c.env.LEAD_SCAN_WORKFLOW.create({
+      params: { source: 'manual' as const },
+    });
+    return c.json({ success: true, workflow_id: instance.id });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// Get workflow instance status
+api.get('/facebook/lead-scan/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const instance = await c.env.LEAD_SCAN_WORKFLOW.get(id);
+    const status = await instance.status();
+    return c.json({ id, status });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 // Mount portfolio/gallery API routes
 api.route('/images/portfolio', portfolioApi);
 api.route('/portfolio', portfolioApi);
@@ -509,6 +539,10 @@ api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
 api.route('/subscriptions', subscriptionApi);
 api.route('/signs', signsCatalogApi); // Signs catalog + Square product setup
+
+// Job Media (photos/videos per job — admin upload + Discord bot + client portal)
+import { jobMediaApi } from './routes/job-media-api';
+api.route('/job-media', jobMediaApi);
 
 // Content queue for social media publishing
 import { contentQueueApi } from './routes/content-queue-api';
@@ -989,6 +1023,16 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
 
   if (!session?.cookies) {
     console.log('No Facebook session stored, skipping Facebook scan');
+  }
+
+  // Trigger lead scan workflow (runs as a durable workflow with 10-min review window)
+  try {
+    const instance = await env.LEAD_SCAN_WORKFLOW.create({
+      params: { source: 'cron' as const },
+    });
+    console.log(`Lead scan workflow started: ${instance.id}`);
+  } catch (err) {
+    console.error('Failed to start lead scan workflow:', err);
   }
 
   // Calendar back-sync: pull Google changes and apply to bookings
