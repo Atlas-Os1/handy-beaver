@@ -325,13 +325,13 @@ export const adminLayout = (title: string, content: string, activePage: string =
     <div style="display: flex; align-items: center; gap: 0.75rem;">
       <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
       <div class="brand">
-        <img src="/api/assets/beaver-avatar.png" alt="Beaver">
+        <img src="/beaver-avatar.png" alt="Beaver">
         <span>${siteConfig.business.name} Admin</span>
       </div>
     </div>
     <div class="user">
       <span>${admin?.name || admin?.github_username || 'Admin'}</span>
-      <img src="${admin?.avatar_url || '/api/assets/beaver-avatar.png'}" alt="Avatar">
+      <img src="${admin?.avatar_url || '/beaver-avatar.png'}" alt="Avatar">
       <a href="/api/auth/logout" style="color: #ccc; margin-left: 1rem;">Logout</a>
     </div>
   </nav>
@@ -339,22 +339,23 @@ export const adminLayout = (title: string, content: string, activePage: string =
   <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
   <div class="admin-layout">
     <aside class="sidebar" id="sidebar">
-      <a href="/admin" class="${activePage === 'dashboard' ? 'active' : ''}"><img src="/api/assets/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
-      <a href="/admin/quotes" class="${activePage === 'quotes' ? 'active' : ''}"><img src="/api/assets/icons/quotes.png" alt="" class="nav-icon"> Quotes</a>
-      <a href="/admin/jobs" class="${activePage === 'jobs' ? 'active' : ''}"><img src="/api/assets/icons/jobs.png" alt="" class="nav-icon"> Jobs</a>
-      <a href="/admin/calendar" class="${activePage === 'calendar' ? 'active' : ''}"><img src="/api/assets/icons/calendar.png" alt="" class="nav-icon"> Calendar</a>
-      <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}"><img src="/api/assets/icons/customers.png" alt="" class="nav-icon"> Customers</a>
-      <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}"><img src="/api/assets/icons/messages.png" alt="" class="nav-icon"> Messages</a>
+      <a href="/admin" class="${activePage === 'dashboard' ? 'active' : ''}"><img src="/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
+      <a href="/admin/quotes" class="${activePage === 'quotes' ? 'active' : ''}"><img src="/icons/quotes.png" alt="" class="nav-icon"> Quotes</a>
+      <a href="/admin/jobs" class="${activePage === 'jobs' ? 'active' : ''}"><img src="/icons/jobs.png" alt="" class="nav-icon"> Jobs</a>
+      <a href="/admin/calendar" class="${activePage === 'calendar' ? 'active' : ''}"><img src="/icons/calendar.png" alt="" class="nav-icon"> Calendar</a>
+      <a href="/admin/customers" class="${activePage === 'customers' ? 'active' : ''}"><img src="/icons/customers.png" alt="" class="nav-icon"> Customers</a>
+      <a href="/admin/messages" class="${activePage === 'messages' ? 'active' : ''}"><img src="/icons/messages.png" alt="" class="nav-icon"> Messages</a>
       <a href="/admin/subscriptions" class="${activePage === 'subscriptions' ? 'active' : ''}">🦫 Subscriptions</a>
       <div class="divider"></div>
       <a href="/admin/visualizer" class="${activePage === 'visualizer' ? 'active' : ''}">✨ AI Visualizer</a>
-      <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}"><img src="/api/assets/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
+      <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}"><img src="/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
       <a href="/admin/gallery" class="${activePage === 'gallery' ? 'active' : ''}">🖼️ Gallery</a>
+      <a href="/admin/job-media" class="${activePage === 'job-media' ? 'active' : ''}">📷 Job Photos</a>
       <a href="/admin/blog" class="${activePage === 'blog' ? 'active' : ''}">📝 Blog</a>
       <a href="/admin/fliers" class="${activePage === 'fliers' ? 'active' : ''}">🎨 Fliers</a>
       <a href="/admin/competitors" class="${activePage === 'competitors' ? 'active' : ''}">🔍 Competitors</a>
       <div class="divider"></div>
-      <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}"><img src="/api/assets/icons/settings.png" alt="" class="nav-icon"> Settings</a>
+      <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}"><img src="/icons/settings.png" alt="" class="nav-icon"> Settings</a>
       <a href="/" target="_blank">🌐 View Site</a>
     </aside>
     
@@ -936,3 +937,4 @@ export const adminSubscriptionsPage = async (c: Context) => {
   
   return c.html(adminLayout('Subscriptions', content, 'subscriptions', admin));
 };
+    
