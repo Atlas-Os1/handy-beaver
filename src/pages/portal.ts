@@ -290,6 +290,7 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
       <a href="/portal/invoices"><span class="nav-icon">💰</span> Invoices</a>
       <a href="/portal/jobs"><span class="nav-icon">🔨</span> Job History</a>
       <a href="/portal/messages"><span class="nav-icon">💬</span> Messages</a>
+      <a href="/portal/photos">📷 Job Photos</a>
       <a href="/portal/subscription">🦫 Subscription</a>
       <a href="/portal/visualizer">✨ AI Visualizer</a>
       <a href="/portal/gallery">🖼️ My Gallery</a>
@@ -302,6 +303,7 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
     <a href="/portal/subscription" style="font-size: 1.2rem;">🦫<span style="font-size: 0.7rem;">Plan</span></a>
     <a href="/portal/invoices"><span class="nav-icon">💰</span>Pay</a>
     <a href="/portal/messages"><span class="nav-icon">💬</span>Chat</a>
+    <a href="/portal/photos" style="font-size: 1.2rem;">📷<span style="font-size: 0.7rem;">Photos</span></a>
   </nav>
     
     <main class="main-content">
@@ -1118,4 +1120,98 @@ export const portalSubscription = async (c: Context) => {
   `;
   
   return c.html(portalLayout('My Subscription', content, customer));
+};
+
+// ─── Job Photos Portal Page ───────────────────────────────────────────────────
+
+export const portalPhotos = async (c: Context) => {
+  const customer = c.get('customer');
+  const db = c.env.DB;
+
+  const media = await db.prepare(`
+    SELECT m.*, b.title as job_title, b.scheduled_date, b.status as job_status
+    FROM job_media m
+    LEFT JOIN bookings b ON m.booking_id = b.id
+    WHERE m.customer_id = ? AND m.visible_to_client = 1
+    ORDER BY m.created_at DESC
+  `).bind(customer.customer_id).all<any>();
+
+  const byJob: Record<string, { job: any; items: any[] }> = {};
+  const ungrouped: any[] = [];
+
+  for (const item of (media.results || [])) {
+    if (item.booking_id) {
+      const key = String(item.booking_id);
+      if (!byJob[key]) {
+        byJob[key] = {
+          job: { id: item.booking_id, title: item.job_title, scheduled_date: item.scheduled_date, status: item.job_status },
+          items: []
+        };
+      }
+      byJob[key].items.push(item);
+    } else {
+      ungrouped.push(item);
+    }
+  }
+
+  const renderGrid = (items: any[]): string => items.map((m: any) => `
+    <div style="border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+      ${m.media_type === 'video'
+        ? `<video src="${m.url}" controls style="width:100%;height:200px;object-fit:cover;background:#000;display:block;"></video>`
+        : `<img src="${m.url}" alt="${m.title || 'Job photo'}" style="width:100%;height:200px;object-fit:cover;display:block;" loading="lazy">`
+      }
+      <div style="padding:0.75rem;">
+        ${m.title ? `<div style="font-weight:600;font-size:0.9rem;">${m.title}</div>` : ''}
+        ${m.description ? `<div style="font-size:0.85rem;color:#555;margin-top:0.25rem;">${m.description}</div>` : ''}
+        ${m.taken_at ? `<div style="font-size:0.75rem;color:#999;margin-top:0.25rem;">Taken: ${new Date(m.taken_at).toLocaleDateString()}</div>` : ''}
+        <a href="${m.url}" download target="_blank"
+          style="display:inline-block;margin-top:0.5rem;font-size:0.8rem;color:var(--secondary);text-decoration:none;">
+          Download
+        </a>
+      </div>
+    </div>
+  `).join('');
+
+  const totalCount = media.results?.length || 0;
+
+  const jobSections = Object.values(byJob).map(({ job, items }) => `
+    <div style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <h2 style="font-size:1.1rem;font-weight:600;color:var(--primary);">
+          Job: ${job.title || '#' + job.id}
+        </h2>
+        ${job.scheduled_date ? `<span style="font-size:0.85rem;color:#888;">${new Date(job.scheduled_date).toLocaleDateString()}</span>` : ''}
+        <span class="badge badge-${job.status}" style="font-size:0.75rem;">${(job.status || '').replace('_', ' ')}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+        ${renderGrid(items)}
+      </div>
+    </div>
+  `).join('');
+
+  const ungroupedSection = ungrouped.length ? `
+    <div style="margin-bottom:2rem;">
+      <h2 style="font-size:1.1rem;font-weight:600;color:var(--primary);margin-bottom:1rem;">General Photos</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+        ${renderGrid(ungrouped)}
+      </div>
+    </div>
+  ` : '';
+
+  const content = `
+    <div style="margin-bottom:1.5rem;">
+      <h1 style="font-size:1.5rem;font-weight:700;">Your Job Photos</h1>
+      <p style="color:#666;margin-top:0.25rem;">${totalCount} item${totalCount !== 1 ? 's' : ''} from your projects</p>
+    </div>
+    ${totalCount === 0 ? `
+      <div class="card" style="text-align:center;padding:3rem 2rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;">📷</div>
+        <h2 style="color:var(--primary);margin-bottom:0.75rem;">No Photos Yet</h2>
+        <p style="color:#666;">Photos and videos from your jobs will appear here once uploaded by our team.</p>
+      </div>
+    ` : jobSections + ungroupedSection}
+  `;
+
+  return c.html(portalLayout('Job Photos', content, customer));
+};
 };

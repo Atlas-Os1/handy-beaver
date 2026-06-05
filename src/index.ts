@@ -29,7 +29,8 @@ import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { adminBlogPage } from './pages/admin-blog';
 import { adminFliersPage } from './pages/admin-fliers';
 import { adminCompetitorsPage } from './pages/admin-competitors';
-import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, requirePortalAuth } from './pages/portal';
+import { adminJobMediaPage } from './pages/admin-job-media';
+import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, portalPhotos, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
@@ -176,6 +177,7 @@ app.get('/admin/login', adminLoginPage);
 // Admin routes (protected)
 app.get('/admin', requireAdmin, adminDashboard);
 app.get('/admin/gallery', requireAdmin, adminGalleryPage);
+app.get('/admin/job-media', requireAdmin, adminJobMediaPage);
 app.get('/admin/visualizer', requireAdmin, adminVisualizerPage);
 app.get('/admin/messages', requireAdmin, adminMessagesPage);
 app.get('/admin/messages/:customerId', requireAdmin, adminMessagesPage); // Handle direct links
@@ -344,6 +346,7 @@ app.get('/portal/invoices/:id', requirePortalAuth, portalInvoiceDetail);
 app.get('/portal/jobs', requirePortalAuth, portalJobs);
 app.get('/portal/messages', requirePortalAuth, portalMessages);
 app.get('/portal/subscription', requirePortalAuth, portalSubscription);
+app.get('/portal/photos', requirePortalAuth, portalPhotos);
 
 // Subscription task submission
 app.post('/portal/subscription/add-task', requirePortalAuth, async (c) => {
@@ -517,7 +520,11 @@ api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
 api.route('/subscriptions', subscriptionApi);
-api.route('/signs', signsCatalogApi); // Signs catalog + Square product setup
+api.route('/signs', signsCatalogApi);
+
+// Job Media (photos/videos per job — admin + Discord bot + client portal)
+import { jobMediaApi } from './routes/job-media-api';
+api.route('/job-media', jobMediaApi); // Signs catalog + Square product setup
 
 // Content queue for social media publishing
 import { contentQueueApi } from './routes/content-queue-api';

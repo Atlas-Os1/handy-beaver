@@ -73,7 +73,7 @@ CNC-carved, hand-finished, weatherproof outdoor signs. Cedar or pine. AI mockup 
 
 - **Runtime:** Cloudflare Workers (Hono framework)
 - **Database:** Cloudflare D1 (SQLite)
-- **Storage:** Cloudflare R2 (images, assets)
+- **Storage:** Cloudflare R2 (primary) + Cloudinary (fallback/CDN for images)
 - **AI:** Cloudflare Workers AI (chat, image gen)
 - **Frontend:** Vite + vanilla HTML/CSS/JS
 - **Payments:** Square API
@@ -192,39 +192,25 @@ Key tables:
 - `customer_subscriptions` — Active customer subscriptions
 - `subscription_tasks` — Task queue for subscribers (with photo uploads)
 - `tiny_home_projects` — Tiny home finish projects
+- `job_media` — Photos/videos per job (schema-v17). Linked to `bookings` + `customers`. Uploaded via admin panel or Discord bot. Visible to clients at `/portal/photos`.
 
-## Agent Architecture
+## Job Media System
 
-This repo contains TWO agents with different access levels:
+Photos and videos from jobs are stored in R2 with Cloudinary as automatic fallback.
 
-| Agent | Channel | Access | Rules |
-|-------|---------|--------|-------|
-| Lil Beaver Admin | Discord | Full CRUD | `agent/ADMIN-RULES.md` |
-| Lil Beaver Customer | Website/Phone | Read + Lead capture | `agent/CUSTOMER-RULES.md` |
+### Upload endpoints
 
-When modifying agent behavior:
-- Check which mode you're editing
-- Admin tools go in `agent/SKILL.md`
-- Customer tools are limited by `CUSTOMER-RULES.md`
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/api/job-media/upload` | Admin session | Upload from admin panel (multipart) |
+| POST | `/api/job-media/discord` | `secret` field | Upload from Discord bot (Hermes/Lil Beaver) |
+| GET  | `/api/job-media` | Admin | List all media, filter by `booking_id` / `customer_id` |
+| GET  | `/api/job-media/portal/:customerId` | Portal session | Customer-facing list (visible only) |
+| PATCH | `/api/job-media/:id/visibility` | Admin | Toggle `visible_to_client` |
+| DELETE | `/api/job-media/:id` | Admin | Delete from R2 + DB |
 
-## Good Examples
+### Discord webhook (for Hermes / Lil Beaver admin bot)
 
-- **API route:** `src/routes/quotes.ts`
-- **D1 queries:** `src/routes/customers.ts`
-- **R2 uploads:** `src/routes/assets.ts`
-- **Square integration:** `src/routes/square.ts`
-
-## When Stuck
-
-- Ask a clarifying question
-- Propose a short plan before major changes
-- Check `docs/` for architecture decisions
-- Don't guess at business logic — verify with existing code
-
-## PR Checklist
-
-- [ ] TypeScript compiles (`npm run build`)
-- [ ] No hardcoded secrets
-- [ ] D1 migrations are versioned (`schema-vN.sql`)
-- [ ] Diff is small and focused
-- [ ] Brief summary of what changed and why
+```
+POST https://handybeaver.co/api/job-media/discord
+Content-Type: applicati
