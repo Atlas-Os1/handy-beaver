@@ -399,6 +399,7 @@ export const adminQuoteDetail = async (c: Context) => {
         <div style="display: flex; gap: 0.5rem;">
           <button class="btn-secondary" onclick="editQuote()">✏️ Edit</button>
           ${quote.status === 'draft' ? `<button class="btn-primary" onclick="sendQuote()">Send to Customer</button>` : ''}
+          ${quote.status === 'draft' || quote.status === 'sent' ? `<button class="btn-success" onclick="approveQuote()" style="background:#059669;color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-weight:600;">✓ Approve & Schedule</button>` : ''}
           ${quote.status === 'accepted' ? `<button class="btn-primary" onclick="createJob()">Create Job</button>` : ''}
           <button class="btn-secondary" onclick="downloadPdf()">Download PDF</button>
           <button class="btn-secondary" onclick="copyShareLink()" title="Copy shareable link">🔗</button>
@@ -494,6 +495,23 @@ export const adminQuoteDetail = async (c: Context) => {
       
       function createJob() {
         window.location.href = '/admin/jobs?new=1&quote=${quote.id}';
+      }
+
+      async function approveQuote() {
+        const date = prompt('Schedule date for this job? (YYYY-MM-DD)\nLeave blank to just approve:', new Date().toISOString().split('T')[0]);
+        if (date === null) return; // cancelled
+        const res = await fetch('/api/admin/quotes/${quote.id}/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduled_date: date || null })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert('Quote approved!' + (date ? ' Job scheduled for ' + date : ''));
+          location.reload();
+        } else {
+          alert(result.error || 'Failed to approve quote');
+        }
       }
       
       function downloadPdf() {

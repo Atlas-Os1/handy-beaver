@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
+import { buildHead, pageSeo } from '../lib/seo';
 import { siteConfig } from '../../config/site.config';
 
 const { business } = siteConfig;
@@ -189,5 +190,5 @@ export const serviceAreaPage = (c: Context) => {
     </section>
   `;
   
-  return c.html(layout('Service Area', content, 'service-area'));
+  return c.html(layout('Service Area', content, 'service-area', buildHead(pageSeo.serviceArea)));
 };

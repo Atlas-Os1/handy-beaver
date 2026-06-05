@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
+import { buildHead, pageSeo } from '../lib/seo';
 import { siteConfig } from '../../config/site.config';
 
 const { business, pricing } = siteConfig;
@@ -294,5 +295,5 @@ export const homePage = (c: Context) => {
     </section>
   `;
   
-  return c.html(layout('Home', content, 'home'));
+  return c.html(layout('Handyman & Craftsman Services in SE Oklahoma', content, 'home', buildHead(pageSeo.home)));
 };

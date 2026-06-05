@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
+import { buildHead, pageSeo } from '../lib/seo';
 
 const signTiers = [
   {

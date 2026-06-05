@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
+import { buildHead, pageSeo } from '../lib/seo';
 import { siteConfig } from '../../config/site.config';
 import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
 
@@ -307,7 +308,7 @@ export const galleryPage = (c: Context) => {
     </script>
   `;
   
-  return c.html(layout('Gallery', content, 'gallery'));
+  return c.html(layout('Gallery', content, 'gallery', buildHead(pageSeo.gallery)));
 };
 
 export const galleryCategoryPage = async (c: Context) => {

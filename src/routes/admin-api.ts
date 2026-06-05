@@ -57,7 +57,7 @@ adminApi.get('/customers', async (c) => {
     LIMIT 100
   `).all();
   
-  return c.json(customers);
+  return c.json({ customers: customers.results || [] });
 });
 
 adminApi.get('/customers/search', async (c) => {
@@ -70,7 +70,7 @@ adminApi.get('/customers/search', async (c) => {
     LIMIT 20
   `).bind(`%${query}%`, `%${query}%`, `%${query}%`).all();
   
-  return c.json(customers);
+  return c.json({ customers: customers.results || [] });
 });
 
 // Create customer manually
@@ -455,6 +455,38 @@ adminApi.get('/quotes/:id/pdf', async (c) => {
   `;
   
   return c.html(html);
+});
+
+
+
+// Admin approve quote (mark as accepted without customer portal action)
+adminApi.post('/quotes/:id/approve', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json<{ scheduled_date?: string }>().catch(() => ({}));
+
+  const quote = await c.env.DB.prepare('SELECT * FROM quotes WHERE id = ?').bind(id).first<any>();
+  if (!quote) return c.json({ error: 'Quote not found' }, 404);
+
+  const now = Math.floor(Date.now() / 1000);
+  await c.env.DB.prepare(
+    'UPDATE quotes SET status = ?, updated_at = ? WHERE id = ?'
+  ).bind('accepted', now, id).run();
+
+  // Auto-create booking if scheduled_date provided
+  if (body.scheduled_date && quote.customer_id) {
+    await c.env.DB.prepare(`
+      INSERT INTO bookings (customer_id, title, description, status, scheduled_date, source, created_at)
+      VALUES (?, ?, ?, 'confirmed', ?, 'quote', ?)
+    `).bind(
+      quote.customer_id,
+      quote.title || 'Job from Quote #' + id,
+      quote.notes || '',
+      body.scheduled_date,
+      now
+    ).run();
+  }
+
+  return c.json({ success: true });
 });
 
 adminApi.post('/quotes/:id/send', async (c) => {

@@ -459,14 +459,26 @@ export const baseStyles = `
   }
 `;
 
-export const layout = (title: string, content: string, activeNav?: string) => `
+export const layout = (title: string, content: string, activeNav?: string, seoHead?: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  ${seoHead || `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="${business.description}">
   <title>${title} | ${business.name}</title>
+  <link rel="canonical" href="https://handybeaver.co/">
+  <meta name="robots" content="index,follow">
+  <meta property="og:title" content="${title} | ${business.name}">
+  <meta property="og:description" content="${business.description}">
+  <meta property="og:image" content="https://handybeaver.co/beaver-avatar.png">
+  <meta property="og:type" content="website">
+  <meta name="geo.region" content="US-OK">
+  <meta name="geo.placename" content="Southeast Oklahoma">
+  <link rel="icon" type="image/png" href="/beaver-avatar.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  `}
   <style>${baseStyles}</style>
 </head>
 <body>
