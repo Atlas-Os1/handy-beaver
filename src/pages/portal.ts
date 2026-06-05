@@ -285,24 +285,24 @@ const portalLayout = (title: string, content: string, customer?: any, showChat: 
   
   <div class="portal-layout">
     <aside class="sidebar">
-      <a href="/portal"><img src="/icons/dashboard.png" alt="" class="nav-icon"> Dashboard</a>
-      <a href="/portal/quotes"><img src="/icons/quotes.png" alt="" class="nav-icon"> My Quotes</a>
-      <a href="/portal/invoices"><img src="/icons/invoices.png" alt="" class="nav-icon"> Invoices</a>
-      <a href="/portal/jobs"><img src="/icons/jobs.png" alt="" class="nav-icon"> Job History</a>
-      <a href="/portal/messages"><img src="/icons/messages.png" alt="" class="nav-icon"> Messages</a>
+      <a href="/portal"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a href="/portal/quotes"><span class="nav-icon">📋</span> My Quotes</a>
+      <a href="/portal/invoices"><span class="nav-icon">💰</span> Invoices</a>
+      <a href="/portal/jobs"><span class="nav-icon">🔨</span> Job History</a>
+      <a href="/portal/messages"><span class="nav-icon">💬</span> Messages</a>
+      <a href="/portal/photos">📷 Job Photos</a>
       <a href="/portal/subscription">🦫 Subscription</a>
       <a href="/portal/visualizer">✨ AI Visualizer</a>
       <a href="/portal/gallery">🖼️ My Gallery</a>
-      <a href="/portal/photos">📷 Job Photos</a>
     </aside>
   
   <!-- Mobile Bottom Navigation -->
   <nav class="bottom-nav">
-    <a href="/portal"><img src="/icons/dashboard.png" alt="" class="nav-icon">Home</a>
-    <a href="/portal/quotes"><img src="/icons/quotes.png" alt="" class="nav-icon">Quotes</a>
+    <a href="/portal"><span class="nav-icon">🏠</span>Home</a>
+    <a href="/portal/quotes"><span class="nav-icon">📋</span>Quotes</a>
     <a href="/portal/subscription" style="font-size: 1.2rem;">🦫<span style="font-size: 0.7rem;">Plan</span></a>
-    <a href="/portal/invoices"><img src="/icons/invoices.png" alt="" class="nav-icon">Pay</a>
-    <a href="/portal/messages"><img src="/icons/messages.png" alt="" class="nav-icon">Chat</a>
+    <a href="/portal/invoices"><span class="nav-icon">💰</span>Pay</a>
+    <a href="/portal/messages"><span class="nav-icon">💬</span>Chat</a>
     <a href="/portal/photos" style="font-size: 1.2rem;">📷<span style="font-size: 0.7rem;">Photos</span></a>
   </nav>
     
@@ -1122,7 +1122,6 @@ export const portalSubscription = async (c: Context) => {
   return c.html(portalLayout('My Subscription', content, customer));
 };
 
-
 // ─── Job Photos Portal Page ───────────────────────────────────────────────────
 
 export const portalPhotos = async (c: Context) => {
@@ -1204,7 +1203,6 @@ export const portalPhotos = async (c: Context) => {
       <h1 style="font-size:1.5rem;font-weight:700;">Your Job Photos</h1>
       <p style="color:#666;margin-top:0.25rem;">${totalCount} item${totalCount !== 1 ? 's' : ''} from your projects</p>
     </div>
-
     ${totalCount === 0 ? `
       <div class="card" style="text-align:center;padding:3rem 2rem;">
         <div style="font-size:3rem;margin-bottom:1rem;">📷</div>
