@@ -125,7 +125,7 @@ export const adminCustomerDetail = async (c: Context) => {
         </div>
       </div>
       
-      <div class="customer-info card" style="margin: 1.5rem 0; padding: 1.5rem; background: #1a1a1a; border-radius: 8px;">
+      <div class="customer-info card" style="margin: 1.5rem 0; padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
           <div>
             <strong>Email:</strong><br>
@@ -169,7 +169,7 @@ export const adminCustomerDetail = async (c: Context) => {
       </div>
       
       <div id="panel-messages" class="tab-panel" style="display: none;">
-        <div style="max-height: 400px; overflow-y: auto; padding: 1rem; background: #111; border-radius: 8px;">
+        <div style="max-height: 400px; overflow-y: auto; padding: 1rem; background: #f9fafb; border-radius: 8px;">
           ${messagesHtml}
         </div>
       </div>
@@ -325,15 +325,15 @@ export const adminCustomersPage = async (c: Context) => {
       .admin-customers { padding: 0; }
       .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
       .search-bar { margin-bottom: 1.5rem; }
-      .search-bar input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #333; border-radius: 8px; background: #1a1a1a; color: #fff; font-size: 1rem; }
+      .search-bar input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #333; border-radius: 8px; background: white; color: #fff; font-size: 1rem; }
       .stats-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
-      .stat-card { flex: 1; padding: 1rem; background: #1a1a1a; border-radius: 8px; text-align: center; }
+      .stat-card { flex: 1; padding: 1rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb; text-align: center; }
       .stat-value { display: block; font-size: 2rem; font-weight: bold; color: #f97316; }
       .stat-label { color: #888; font-size: 0.875rem; }
-      .customer-list { background: #1a1a1a; border-radius: 8px; overflow: hidden; }
+      .customer-list { background: white; border-radius: 10px; border: 1px solid #e5e7eb; overflow: hidden; }
       .customer-row { display: grid; grid-template-columns: 2fr 2fr 1.5fr 1fr 100px; padding: 1rem; border-bottom: 1px solid #333; align-items: center; }
       .customer-row:hover { background: #222; }
-      .customer-row.header { background: #111; font-weight: 600; color: #888; }
+      .customer-row.header { background: #f9fafb; font-weight: 600; color: #888; }
       .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; }
       .status-lead { background: #f59e0b33; color: #f59e0b; }
       .status-active { background: #10b98133; color: #10b981; }
@@ -342,12 +342,12 @@ export const adminCustomersPage = async (c: Context) => {
       .customer-actions button { padding: 4px 8px; font-size: 0.8rem; }
       .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
       .modal-overlay.active { display: flex; }
-      .modal { background: #1a1a1a; border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 500px; }
+      .modal { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1.5rem; width: 90%; max-width: 500px; }
       .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
       .close-btn { background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer; }
       .form-group { margin-bottom: 1rem; }
       .form-group label { display: block; margin-bottom: 0.5rem; color: #888; }
-      .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; }
+      .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #333; border-radius: 6px; background: #f9fafb; color: #fff; }
       .form-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
       .loading { padding: 2rem; text-align: center; color: #888; }
     </style>

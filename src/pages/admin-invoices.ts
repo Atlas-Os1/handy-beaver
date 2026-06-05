@@ -490,7 +490,7 @@ export const adminInvoiceDetail = async (c: Context) => {
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
         <div>
           <!-- Line Items Card -->
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px; margin-bottom: 1rem;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 1rem;">
             <h3 style="margin-top: 0;">Line Items</h3>
             
             ${lineItems.results?.length ? `
@@ -577,7 +577,7 @@ export const adminInvoiceDetail = async (c: Context) => {
             `}
             
             ${invoice.notes ? `
-            <div style="margin-top: 1.5rem; padding: 1rem; background: #111; border-radius: 6px;">
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
               <strong>Notes:</strong>
               <p style="margin: 0.5rem 0 0; white-space: pre-wrap;">${invoice.notes}</p>
             </div>
@@ -591,7 +591,7 @@ export const adminInvoiceDetail = async (c: Context) => {
           </div>
           
           <!-- Payments Card -->
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <h3 style="margin: 0;">Payment History</h3>
               ${balance > 0 ? `
@@ -654,7 +654,7 @@ export const adminInvoiceDetail = async (c: Context) => {
         </div>
         
         <div>
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px; margin-bottom: 1rem;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 1rem;">
             <h3 style="margin-top: 0;">Customer</h3>
             <p><strong>${invoice.customer_name}</strong></p>
             <p><a href="mailto:${invoice.customer_email}">${invoice.customer_email}</a></p>
@@ -664,7 +664,7 @@ export const adminInvoiceDetail = async (c: Context) => {
           </div>
           
           ${job ? `
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px; margin-bottom: 1rem;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 1rem;">
             <h3 style="margin-top: 0;">Related Job</h3>
             <p><strong>${job.title}</strong></p>
             <p>Status: ${job.status}</p>
@@ -672,9 +672,9 @@ export const adminInvoiceDetail = async (c: Context) => {
           </div>
           ` : ''}
           
-          <div class="card" style="padding: 1.5rem; background: #1a1a1a; border-radius: 8px;">
+          <div class="card" style="padding: 1.5rem; background: white; border-radius: 10px; border: 1px solid #e5e7eb;">
             <h3 style="margin-top: 0;">Payment Link</h3>
-            <input type="text" value="${paymentUrl}" readonly style="width: 100%; padding: 0.5rem; background: #111; border: 1px solid #333; border-radius: 4px; color: #fff; margin-bottom: 0.5rem;">
+            <input type="text" value="${paymentUrl}" readonly style="width: 100%; padding: 0.5rem; background: #f9fafb; border: 1px solid #333; border-radius: 4px; color: #fff; margin-bottom: 0.5rem;">
             <button class="btn-secondary" style="width: 100%;" onclick="copyPaymentLink()">Copy Link</button>
           </div>
         </div>
@@ -739,13 +739,13 @@ export const adminInvoiceDetail = async (c: Context) => {
       
       .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
       .modal-overlay.active { display: flex; }
-      .modal { background: #1a1a1a; border-radius: 12px; width: 100%; }
+      .modal { background: white; border-radius: 12px; border: 1px solid #e5e7eb; width: 100%; }
       .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #333; }
       .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; }
       
       .form-group { margin-bottom: 1rem; }
-      .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #ccc; }
-      .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #333; border-radius: 6px; font-size: 1rem; background: #111; color: #fff; }
+      .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #6b7280; }
+      .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #333; border-radius: 6px; font-size: 1rem; background: #f9fafb; color: #fff; }
       .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
     </style>
     

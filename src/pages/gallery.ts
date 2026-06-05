@@ -2,19 +2,9 @@ import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { siteConfig } from '../../config/site.config';
 import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
-import { r2PortfolioImages } from '../../config/r2-portfolio';
 
-// Combined portfolio: original + R2 images (160+ total)
-const fullPortfolio = [
-  ...portfolioManifest,
-  ...r2PortfolioImages.map(img => ({
-    ...img,
-    type: 'gallery' as const,
-  }))
-];
-
-// Get R2 image URL
-const getR2ImageUrl = (img: typeof r2PortfolioImages[0]) => `/api/assets/${img.r2Path}`;
+// Portfolio images from public/portfolio/ (static assets — no R2 needed)
+const fullPortfolio = portfolioManifest;
 
 const { business } = siteConfig;
 

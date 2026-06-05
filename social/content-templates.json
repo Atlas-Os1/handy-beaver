@@ -1,110 +1,253 @@
 {
   "page_id": "1040910635768535",
   "instagram_id": "17841443253800030",
-  "brand_voice": "Lil Beaver - friendly Oklahoma handyman, says y'all, no corporate jargon, 1-2 emojis max",
+  "brand_voice": "Colt from Handy Beaver Co — real guy, SE Oklahoma, direct and friendly, says y'all naturally not forced, 1 emoji max per post, never corporate, talks like a local who takes pride in their craft",
+
   "services": [
-    "trim carpentry",
+    "cabin maintenance plans",
+    "deck repair & staining",
     "flooring installation",
-    "deck repair & restoration",
-    "baseboard installation",
-    "custom built-ins",
-    "general maintenance",
-    "custom cabin signs"
+    "trim & crown molding",
+    "custom cedar signs",
+    "hot tub maintenance",
+    "seasonal cabin prep",
+    "general handyman"
   ],
+
   "service_areas": [
-    "Hochatown", "Broken Bow", "Idabel", "Valliant", "Hugo", "Antlers", "Paris TX"
+    "Hochatown", "Broken Bow", "Beavers Bend", "McCurtain County",
+    "Idabel", "Valliant", "Hugo", "Antlers", "Paris TX"
   ],
-  "caption_templates": [
-    {
-      "theme": "deck",
-      "captions": [
-        "Nothing beats a fresh deck stain job. If your deck's looking rough, let's talk. handybeaver.co",
-        "Deck season is coming — make sure yours is ready. We do staining, sealing, and repairs across Southeast Oklahoma.",
-        "Just wrapped another deck restoration in {area}. That weathered gray? Gone. handybeaver.co"
-      ],
-      "image_prompts": [
-        "Cute cartoon beaver mascot in hard hat and flannel shirt standing proudly on a freshly stained wooden deck overlooking scenic Oklahoma forest, sunset lighting, photorealistic background"
-      ]
-    },
-    {
-      "theme": "flooring",
-      "captions": [
-        "New floors can transform a whole room. We install hardwood, laminate, and vinyl plank. handybeaver.co",
-        "That feeling when the last plank clicks into place... chef's kiss. Flooring installs across SE Oklahoma.",
-        "Thinking about new floors? We've got you covered — hardwood to vinyl plank. Message us or visit handybeaver.co"
-      ],
-      "image_prompts": [
-        "Cute cartoon beaver mascot in hard hat installing beautiful dark hardwood flooring in modern living room, professional renovation setting, photorealistic interior with cartoon character"
-      ]
-    },
-    {
-      "theme": "trim",
-      "captions": [
-        "Baseboards make the room. We do trim carpentry that actually looks right. handybeaver.co",
-        "Custom trim work in {area} today. Those clean corners? That's the good stuff.",
-        "It's the details that matter — baseboards, crown molding, door trim. We handle it all."
-      ],
-      "image_prompts": [
-        "Cute cartoon beaver mascot in hard hat installing white baseboards along wall in elegant living room, measuring tape in hand, professional carpentry setting, photorealistic background"
-      ]
-    },
-    {
-      "theme": "general",
-      "captions": [
-        "Got a project you've been putting off? Let's knock it out. handybeaver.co",
-        "No job too small, no attitude too big. That's how we do it at Handy Beaver Co.",
-        "Something broken? We can probably fix it. Serving {area} and surrounding areas."
-      ],
-      "image_prompts": [
-        "Cute cartoon beaver mascot in hard hat and flannel shirt holding tools, standing in front of beautiful Oklahoma home, friendly pose, photorealistic setting"
-      ]
-    },
-    {
-      "theme": "cabin_signs",
-      "captions": [
-        "Every cabin deserves a name. We cut, stain, seal, and install — all local, all custom. handybeaver.co/signs",
-        "Just delivered a custom sign for a Hochatown cabin owner. Cedar, dark walnut stain, exterior sealed. That's a statement.",
-        "Cabin owners — your sign is the first impression your guests get. Make it count. Custom signs starting at $125. handybeaver.co/signs",
-        "We let the CNC do the hard part, but the finishing? That's all craftsmanship. Custom cabin signs, SE Oklahoma.",
-        "Know a cabin owner who needs a sign? Send this their way. We do custom orders year-round. handybeaver.co/signs",
-        "We'll show you an AI mockup of your sign before we ever touch the machine. You approve it, we cut it. That's how we do it. handybeaver.co/signs",
-        "Sign Wednesday — watch the CNC carve out a fresh cabin name. Cedar + dark walnut stain = perfect. Order yours at handybeaver.co/signs"
-      ],
-      "image_prompts": [
-        "Rustic cedar wood cabin sign carved with Lakeview Lodge mounted on a beautiful Oklahoma cabin exterior, warm evening light, photorealistic",
-        "CNC router carving a custom wood cabin sign, sawdust flying, warm workshop lighting, overhead time-lapse style shot",
-        "Cute cartoon beaver mascot holding a large wooden cabin sign reading The Family Retreat, forest background, warm friendly style",
-        "Before and after split image: plain cabin exterior with no sign vs same cabin with a beautiful hand-finished carved cedar sign installed, Oklahoma forest setting",
-        "Close-up of freshly carved cedar cabin sign with dark walnut stain, exterior sealer sheen, rustic rope hanging hardware, warm natural lighting",
-        "Flat lay of CNC cabin sign design mockup on screen next to finished physical sign, showing the AI design to real-life process"
-      ],
-      "facebook_marketplace_listing": {
-        "title": "Custom CNC Cabin Sign — Cedar, Weatherproof, Personalized — Hochatown/Broken Bow",
-        "description": "Handcrafted CNC-carved cabin signs made local in Southeast Oklahoma. Cedar or pine, dark walnut stain, double-coat exterior sealer. We send you an AI mockup before we cut — you approve the design, then we build it.\n\nSizes and pricing:\n12x18 Address/Name Sign — $125-150\n18x24 Standard Cabin Sign — $200-250\n24x36 Statement Sign — $300-375\n36x48 Premium Large Sign — $425-525\nAdd cedar post installation: +$100\n\n5-7 business day turnaround. Local delivery and installation available.\n\nOrder at handybeaver.co/signs or message us here.",
-        "renew_every_days": 7
-      }
+
+  "seasonal_context": {
+    "note": "Hochatown is in SE Oklahoma — hardwood forest, hot humid summers, mild winters. NO snow in summer/spring/fall. Current season should override any wintery prompt language.",
+    "months": {
+      "1-2": "mild winter, some frost, cabin owners prepping for spring",
+      "3-4": "spring green-up, dogwoods blooming, busy season starts",
+      "5-6": "full summer, green forest, hot, booking season peak",
+      "7-8": "peak tourist season, Broken Bow lake, hot evenings, fire pits",
+      "9-10": "fall colors starting, cooler evenings, peak leaf season",
+      "11-12": "holiday cabin season, some cold, fire pits and hot tubs"
     }
-  ],
-  "hashtags": [
-    "#HandyBeaverCo", "#SoutheastOklahoma", "#Handyman", "#HomeImprovement",
-    "#BrokenBow", "#Hochatown", "#OklahomaHandyman",
-    "#CabinSigns", "#CustomWoodSigns", "#CNCWoodworking", "#CabinLife",
-    "#HochatownCabins", "#BrokenBowCabin", "#CustomSigns", "#WoodSign",
-    "#OutdoorSign", "#CabinDecor", "#VacationRentalHost", "#AirbnbHost",
-    "#ShortTermRental", "#OklahomaWoodworking"
-  ],
-  "hashtags_by_theme": {
-    "core": ["#HandyBeaverCo", "#SoutheastOklahoma", "#Handyman", "#BrokenBow", "#Hochatown"],
-    "cabin_signs": ["#CabinSigns", "#CustomWoodSigns", "#CNCWoodworking", "#CabinLife", "#HochatownCabins", "#BrokenBowCabin", "#CustomSigns", "#WoodSign", "#OutdoorSign", "#CabinDecor", "#VacationRentalHost", "#AirbnbHost", "#OklahomaWoodworking"],
-    "deck": ["#DeckRestoration", "#DeckStaining", "#OutdoorLiving", "#DeckRepair"],
-    "flooring": ["#HardwoodFloors", "#FlooringInstallation", "#VinylPlank", "#FloorRefinishing"],
-    "trim": ["#TrimCarpentry", "#CrownMolding", "#CustomWoodwork", "#Baseboards"],
-    "general": ["#HomeRepair", "#HomeMaintenance", "#FixerUpper", "#HomeImprovement"],
-    "location": ["#McCurtainCounty", "#SEOklahoma", "#BeaversBend", "#CabinLife"]
   },
+
+  "post_type_mix": {
+    "real_portfolio_photo": 0.40,
+    "ai_professional_cabin": 0.35,
+    "lil_beaver_mascot": 0.25,
+    "note": "Real photos get highest engagement. AI cabin photography for variety. Mascot posts sparingly for brand."
+  },
+
+  "caption_themes": {
+
+    "deck_work": {
+      "captions": [
+        "Wrapped up a deck restoration in {area} this week. Owner said it looks better than the day it was built. That's what we're going for. handybeaver.co",
+        "If your cabin deck is grey and splintering, it's not done — it just needs some attention. Stain, seal, replace the bad boards. We handle all of it in {area}.",
+        "A deck with the right stain and a pressure wash is a completely different thing. Night and day. Hit us up before the season gets away from you. handybeaver.co",
+        "Hot tip for cabin owners: if water isn't beading off your deck boards anymore, your stain is done. Time to redo it before the wood starts to go soft. We serve {area}.",
+        "Just finished a full deck board replacement and stain job. Client was going to replace the whole thing — saved them a few grand by repairing what mattered. handybeaver.co"
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "deck"
+    },
+
+    "flooring": {
+      "captions": [
+        "Flooring changes a room more than almost anything else. Installed some LVP in a Hochatown cabin this week — looks completely different in the best way.",
+        "Hardwood floors in a cabin are a statement. We install, repair, and refinish. Serving {area} and the whole SE Oklahoma area. handybeaver.co",
+        "If your cabin floors are scratched up or dated, that's the first thing guests notice. We can fix that. handybeaver.co",
+        "New floors done right in {area} today. Client picked the stain color — we handled everything else. That's how it should work.",
+        "From LVP to solid hardwood — we do flooring installs that hold up in cabin environments. Humidity changes, heavy foot traffic, all of it."
+      ],
+      "image_type": "real_portfolio",
+      "image_subject": "flooring"
+    },
+
+    "cabin_maintenance": {
+      "captions": [
+        "Most cabin owners in Hochatown don't have eyes on their property between bookings. That's what our maintenance plans are for. We check it, we document it, we fix what needs fixing. handybeaver.co",
+        "Cabin Care Plan reminder: if something breaks between guest stays and nobody catches it, that's a bad review waiting to happen. Monthly inspections prevent that. {area} area. handybeaver.co",
+        "We do the walk-throughs so you don't have to drive from {city} every time something needs attention. Photo reports after every visit. Plans start at $199/mo. handybeaver.co",
+        "Property managers — we partner with management companies in {area} to keep cabins in top shape. Reliable, documented, local. Let's talk.",
+        "A cabin that's well maintained books better. Guests notice. Reviews mention it. Our plans keep it that way. handybeaver.co/pricing"
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "cabin_exterior"
+    },
+
+    "hot_tub": {
+      "captions": [
+        "Hot tub season never really ends in Hochatown — but it does end for the owners who don't maintain them. Water chemistry, filters, jets. We handle it as part of your cabin plan.",
+        "Nothing kills a 5-star review faster than a cloudy hot tub. We check chemicals, clean filters, and flag issues before guests arrive. {area} cabin owners — ask about our maintenance plans.",
+        "If your hot tub water is anything less than crystal clear, that's a problem we can solve. Part of our {area} cabin maintenance services. handybeaver.co",
+        "Hot tub maintenance is one of those things that feels optional until a guest complains about it. Monthly checks are cheap. A bad review is not."
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "hot_tub"
+    },
+
+    "signs": {
+      "captions": [
+        "Just delivered a custom cedar sign for a Hochatown cabin owner. Dark walnut stain, double-coated exterior seal, rustic chain mount. First thing guests see when they pull up.",
+        "Every cabin deserves a name. We design it, cut it, finish it, and install it. AI mockup before we ever touch the machine — you approve it first. handybeaver.co/signs",
+        "Custom cabin signs starting at $125. Cedar, personalized, weatherproof. Serving {area} and surrounding areas. If you've been putting it off, here's your sign. (Literally.) handybeaver.co/signs",
+        "We'll show you exactly what your sign looks like before we cut it. No surprises. Custom orders year-round. handybeaver.co/signs",
+        "Sign Wednesday 🪵 — another one out the door. Cedar + dark walnut stain + exterior sealer = the real deal. handybeaver.co/signs"
+      ],
+      "image_type": "real_portfolio",
+      "image_subject": "signs"
+    },
+
+    "trim_carpentry": {
+      "captions": [
+        "Trim work is where good construction looks great. We do crown molding, baseboards, door trim, and custom built-ins across SE Oklahoma. handybeaver.co",
+        "Just finished some T&G accent walls in a {area} cabin renovation. Client wanted that mountain lodge feel — I'd say we got there.",
+        "The difference between a nice cabin and a great one is usually in the details. Trim, built-ins, wood accents. We do that work. handybeaver.co",
+        "Custom woodwork in {area} today. These things take time to do right — but right is the only way we do them."
+      ],
+      "image_type": "real_portfolio",
+      "image_subject": "trim"
+    },
+
+    "before_after": {
+      "captions": [
+        "Before: weathered, grey, soft in spots. After: fresh cedar stain, new boards where needed, sealed. Same deck, completely different cabin. {area}.",
+        "This deck was one bad summer from being replaced. We stained and sealed it instead. Saved the client $4k. handybeaver.co",
+        "Before and after — a floor refinish in {area}. Original hardwood, just needed some love. Came out better than new.",
+        "What a difference a maintenance visit makes. This was caught early because of a monthly check. Small fix versus big problem. That's the whole idea."
+      ],
+      "image_type": "real_portfolio",
+      "image_subject": "before_after"
+    },
+
+    "seasonal_summer": {
+      "captions": [
+        "Summer booking season is peak time in Hochatown — and it's when deferred maintenance shows up in reviews. Catch it before guests do. handybeaver.co",
+        "It's hot, the cabins are full, and something's going to need fixing. Better to be on a plan than to get a call at 9pm on a Saturday. handybeaver.co",
+        "Peak season in {area} — we're running maintenance checks, deck repairs, and hot tub service. If you need us, book now before spots fill up.",
+        "Hochatown summer hits different. Cabins are busy, owners are watching their reviews. Our job is to make sure the property doesn't let them down."
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "cabin_summer"
+    },
+
+    "seasonal_fall": {
+      "captions": [
+        "Fall in Hochatown is peak leaf season — and peak gutter season. We're booking cabin cleanups now. handybeaver.co",
+        "Fall gutter cleaning — leaves don't care about your cabin, but we do. Included in all maintenance plans. {area}.",
+        "Before the cold hits: deck inspection, weatherstripping, hot tub service, gutter clean. All of it. handybeaver.co/pricing",
+        "The color in Hochatown right now is insane. Also your cabin's gutters are probably full. We handle both — okay just the gutters. handybeaver.co"
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "cabin_fall"
+    },
+
+    "general_handyman": {
+      "captions": [
+        "Got something that needs fixing? There's a good chance we can handle it. SE Oklahoma handyman services — no job too small. handybeaver.co",
+        "If it's on your list and you haven't gotten to it, that's what we're here for. Serving {area} and surrounding areas.",
+        "Local, reliable, shows up when we say we will. That's not a low bar, but apparently it is. handybeaver.co",
+        "Some things are worth doing yourself. Some things you should just call us for. handybeaver.co",
+        "Fair prices, good work, no drama. That's the Handy Beaver way. {area} and beyond."
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "general"
+    },
+
+    "client_story": {
+      "captions": [
+        "Had a cabin owner from Dallas reach out — hadn't been to the property in 6 months. We went out, did a full inspection, found 3 things that needed attention. Got them all handled same week. That's the service. handybeaver.co",
+        "Got a call from a property manager in {area} — guest was arriving in 4 hours and a door wouldn't lock. We were there in 45 minutes. That's what being local means.",
+        "Client in {area} was going to replace their entire deck. We took a look and said — no, you don't. Stained and repaired for a fraction of replacement cost. They were pretty happy.",
+        "Out-of-state cabin owners — we're your local eyes and hands. Monthly check, photo report, we handle what needs handling. You can breathe. handybeaver.co"
+      ],
+      "image_type": "ai_professional_cabin",
+      "image_subject": "cabin_exterior"
+    }
+  },
+
+  "image_prompts": {
+
+    "mascot_v2_description": "Lil Beaver — a friendly cartoon beaver character wearing a red plaid flannel shirt and a round brown work hat, confident stance, hands on hips or holding tools, warm approachable expression",
+
+    "mascot_posts": [
+      "Lil Beaver — a friendly cartoon beaver in a red plaid shirt and brown work hat — standing on a gorgeous wooden cabin deck in Hochatown Oklahoma, lush green pine forest in background, warm summer evening, string lights, professional cartoon illustration, NO snow",
+      "Lil Beaver — a friendly cartoon beaver in a red plaid shirt and brown work hat — inspecting a beautiful cabin hot tub on a wraparound deck, pine trees, warm golden light, SE Oklahoma summer, no snow, clean professional style",
+      "Lil Beaver — cartoon beaver in red plaid shirt and work hat — holding a custom cedar sign with a cabin name carved in it, green Oklahoma forest background, warm natural lighting, professional illustration",
+      "Lil Beaver — cartoon beaver in red plaid shirt and work hat — giving thumbs up next to a freshly stained cedar deck, lush summer green trees, Oklahoma forest, warm afternoon light, no winter elements",
+      "Lil Beaver — cartoon beaver in red plaid shirt and work hat — installing hardwood floors in a beautiful cabin interior, warm wood tones, natural window light, professional setting, summer vibes"
+    ],
+
+    "professional_cabin": {
+      "cabin_exterior": [
+        "Professional real estate photography of a luxury vacation rental cabin in Hochatown Oklahoma, modern A-frame or craftsman style, cedar and stone exterior, wraparound deck, string lights, fire pit with Adirondack chairs in gravel clearing, lush green pine forest, blue hour evening, no people, no snow, photorealistic 4K",
+        "Stunning Hochatown Oklahoma vacation cabin at golden hour, warm amber light from large windows, covered porch with cedar railing, fire pit glowing, tall pine trees surrounding, summer evening, professional photography, no snow",
+        "Luxury cabin in Beavers Bend area Oklahoma, stone chimney, wood siding, deck with outdoor furniture, string lights hanging, Ouachita forest, dusk lighting, photorealistic, no people, summer/fall, no snow"
+      ],
+      "deck": [
+        "Beautiful freshly stained cedar deck on a Hochatown vacation cabin, dark walnut stain gleaming, Adirondack chairs, string lights, pine forest view, warm afternoon light, no people, professional photography, summer, no snow",
+        "Wraparound cabin deck in SE Oklahoma after professional restoration, fresh stain, clean railings, fire pit visible in background, lush green trees, golden hour, no snow, photorealistic"
+      ],
+      "hot_tub": [
+        "Luxury cabin hot tub on a wooden deck in Hochatown Oklahoma, water steaming gently, surrounded by pine trees, outdoor stone fireplace lit in background, string lights, warm evening ambiance, no snow, professional photography",
+        "Covered cabin deck in SE Oklahoma with bubbling hot tub, cedar railings, outdoor TV mounted on wall, pine forest visible, dusk lighting, no people, warm amber tones, summer evening"
+      ],
+      "cabin_summer": [
+        "Gorgeous vacation rental cabin in Hochatown Oklahoma surrounded by full green summer forest, evening string lights, fire pit, gravel driveway, warm golden light from windows, lush Oklahoma hardwood trees, professional photography",
+        "Summer evening at a Broken Bow area cabin, outdoor seating area, string lights draped over deck, tall pines, warm interior lights glowing, fire pit in clearing, photorealistic 4K photography"
+      ],
+      "cabin_fall": [
+        "Hochatown Oklahoma cabin in peak fall foliage, orange and red hardwood trees surrounding, string lights on deck, warm cabin glow, Adirondack chairs, professional photography, stunning autumn colors",
+        "Fall colors at a Beavers Bend area vacation cabin, mixed hardwood forest in peak color, fire pit glowing, cedar deck, outdoor string lights, golden hour, professional real estate photography"
+      ],
+      "flooring": [
+        "Luxury cabin interior with beautiful dark hardwood floors, warm wood tones, large windows with pine forest view, natural light streaming in, professional interior photography, no people, Southeast Oklahoma cabin aesthetic",
+        "Modern cabin interior with fresh LVP flooring, cedar ceiling planks, stone fireplace, large windows, natural warm light, professional interior design photography"
+      ],
+      "general": [
+        "Scenic Hochatown Oklahoma vacation cabin in summer, wraparound porch, outdoor fire pit, pine forest backdrop, golden hour lighting, string lights, professional photography",
+        "Beautiful SE Oklahoma cabin property, manicured gravel area, fire pit, covered porch, lush green trees, warm evening light, no people, real estate photography style"
+      ]
+    },
+
+    "generation_rules": [
+      "ALWAYS include 'no snow' in prompts — it is summer/fall in Oklahoma",
+      "Use 'Hochatown Oklahoma', 'SE Oklahoma', or 'Beavers Bend' for location grounding",
+      "Add current season context explicitly (summer green trees / fall colors)",
+      "For professional cabin: specify 'professional photography', '4K', 'no people'",
+      "For mascot: use exact v2 description — red plaid shirt, brown work hat",
+      "NEVER say 'cute' or 'cartoon' for professional posts",
+      "Use flux-2-klein-9b for best quality"
+    ]
+  },
+
+  "hashtags": {
+    "core": ["#HandyBeaverCo", "#SoutheastOklahoma", "#BrokenBow", "#Hochatown", "#HochatownCabins"],
+    "cabin_maintenance": ["#CabinMaintenance", "#VacationRentalHost", "#AirbnbHost", "#ShortTermRental", "#CabinLife", "#PropertyManagement"],
+    "deck": ["#DeckRestoration", "#DeckStaining", "#OutdoorLiving", "#CabinDeck", "#DeckRepair"],
+    "flooring": ["#HardwoodFloors", "#CabinFlooring", "#VinylPlank", "#FlooringInstall"],
+    "signs": ["#CabinSigns", "#CustomWoodSigns", "#CNCWoodworking", "#CabinDecor", "#WoodSign", "#OklahomaWoodworking"],
+    "trim": ["#TrimCarpentry", "#CrownMolding", "#CustomWoodwork", "#CabinInterior"],
+    "location": ["#McCurtainCounty", "#BeaversBend", "#OklahomaHandyman", "#SEOklahoma"],
+    "hot_tub": ["#HotTubLife", "#CabinHotTub", "#OutdoorLiving", "#HochatownLiving"]
+  },
+
+  "facebook_posting": {
+    "photo_post_with_real_image": {
+      "note": "When posting a real portfolio photo, always use a direct human caption — no AI fluff",
+      "caption_style": "short, specific, mentions the work type and general area"
+    },
+    "pull_fb_photos_to_gallery": {
+      "endpoint": "GET /sync-fb-gallery",
+      "description": "Fetches recent photos posted to FB page, stores in KV, makes available for site gallery and AI generation reference"
+    }
+  },
+
   "posting_schedule": {
     "frequency": "3x per week",
     "times": ["10:00 CST", "14:00 CST", "18:00 CST"],
-    "days": ["Monday", "Wednesday", "Friday"]
+    "days": ["Monday", "Wednesday", "Friday"],
+    "post_type_rotation": "Avoid same post type back to back. Rotate: real_photo → ai_cabin → mascot → real_photo..."
   }
 }

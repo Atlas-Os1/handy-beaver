@@ -129,7 +129,7 @@ const adminLayout = (title: string, content: string, activePage: string, admin?:
         z-index: 1000;
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-        background: #1a1a2e !important;
+        background: #f8fafc !important;
         flex-direction: column !important;
         overflow-y: auto;
         display: flex !important;
@@ -138,7 +138,7 @@ const adminLayout = (title: string, content: string, activePage: string, admin?:
       .sidebar.open { left: 0 !important; }
       
       .sidebar a {
-        color: #ccc !important;
+        color: #374151 !important;
         border-left: 3px solid transparent !important;
         padding: 0.75rem 1rem !important;
       }
@@ -179,7 +179,7 @@ const adminLayout = (title: string, content: string, activePage: string, admin?:
     </div>
     <div class="user" style="display: flex; align-items: center; gap: 1rem;">
       <span>${admin?.name || admin?.github_username || 'Admin'}</span>
-      <a href="/api/auth/logout" style="color: #ccc;">Logout</a>
+      <a href="/api/auth/logout" style="color: #6b7280;">Logout</a>
     </div>
   </nav>
   <div class="sidebar-overlay" onclick="toggleSidebar()"></div>

@@ -51,7 +51,7 @@ export const signsPage = (c: Context) => {
         content: '';
         position: absolute;
         inset: 0;
-        background: url('/api/assets/icons/wood-texture.png') center/cover;
+        background: linear-gradient(135deg, #8B6914 0%, #A0522D 40%, #8B4513 70%, #6B3410 100%);
         opacity: 0.06;
         pointer-events: none;
       }
