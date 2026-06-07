@@ -350,6 +350,7 @@ export const adminLayout = (title: string, content: string, activePage: string =
       <a href="/admin/visualizer" class="${activePage === 'visualizer' ? 'active' : ''}">✨ AI Visualizer</a>
       <a href="/admin/invoices" class="${activePage === 'invoices' ? 'active' : ''}"><span class="nav-icon">💰</span> Invoices</a>
       <a href="/admin/gallery" class="${activePage === 'gallery' ? 'active' : ''}">🖼️ Gallery</a>
+      <a href="/admin/job-media" class="${activePage === 'job-media' ? 'active' : ''}">📷 Job Photos</a>
       <a href="/admin/blog" class="${activePage === 'blog' ? 'active' : ''}">📝 Blog</a>
       <a href="/admin/fliers" class="${activePage === 'fliers' ? 'active' : ''}">🎨 Fliers</a>
       <a href="/admin/competitors" class="${activePage === 'competitors' ? 'active' : ''}">🔍 Competitors</a>
