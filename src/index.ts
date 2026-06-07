@@ -515,8 +515,8 @@ api.route('/voice', voiceApi);
 api.route('/whatsapp', whatsappApi);
 api.route('/webhooks/meta', metaWebhook);
 api.route('/chat', chatApi);
+api.route('/calendar/notes', calendarNotesApi); // Must come before /calendar (Hono prefix match)
 api.route('/calendar', calendarApi);
-api.route('/calendar/notes', calendarNotesApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
