@@ -578,8 +578,7 @@ export function getHeroImages(): PortfolioImage[] {
 }
 
 /**
- * URL builder (images served from R2 via /api/assets/)
+ * URL builder — serves directly from Cloudflare static assets (public/portfolio/)
+ * No KV/R2 lookup needed; files are deployed at their natural paths.
  */
-export function getImageUrl(image: PortfolioImage): string {
-  return `/api/assets/portfolio/${image.folder}/${image.filename}`;
-}
+export function getImageUrl(imag
