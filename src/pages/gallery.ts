@@ -20,6 +20,7 @@ const categories: Array<{ slug: PortfolioCategory; name: string; icon: string; d
   { slug: 'kitchen-bar', name: 'Kitchen & Bar', icon: '🍺', description: 'Custom bars, epoxy counters, and kitchen renovations' },
   { slug: 'trim-carpentry', name: 'Trim & Carpentry', icon: '🔨', description: 'Crown molding, door trim, T&G accent walls' },
   { slug: 'doors', name: 'Door Installation', icon: '🚪', description: 'Entry doors, French doors, and custom trim work' },
+  { slug: 'signs', name: 'Cabin Signs', icon: '🪵', description: 'Custom cedar signs — cabin, business, address markers, and more' },
 ];
 
 export const galleryPage = (c: Context) => {
@@ -510,10 +511,4 @@ export const galleryCategoryPage = async (c: Context) => {
       }
       
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeLightbox();
-      });
-    </script>
-  `;
-  
-  return c.html(layout(category.name, content, 'gallery'));
-};
+      
