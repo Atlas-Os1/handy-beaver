@@ -418,6 +418,7 @@ export const adminVisualizerPage = async (c: Context) => {
                         <td colspan="5" style="padding: 0.5rem; font-weight: 700; text-align: right; border-top: 1px solid #e5e7eb;">Total</td>
                         <td style="padding: 0.5rem; font-weight: 700; text-align: right; border-top: 1px solid #e5e7eb; color: var(--primary);">${total}</td>
                       </tr></tfoot>
+                   
                     </table>
                   ` : '<p style="color: #999; font-size: 0.85rem;">No line items available.</p>'}
                 </div>

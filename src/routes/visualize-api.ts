@@ -572,16 +572,18 @@ visualizeApi.get('/history', async (c) => {
   if (adminToken) {
     const admin = await getAdmin(c.env.DB, adminToken);
     if (admin) {
-      const results = await c.env.DB.prepare(`SELECT vu.*, c.name, c.email FROM visualizer_usage vu LEFT JOIN customers c ON vu.customer_id = c.id ORDER BY vu.created_at DESC LIMIT 50`).all();
-      return c.json({ history: results.results, isAdmin: true });
+      const results = await c.env.DB.prepare(`SELECT vu.*, c.name, c.email FROM visualizer_usage vu LEFT JOIN customers c ON vu.customer_id=c.id ORDER BY vu.created_at DESC LIMIT 20`).all();
+      return c.json({ success: true, results: results.results });
     }
   }
   if (portalToken) {
-    const customer = await getPortalCustomer(c.env.DB, portalToken);
+    const customer = await getCustomer(c.env.DB, portalToken);
     if (customer) {
-      const results = await c.env.DB.prepare(`SELECT * FROM visualizer_usage WHERE customer_id = ? ORDER BY created_at DESC LIMIT 20`).bind(customer.customer_id).all();
-      return c.json({ history: results.results, isAdmin: false });
+      const results = await c.env.DB.prepare(`SELECT * FROM visualizer_usage WHERE customer_id=? ORDER BY created_at DESC LIMIT 20`).bind(customer.customer_id).all();
+      return c.json({ success: true, results: results.results });
     }
   }
   return c.json({ error: 'Unauthorized' }, 401);
 });
+
+export { visualizeApi };

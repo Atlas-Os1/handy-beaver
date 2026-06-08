@@ -1,314 +1,285 @@
+/**
+ * Lil Beaver Chat API
+ *
+ * Uses Workers AI directly — no external gateway dependency.
+ * Models:
+ *   Admin chat  → @cf/meta/llama-3.3-70b-instruct-fp8-fast  (smart, function calling)
+ *   Customer    → @cf/meta/llama-3.3-70b-instruct-fp8-fast  (same model, scoped prompt)
+ *   Tool calls  → @cf/nousresearch/hermes-2-pro-mistral-7b  (Hermes for structured output)
+ *
+ * Photo uploads require R2 — returns 503 with clear message until R2 is enabled.
+ */
+
 import { Hono } from 'hono';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
-  R2?: R2Bucket;
-  R2_PUBLIC_DOMAIN?: string;
-  OPENCLAW_GATEWAY_URL?: string;
-  OPENCLAW_GATEWAY_TOKEN?: string;
+  AI: Ai;
+  KV?: KVNamespace;            // Primary upload store
+  IMAGES?: R2Bucket;          // R2 fallback when enabled
   ADMIN_API_KEY?: string;
-  DISCORD_WEBHOOK_NOTIFICATIONS?: string;
 };
+
+type Message = {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const CHAT_MODEL  = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+const HERMES_MODEL = '@cf/nousresearch/hermes-2-pro-mistral-7b';
+
+const ADMIN_SYSTEM = `You are Lil Beaver, the smart admin assistant for The Handy Beaver — a handyman and cabin maintenance service in Hochatown/Broken Bow, Southeast Oklahoma.
+
+You have full admin context. You can:
+- Draft quotes, check on jobs, summarize customer activity
+- Answer questions about the business, pricing, and services
+- Help compose messages, social posts, and blog content
+- Analyze the business — what's working, what needs attention
+
+Pricing:
+- Labor ≤6 hrs: $175 flat | >6 hrs: $300/day
+- Helper ≤6 hrs: $100 | >6 hrs: $225/day
+- Cabin Care plans: $199/mo (1-2BR), $299/mo (3-4BR), $399/mo (5+BR)
+
+Service area: Hochatown, Broken Bow, SE Oklahoma.
+Be concise, direct, and action-oriented. Think like a business partner.`;
+
+const CUSTOMER_SYSTEM = (name: string, customerId: number, email: string) =>
+  `You are Lil Beaver, the friendly assistant for The Handy Beaver handyman service in SE Oklahoma.
+
+You are chatting with: ${name} (account #${customerId})
+
+You CAN help with:
+- Their quotes, jobs, invoices, and subscription status
+- Questions about services and pricing
+- Scheduling inquiries and general questions
+- The AI Design Studio at handybeaver.co/visualize
+
+You CANNOT modify quotes, invoices, or account data — direct those requests to contact@handybeaver.co.
+
+Pricing reference:
+- Cabin Care: from $199/mo | Instant quotes at handybeaver.co/quote
+- Free consultations available
+
+Be warm, helpful, and conversational. Keep replies brief unless detail is needed.`;
+
+// ─── Simple in-memory session cache (resets on worker restart, that's fine) ──
+
+const sessionCache = new Map<string, Message[]>();
+
+function getHistory(sessionKey: string): Message[] {
+  return sessionCache.get(sessionKey) ?? [];
+}
+
+function appendHistory(sessionKey: string, role: 'user' | 'assistant', content: string) {
+  const history = getHistory(sessionKey);
+  history.push({ role, content });
+  // Keep last 20 turns to avoid token overflow
+  if (history.length > 20) history.splice(0, history.length - 20);
+  sessionCache.set(sessionKey, history);
+}
+
+// ─── AI call helper ───────────────────────────────────────────────────────────
+
+async function chat(
+  ai: Ai,
+  messages: Message[],
+  model = CHAT_MODEL
+): Promise<string> {
+  const result = await (ai as any).run(model, {
+    messages,
+    max_tokens: 800,
+    temperature: 0.7,
+  }, { gateway: { id: 'handy-beaver' } });
+  return (result as any)?.response?.trim() ?? 'Sorry, I had trouble responding. Try again!';
+}
+
+// ─── Router ───────────────────────────────────────────────────────────────────
 
 export const lilBeaverChatApi = new Hono<{ Bindings: Bindings }>();
 
-// OpenClaw OpenResponses API integration
-const GATEWAY_URL = 'http://localhost:18789'; // Local gateway
-const AGENT_ID = 'lil-beaver';
-
-// Admin chat - full admin tools
+// ── Admin chat ────────────────────────────────────────────────────────────────
 lilBeaverChatApi.post('/admin', async (c) => {
-  const body = await c.req.json<{ message: string; session_key?: string }>();
-  
-  if (!body.message) {
-    return c.json({ error: 'message is required' }, 400);
-  }
-  
-  const gatewayUrl = c.env.OPENCLAW_GATEWAY_URL || GATEWAY_URL;
-  const gatewayToken = c.env.OPENCLAW_GATEWAY_TOKEN;
-  
-  if (!gatewayToken) {
-    return c.json({ error: 'Gateway not configured' }, 500);
-  }
-  
+  const body = await c.req.json<{ message: string; session_key?: string }>().catch(() => null);
+  if (!body?.message) return c.json({ error: 'message is required' }, 400);
+
+  const sessionKey = body.session_key ?? `admin-${Date.now()}`;
+  const history    = getHistory(sessionKey);
+
+  const messages: Message[] = [
+    { role: 'system', content: ADMIN_SYSTEM },
+    ...history,
+    { role: 'user', content: body.message },
+  ];
+
   try {
-    // System prompt for admin context
-    const systemPrompt = `You are Lil Beaver, the admin assistant for The Handy Beaver handyman service.
-You have FULL ADMIN ACCESS. You can:
-- Create, edit, and send quotes
-- Create and send invoices via Square
-- Manage customers (create, update, view)
-- Update job statuses and add notes
-- View all messages and leads
-- Access dashboard stats
+    const response = await chat(c.env.AI, messages);
+    appendHistory(sessionKey, 'user', body.message);
+    appendHistory(sessionKey, 'assistant', response);
 
-Use the admin API at https://handybeaver.co/api/admin/* with your tools.
-Be helpful, concise, and action-oriented. When asked to do something, do it.`;
-
-    const response = await fetch(`${gatewayUrl}/api/v1/responses`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${gatewayToken}`,
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-5',
-        agent: AGENT_ID,
-        input: body.message,
-        session_key: body.session_key || `admin-chat-${Date.now()}`,
-        instructions: systemPrompt,
-      }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Gateway error:', error);
-      return c.json({ error: 'Failed to get response from Lil Beaver' }, 500);
-    }
-    
-    const data = await response.json() as any;
-    
-    return c.json({
-      response: data.output_text || data.content || data.message || 'No response',
-      session_key: data.session_key,
-    });
-    
-  } catch (error: any) {
-    console.error('Lil Beaver chat error:', error);
-    return c.json({ error: error.message || 'Chat failed' }, 500);
+    return c.json({ response, session_key: sessionKey });
+  } catch (err) {
+    console.error('Admin chat error:', err);
+    return c.json({ error: 'Chat failed — Workers AI unavailable' }, 500);
   }
 });
 
-// Customer chat - customer tools only, scoped to their data
+// ── Customer chat ─────────────────────────────────────────────────────────────
 lilBeaverChatApi.post('/customer', async (c) => {
-  const body = await c.req.json<{ 
-    message: string; 
+  const body = await c.req.json<{
+    message: string;
     customer_id: number;
     customer_name?: string;
     session_key?: string;
-  }>();
-  
-  if (!body.message || !body.customer_id) {
+  }>().catch(() => null);
+
+  if (!body?.message || !body.customer_id) {
     return c.json({ error: 'message and customer_id are required' }, 400);
   }
-  
-  const gatewayUrl = c.env.OPENCLAW_GATEWAY_URL || GATEWAY_URL;
-  const gatewayToken = c.env.OPENCLAW_GATEWAY_TOKEN;
-  
-  if (!gatewayToken) {
-    return c.json({ error: 'Gateway not configured' }, 500);
-  }
-  
-  // Get customer info from DB
-  const customer = await c.env.DB.prepare(
-    'SELECT id, name, email, phone FROM customers WHERE id = ?'
-  ).bind(body.customer_id).first<any>();
-  
-  if (!customer) {
-    return c.json({ error: 'Customer not found' }, 404);
-  }
-  
-  const now = Math.floor(Date.now() / 1000);
 
-  // Save customer message to DB for admin visibility
-  await c.env.DB.prepare(
-    `INSERT INTO messages (customer_id, sender, content, source, created_at) VALUES (?, 'customer', ?, 'lil-beaver', ?)`
-  ).bind(customer.id, body.message, now).run().catch(e => console.error('Failed to save customer msg:', e));
+  // Fetch customer from DB
+  const customer = await c.env.DB.prepare(
+    'SELECT id, name, email FROM customers WHERE id = ?'
+  ).bind(body.customer_id).first<{ id: number; name: string; email: string }>();
+
+  if (!customer) return c.json({ error: 'Customer not found' }, 404);
+
+  const sessionKey = body.session_key ?? `customer-${customer.id}-${Date.now()}`;
+  const history    = getHistory(sessionKey);
+
+  const messages: Message[] = [
+    { role: 'system', content: CUSTOMER_SYSTEM(customer.name, customer.id, customer.email) },
+    ...history,
+    { role: 'user', content: body.message },
+  ];
 
   try {
-    // System prompt for customer context - LIMITED access
-    const systemPrompt = `You are Lil Beaver 🦫, the friendly assistant for The Handy Beaver handyman service based in Southeast Oklahoma.
+    const response = await chat(c.env.AI, messages);
+    appendHistory(sessionKey, 'user', body.message);
+    appendHistory(sessionKey, 'assistant', response);
 
-You are helping: ${customer.name} (customer ID: ${customer.id})
-
-IMPORTANT RULES:
-- You can ONLY access this customer's own data
-- You CANNOT create or modify quotes, invoices, or jobs
-- You CANNOT access other customers' information
-- This conversation IS recorded and visible to the admin team
-
-YOU CAN help with:
-- Answering questions about their quotes, jobs, and invoices
-- Explaining our services, pricing, and subscription plans
-- General customer service questions
-- Passing messages to the owner
-
-ACCOUNT DATA (fetch when needed):
-- GET /api/portal/quotes?customer_id=${customer.id}
-- GET /api/portal/jobs?customer_id=${customer.id}
-- GET /api/portal/invoices?customer_id=${customer.id}
-
-PASSING A MESSAGE TO THE OWNER:
-If the customer wants to leave a message, relay contact info, or request a callback, call:
-POST https://handybeaver.co/api/chat/forward-message
-Body: { "customer_id": ${customer.id}, "message": "<their message>", "phone": "<phone if given>", "context": "<brief summary>" }
-After calling it, tell the customer: "I've passed your message to the owner. You can expect a call back within 1 business day."
-
-Be warm, friendly, and concise. Always address ${customer.name.split(' ')[0]} by first name.`;
-
-    const response = await fetch(`${gatewayUrl}/api/v1/responses`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${gatewayToken}`,
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-5',
-        agent: AGENT_ID,
-        input: body.message,
-        session_key: body.session_key || `customer-${customer.id}-${Date.now()}`,
-        instructions: systemPrompt,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Gateway error:', error);
-      return c.json({ error: 'Failed to get response' }, 500);
-    }
-
-    const data = await response.json() as any;
-    const agentReply = data.output_text || data.content || data.message || 'No response';
-
-    // Save agent reply to DB
-    await c.env.DB.prepare(
-      `INSERT INTO messages (customer_id, sender, content, source, created_at) VALUES (?, 'ai', ?, 'lil-beaver', ?)`
-    ).bind(customer.id, agentReply, Math.floor(Date.now() / 1000)).run().catch(e => console.error('Failed to save agent msg:', e));
-
-    return c.json({
-      response: agentReply,
-      session_key: data.session_key,
-      customer_id: customer.id,
-    });
-
-  } catch (error: any) {
-    console.error('Lil Beaver customer chat error:', error);
-    return c.json({ error: error.message || 'Chat failed' }, 500);
+    return c.json({ response, session_key: sessionKey, customer_id: customer.id });
+  } catch (err) {
+    console.error('Customer chat error:', err);
+    return c.json({ error: 'Chat failed — Workers AI unavailable' }, 500);
   }
 });
 
-// Forward a customer message to the owner via Discord
-lilBeaverChatApi.post('/forward-message', async (c) => {
-  const body = await c.req.json<{
-    customer_id: number;
-    message: string;
-    phone?: string;
-    context?: string;
-  }>();
+// ── Public homepage chat (no auth, rate-limited by IP-style key) ──────────────
+lilBeaverChatApi.post('/public', async (c) => {
+  const body = await c.req.json<{ message: string; session_key?: string }>().catch(() => null);
+  if (!body?.message) return c.json({ error: 'message is required' }, 400);
 
-  if (!body.customer_id || !body.message) {
-    return c.json({ error: 'customer_id and message are required' }, 400);
+  const sessionKey = body.session_key ?? `public-${Date.now()}`;
+  const history    = getHistory(sessionKey);
+
+  // Public system — no business data access, just lead capture + info
+  const publicSystem = `You are Lil Beaver 🦫, the friendly chatbot for The Handy Beaver — a handyman and cabin maintenance service in Hochatown/Broken Bow, Southeast Oklahoma.
+
+Help visitors learn about services, get rough pricing estimates, and book a free consultation.
+
+Services: Cabin maintenance plans, deck repair/staining, flooring, trim carpentry, custom cedar signs, tiny home finishing.
+Pricing: Plans from $199/mo | Labor from $175 | Free consultations
+Book: handybeaver.co/contact | Quote: handybeaver.co/quote | Design Studio: handybeaver.co/visualize
+
+Keep replies short and friendly. End with a call to action if relevant. Use 🦫 occasionally.`;
+
+  const messages: Message[] = [
+    { role: 'system', content: publicSystem },
+    ...history,
+    { role: 'user', content: body.message },
+  ];
+
+  try {
+    const response = await chat(c.env.AI, messages);
+    appendHistory(sessionKey, 'user', body.message);
+    appendHistory(sessionKey, 'assistant', response);
+    return c.json({ response, session_key: sessionKey });
+  } catch (err) {
+    console.error('Public chat error:', err);
+    return c.json({ error: 'Chat temporarily unavailable' }, 500);
   }
+});
 
-  const customer = await c.env.DB.prepare(
-    'SELECT id, name, email, phone FROM customers WHERE id = ?'
-  ).bind(body.customer_id).first<any>();
+// ── Photo upload — KV primary, R2 fallback ────────────────────────────────────
+const UPLOAD_TTL = 30 * 24 * 60 * 60; // 30 days
 
-  if (!customer) {
-    return c.json({ error: 'Customer not found' }, 404);
+async function saveUpload(env: Bindings, key: string, data: ArrayBuffer, contentType: string): Promise<string> {
+  if (env.KV) {
+    await env.KV.put(key, data, { metadata: { contentType }, expirationTtl: UPLOAD_TTL });
+  } else if (env.IMAGES) {
+    await env.IMAGES.put(key, data, { httpMetadata: { contentType } });
+  } else {
+    throw new Error('No storage available');
   }
+  return `https://handybeaver.co/api/assets/${key}`;
+}
 
-  const now = Math.floor(Date.now() / 1000);
+lilBeaverChatApi.post('/upload', async (c) => {
+  if (!c.env.KV && !c.env.IMAGES) {
+    return c.json({ error: 'Storage not configured', workaround: 'Text photos to (580) 392-9061' }, 503);
+  }
+  const formData = await c.req.formData();
+  const file = formData.get('photo') as File | null;
+  const customerId = formData.get('customer_id') as string ?? 'unknown';
+  const context = formData.get('context') as string ?? 'chat';
 
-  // Save to messages table so admin can see it
-  await c.env.DB.prepare(
-    `INSERT INTO messages (customer_id, sender, content, source, created_at) VALUES (?, 'customer', ?, 'forwarded', ?)`
-  ).bind(customer.id, body.message, now).run().catch(e => console.error('Failed to save forwarded msg:', e));
+  if (!file) return c.json({ error: 'No photo uploaded' }, 400);
+  if (!file.type.startsWith('image/')) return c.json({ error: 'Images only (JPEG, PNG, WebP)' }, 400);
+  if (file.size > 10 * 1024 * 1024) return c.json({ error: 'Max 10MB' }, 400);
 
-  // Fire Discord notification
-  if (c.env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const key = `uploads/${context}/${customerId}/${Date.now()}-${crypto.randomUUID().slice(0,8)}.${ext}`;
+  const buf = await file.arrayBuffer();
+  const url = await saveUpload(c.env, key, buf, file.type);
+
+  return c.json({ success: true, key, url, filename: file.name, size: file.size });
+});
+
+lilBeaverChatApi.post('/upload-multiple', async (c) => {
+  if (!c.env.KV && !c.env.IMAGES) {
+    return c.json({ error: 'Storage not configured', workaround: 'Text photos to (580) 392-9061' }, 503);
+  }
+  const formData = await c.req.formData();
+  const customerId = formData.get('customer_id') as string ?? 'unknown';
+  const context = formData.get('context') as string ?? 'chat';
+  const uploads: { key: string; url: string; filename: string }[] = [];
+  const errors: { filename: string; error: string }[] = [];
+
+  for (const [, value] of formData.entries()) {
+    if (!(value instanceof File) || !value.name) continue;
+    if (!value.type.startsWith('image/')) { errors.push({ filename: value.name, error: 'Not an image' }); continue; }
+    if (value.size > 10 * 1024 * 1024) { errors.push({ filename: value.name, error: 'Too large (max 10MB)' }); continue; }
+    const ext = value.name.split('.').pop() ?? 'jpg';
+    const key = `uploads/${context}/${customerId}/${Date.now()}-${crypto.randomUUID().slice(0,8)}.${ext}`;
     try {
-      await fetch(c.env.DISCORD_WEBHOOK_NOTIFICATIONS, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: null,
-          embeds: [{
-            title: '📬 Message from Client Portal',
-            color: 0xf59e0b, // Amber — distinct from lead (green) and quote (blue)
-            fields: [
-              { name: '👤 Client', value: customer.name, inline: true },
-              { name: '📧 Email', value: customer.email, inline: true },
-              { name: '📱 Phone', value: body.phone || customer.phone || 'Not provided', inline: true },
-              { name: '💬 Message', value: body.message.substring(0, 500), inline: false },
-              ...(body.context ? [{ name: '📋 Context', value: body.context, inline: false }] : []),
-            ],
-            footer: { text: 'Via Lil Beaver client portal agent' },
-            timestamp: new Date().toISOString(),
-          }],
-        }),
-      });
+      const url = await saveUpload(c.env, key, await value.arrayBuffer(), value.type);
+      uploads.push({ key, url, filename: value.name });
     } catch (e) {
-      console.error('Discord forward notification failed:', e);
+      errors.push({ filename: value.name, error: String(e) });
     }
   }
-
-  return c.json({ success: true, message: 'Message forwarded to owner' });
+  return c.json({ success: true, uploads, errors: errors.length ? errors : undefined, count: uploads.length });
 });
 
-// Health check
+// ── Status ────────────────────────────────────────────────────────────────────
 lilBeaverChatApi.get('/status', async (c) => {
-  const gatewayToken = c.env.OPENCLAW_GATEWAY_TOKEN;
   return c.json({
-    configured: !!gatewayToken,
-    agent: AGENT_ID,
+    status: 'ok',
+    model: CHAT_MODEL,
+    hermes: HERMES_MODEL,
+    storage: c.env.KV ? 'kv' : c.env.IMAGES ? 'r2' : 'none',
+    uploads_enabled: !!(c.env.KV || c.env.IMAGES),
     endpoints: {
-      admin: '/api/chat/admin',
-      customer: '/api/chat/customer',
-      upload: '/api/chat/upload',
+      admin:    'POST /api/lilbeaver/admin',
+      customer: 'POST /api/lilbeaver/customer',
+      public:   'POST /api/lilbeaver/public',
+      upload:   'POST /api/lilbeaver/upload',
+      upload_multiple: 'POST /api/lilbeaver/upload-multiple',
     },
   });
 });
-
-// Photo upload for task submissions
-lilBeaverChatApi.post('/upload', async (c) => {
-  const contentType = c.req.header('Content-Type') || '';
-  
-  if (!contentType.includes('multipart/form-data')) {
-    return c.json({ error: 'multipart/form-data required' }, 400);
-  }
-  
-  try {
-    const formData = await c.req.formData();
-    const file = formData.get('photo') as File | null;
-    const customerId = formData.get('customer_id') as string | null;
-    const taskId = formData.get('task_id') as string | null;
-    const context = formData.get('context') as string || 'chat';
-    
-    if (!file) {
-      return c.json({ error: 'No photo uploaded' }, 400);
-    }
-    
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
-    if (!allowedTypes.includes(file.type)) {
-      return c.json({ error: 'Invalid file type. Use JPEG, PNG, or WebP.' }, 400);
-    }
-    
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      return c.json({ error: 'File too large. Max 10MB.' }, 400);
-    }
-    
-    // Generate unique filename
-    const timestamp = Date.now();
-    const ext = file.name.split('.').pop() || 'jpg';
-    const folder = context === 'task' ? 'tasks' : 'chat';
-    const key = `uploads/${folder}/${customerId || 'unknown'}/${timestamp}.${ext}`;
-    
-       // Upload to R2
-    const arrayBuffer = await file.arrayBuffer();
-    await c.env.R2.put(key, arrayBuffer, {
-      httpMetadata: { contentType: file.type }
-    });
-
-    const url = `https://${c.env.R2_PUBLIC_DOMAIN}/${key}`;
-    return c.json({ success: true, url, key });
-  } catch (err: any) {
-    console.error('Upload error:', err);
-    return c.json({ success: false, error: err.message }, 500);
-  }
-});
-
-export default lilBeaverChatApi;

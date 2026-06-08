@@ -486,100 +486,17 @@ export const portfolioManifest: PortfolioImage[] = [
     folder: 'bath-remodel',
     title: 'Bathroom After',
     description: 'Beautiful bathroom after complete remodel',
-    category: 'bathroom-remodels',
-    type: 'after',
-    tags: ['bathroom', 'remodel', 'after'],
-    pairedWith: 'prebath.png',
-    featured: true
-  },
-  {
-    filename: 'afterbath2.png',
-    folder: 'bath-remodel',
-    title: 'Bathroom Remodel Detail',
-    description: 'Bathroom remodel detail shot',
-    category: 'bathroom-remodels',
-    type: 'gallery',
-    tags: ['bathroom', 'remodel', 'detail']
-  },
-  
-  // OFFICE SPACE
-  {
-    filename: '476142526_941002844812131_5074573470816272368_n.jpg',
-    folder: 'office-space',
-    title: 'Office Space',
-    description: 'Custom office space woodwork',
-    category: 'trim-carpentry',
-    type: 'gallery',
-    tags: ['office', 'commercial', 'trim'],
-    featured: true
   },
 ];
 
-/**
- * Video content (separate from images)
- */
-export const portfolioVideos = [
-  {
-    filename: 'transformation.mov',
-    folder: 'videos',
-    title: 'Full Project Transformation',
-    description: 'Video compilation: construction → finished bar, bathroom, interiors',
-    category: 'specialty-wood',
-    tags: ['video', 'transformation', 'social'],
-    notes: 'Perfect for Instagram Reels, TikTok, Facebook'
-  },
-  {
-    filename: 'working.mov',
-    folder: 'about',
-    title: 'Craftsman at Work',
-    description: 'Precision trim work with nail gun, shows attention to detail',
-    category: 'about',
-    tags: ['owner', 'working', 'video', 'social'],
-    notes: 'GOLD for social media'
-  },
-];
-
-/**
- * Get images by category
- */
-export function getImagesByCategory(category: PortfolioCategory): PortfolioImage[] {
-  return portfolioManifest.filter(img => img.category === category);
-}
-
-/**
- * Get featured images for homepage
- */
-export function getFeaturedImages(): PortfolioImage[] {
+export function getFeaturedImages() {
   return portfolioManifest.filter(img => img.featured);
 }
 
-/**
- * Get before/after pairs
- */
-export function getBeforeAfterPairs(): Array<{ before: PortfolioImage; after: PortfolioImage }> {
-  const pairs: Array<{ before: PortfolioImage; after: PortfolioImage }> = [];
-  const beforeImages = portfolioManifest.filter(img => img.type === 'before' && img.pairedWith);
-  
-  for (const before of beforeImages) {
-    const after = portfolioManifest.find(img => img.filename === before.pairedWith && img.folder === before.folder);
-    if (after) {
-      pairs.push({ before, after });
-    }
-  }
-  
-  return pairs;
+export function getBeforeAfterPairs() {
+  return portfolioManifest.filter(img => img.beforeAfter);
 }
 
-/**
- * Get hero images
- */
-export function getHeroImages(): PortfolioImage[] {
-  return portfolioManifest.filter(img => img.type === 'hero');
-}
-
-/**
- * URL builder (images served from R2 via /api/assets/)
- */
-export function getImageUrl(image: PortfolioImage): string {
-  return `/api/assets/portfolio/${image.folder}/${image.filename}`;
+export function getImageUrl(img: PortfolioImage): string {
+  return `/portfolio/${img.folder}/${img.filename}`;
 }

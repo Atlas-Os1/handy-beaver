@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx wrangler deploy:*)",
+      "Bash(npm install:*)",
+      "Bash(gh run list:*)",
+      "WebFetch(domain:blog.cloudflare.com)",
+      "WebSearch",
+      "Bash(npx wrangler:*)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)"
+    ]
+  }
+}

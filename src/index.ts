@@ -28,8 +28,8 @@ import { adminCalendarMonthPage } from './pages/admin-calendar-month';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { adminBlogPage } from './pages/admin-blog';
 import { adminFliersPage } from './pages/admin-fliers';
-import { adminJobMediaPage } from './pages/admin-job-media';
 import { adminCompetitorsPage } from './pages/admin-competitors';
+import { adminJobMediaPage } from './pages/admin-job-media';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, portalPhotos, requirePortalAuth } from './pages/portal';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
@@ -64,7 +64,6 @@ import { squareInvoicesApi } from './routes/square-invoices';
 import { lilBeaverChatApi } from './routes/lil-beaver-chat';
 import { subscriptionApi } from './routes/subscription-api';
 import { signsCatalogApi } from './routes/signs-catalog-api';
-import { jobMediaApi } from './routes/job-media-api';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
@@ -80,9 +79,6 @@ type Bindings = {
   IMAGES?: R2Bucket;          // Optional — R2 pending
   KV: KVNamespace;             // Primary asset store while R2 is off
   ENVIRONMENT: string;
-  CLOUDINARY_CLOUD_NAME?: string;
-  CLOUDINARY_API_KEY?: string;
-  CLOUDINARY_API_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   RESEND_API_KEY?: string;
@@ -110,37 +106,6 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Middleware
 app.use('*', logger());
 app.use('/api/*', cors());
-
-// Security headers — applied to every response
-app.use('*', async (c, next) => {
-  await next();
-  // Prevent clickjacking
-  c.res.headers.set('X-Frame-Options', 'SAMEORIGIN');
-  // Prevent MIME-type sniffing
-  c.res.headers.set('X-Content-Type-Options', 'nosniff');
-  // Enforce HTTPS for 1 year (including subdomains)
-  c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  // Control referrer leakage
-  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Disable browser features we don't use
-  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
-  // Content Security Policy
-  // unsafe-inline required: all CSS/JS is server-rendered inline
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://unpkg.com https://sandbox.web.squarecdn.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://res.cloudinary.com",
-    "media-src 'self' https://res.cloudinary.com",
-    "frame-src https://www.google.com",
-    "connect-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join('; ');
-  c.res.headers.set('Content-Security-Policy', csp);
-});
 
 // ============ PUBLIC PAGES ============
 
@@ -549,8 +514,8 @@ api.route('/voice', voiceApi);
 api.route('/whatsapp', whatsappApi);
 api.route('/webhooks/meta', metaWebhook);
 api.route('/chat', chatApi);
-api.route('/calendar/notes', calendarNotesApi); // Must come before /calendar (Hono prefix match)
 api.route('/calendar', calendarApi);
+api.route('/calendar/notes', calendarNotesApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
@@ -613,16 +578,6 @@ api.get('/assets/:key{.+}', async (c) => {
         },
       });
     }
-  }
-
-  // 3. Cloudinary fallback — redirect to CDN copy
-  // All portfolio/icon/testimonial assets were uploaded to Cloudinary under handy-beaver/
-  if (c.env.CLOUDINARY_CLOUD_NAME) {
-    const ext = (key.split('.').pop() ?? '').toLowerCase();
-    const isVideo = ['mp4', 'mov', 'webm', 'avi'].includes(ext);
-    const resourceType = isVideo ? 'video' : 'image';
-    const cloudUrl = `https://res.cloudinary.com/${c.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/handy-beaver/${key}`;
-    return c.redirect(cloudUrl, 302);
   }
 
   return c.notFound();
@@ -1039,4 +994,84 @@ async function syncElevenLabsConversations(env: Bindings) {
                 { name: 'Duration', value: `${Math.round(conv.call_duration_secs / 60)} min`, inline: true },
                 { name: 'Transcript', value: transcriptText.slice(0, 500) || 'No transcript', inline: false },
               ],
-        
+              timestamp: new Date(conv.start_time_unix_secs * 1000).toISOString(),
+            }],
+          }),
+        }).catch(err => console.error('Discord notify failed:', err));
+      }
+      
+      synced++;
+      console.log(`Synced voice lead: ${callerName} - ${conv.call_summary_title}`);
+    }
+    
+    return { synced };
+  } catch (error) {
+    console.error('ElevenLabs sync error:', error);
+    return { synced: 0, error: String(error) };
+  }
+}
+
+// Scheduled handler for cron triggers (Facebook group scanning)
+async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+  console.log('Cron triggered — launching Workflows');
+
+  // Each workflow runs as an independent durable execution.
+  // A failure in one does not affect the others.
+  // Steps inside each workflow are checkpointed and retried automatically.
+  const triggered: string[] = [];
+
+  if (env.CALENDAR_SYNC_WORKFLOW) {
+    await env.CALENDAR_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
+    triggered.push('calendar-sync');
+  }
+
+  if (env.VOICE_SYNC_WORKFLOW) {
+    await env.VOICE_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
+    triggered.push('voice-lead-sync');
+  }
+
+  if (env.CONTENT_PUBLISH_WORKFLOW) {
+    await env.CONTENT_PUBLISH_WORKFLOW.create({ params: { triggered_by: 'cron', limit: 3 } });
+    triggered.push('content-publish');
+  }
+
+  console.log('Workflows triggered:', triggered.join(', ') || 'none (bindings not configured)');
+}
+
+// Email handler for inbound emails
+async function email(message: any, env: Bindings) {
+  const to = message.to;
+  const from = message.from;
+  const subject = message.headers.get('subject') || '';
+  const rawEmail = await new Response(message.raw).text();
+  
+  console.log(`Inbound email: ${from} -> ${to}, Subject: ${subject}`);
+  
+  // Store in messages table if we can identify the customer
+  const customer = await env.DB.prepare(
+    'SELECT * FROM customers WHERE email = ?'
+  ).bind(from).first<any>();
+  
+  if (customer) {
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(`
+      INSERT INTO messages (customer_id, sender, content, source, created_at)
+      VALUES (?, 'customer', ?, 'email', ?)
+    `).bind(customer.id, `Subject: ${subject}\n\n${rawEmail.slice(0, 2000)}`, now).run();
+  }
+  
+  // Forward to admin for non-portal emails
+  if (to.includes('contact@') || to.includes('admin@')) {
+    // Already forwarded via Cloudflare Email Routing to serviceflowagi@gmail.com
+    console.log('Contact/admin email will be forwarded via CF routing');
+  }
+}
+
+export default {
+  fetch: app.fetch,
+  scheduled,
+  email,
+};
+
+// Workflow class exports (required by Cloudflare Workflows runtime)
+export { CalendarSyncWorkflow, VoiceLeadSyncWorkflow, ContentPublishWorkflow };

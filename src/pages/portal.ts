@@ -1214,4 +1214,4 @@ export const portalPhotos = async (c: Context) => {
 
   return c.html(portalLayout('Job Photos', content, customer));
 };
-};
+
