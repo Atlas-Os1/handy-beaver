@@ -10,6 +10,8 @@ export const adminMessagesPage = async (c: Context) => {
         <div class="filters">
           <select id="source-filter">
             <option value="">All Sources</option>
+            <option value="lil-beaver">🦫 Lil Beaver (Agent)</option>
+            <option value="forwarded">📬 Forwarded to Owner</option>
             <option value="website">Website</option>
             <option value="voice">Voice</option>
             <option value="whatsapp">WhatsApp</option>
@@ -256,11 +258,8 @@ export const adminMessagesPage = async (c: Context) => {
       // Event listeners
       document.getElementById('source-filter').addEventListener('change', loadThreads);
       document.getElementById('unread-only').addEventListener('change', loadThreads);
-      
-      // Initial load
-      loadThreads();
+  
     </script>
   `;
-  
   return c.html(adminLayout('Messages', content, 'messages', admin));
 };

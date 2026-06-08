@@ -174,7 +174,7 @@ const adminLayout = (title: string, content: string, activePage: string, admin?:
   <nav class="admin-nav">
     <div class="brand">
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-      <img src="/api/assets/beaver-avatar.png" alt="Beaver">
+      <img src="/beaver-avatar.png" alt="Beaver">
       <span>${siteConfig.business.name} Admin</span>
     </div>
     <div class="user" style="display: flex; align-items: center; gap: 1rem;">
@@ -234,6 +234,14 @@ export const adminVisualizerPage = async (c: Context) => {
     ORDER BY vu.created_at DESC
     LIMIT 10
   `).all();
+
+  const recentQuotes = await c.env.DB.prepare(`
+    SELECT vq.*, c.name as customer_name, c.email as customer_email
+    FROM visualizer_quotes vq
+    LEFT JOIN customers c ON vq.customer_id = c.id
+    ORDER BY vq.created_at DESC
+    LIMIT 10
+  `).all().catch(() => ({ results: [] }));
   
   const content = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
@@ -354,106 +362,72 @@ export const adminVisualizerPage = async (c: Context) => {
       </div>
     </div>
     
-    <script>
-      let selectedFile = null;
-      let resultImageUrl = null;
-      
-      const dropZone = document.getElementById('drop-zone');
-      const photoInput = document.getElementById('photo-input');
-      const previewContainer = document.getElementById('preview-container');
-      const photoPreview = document.getElementById('photo-preview');
-      const clearPhoto = document.getElementById('clear-photo');
-      const visualizeBtn = document.getElementById('visualize-btn');
-      const resultContainer = document.getElementById('result-container');
-      const resultImage = document.getElementById('result-image');
-      
-      // File handling
-      dropZone.addEventListener('click', () => photoInput.click());
-      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--primary)'; });
-      dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#ccc'; });
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = '#ccc';
-        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-      });
-      
-      photoInput.addEventListener('change', (e) => {
-        if (e.target.files.length) handleFile(e.target.files[0]);
-      });
-      
-      clearPhoto.addEventListener('click', () => {
-        photoInput.value = '';
-        selectedFile = null;
-        previewContainer.style.display = 'none';
-        dropZone.style.display = 'block';
-      });
-      
-      function handleFile(file) {
-        if (!file.type.startsWith('image/') || file.size > 10 * 1024 * 1024) {
-          alert('Invalid file (must be image under 10MB)');
-          return;
-        }
-        selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          photoPreview.src = e.target.result;
-          previewContainer.style.display = 'block';
-          dropZone.style.display = 'none';
-        };
-        reader.readAsDataURL(file);
-      }
-      
-      // Form submission
-      document.getElementById('visualize-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const prompt = document.getElementById('prompt-input').value.trim();
-        if (!selectedFile || !prompt) {
-          alert('Please upload a photo and describe your vision');
-          return;
-        }
-        
-        visualizeBtn.disabled = true;
-        visualizeBtn.textContent = '⏳ Generating...';
-        
-        try {
-          const formData = new FormData();
-          formData.append('image', selectedFile);
-          formData.append('prompt', prompt);
-          
-          const res = await fetch('/api/visualize/generate', { method: 'POST', body: formData });
-          const result = await res.json();
-          
-          if (!result.success) throw new Error(result.error);
-          
-          resultContainer.style.display = 'block';
-          resultImageUrl = result.resultUrl;
-          
-          if (result.demo) {
-            resultImage.innerHTML = '<p style="color: #666;">Demo mode - no GEMINI_API_KEY set</p>';
-          } else {
-            resultImage.innerHTML = '<img src="' + result.resultUrl + '" style="max-width: 100%; border-radius: 8px;">';
-          }
-        } catch (error) {
-          alert('Error: ' + error.message);
-        } finally {
-          visualizeBtn.disabled = false;
-          visualizeBtn.textContent = '✨ Generate';
-        }
-      });
-      
-      document.getElementById('download-btn').addEventListener('click', async () => {
-        if (!resultImageUrl) return;
-        const res = await fetch(resultImageUrl);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'visualization.jpg';
-        a.click();
-      });
-    </script>
+    <!-- Recent Quotes Section -->
+    <div class="card" style="margin-top: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="color: var(--primary);">💰 Recent Quote Estimates</h2>
+        <span style="background: #e5e7eb; color: #555; padding: 0.3rem 0.8rem; border-radius: 10px; font-size: 0.85rem;">
+          ${recentQuotes.results?.length || 0} recent
+        </span>
+      </div>
+
+      ${recentQuotes.results?.length ? `
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          ${recentQuotes.results.map((q: any) => {
+            let lineItems: any[] = [];
+            try { lineItems = JSON.parse(q.line_items || '[]'); } catch (e) {}
+            const total = q.total_amount ? '$' + Number(q.total_amount).toLocaleString('en-US', { minimumFractionDigits: 0 }) : 'N/A';
+            return `
+              <details style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <summary style="padding: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; list-style: none;">
+                  <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <span style="font-weight: 600;">${q.customer_name || q.customer_email || 'Admin'}</span>
+                    <span style="background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; text-transform: capitalize;">${q.project_type || 'Project'}</span>
+                    <span style="background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; text-transform: capitalize;">${q.style || 'No style'}</span>
+                    <span style="color: #666; font-size: 0.85rem;">${new Date(q.created_at * 1000).toLocaleDateString()}</span>
+                  </div>
+                  <span style="font-weight: 700; color: var(--primary); font-size: 1.1rem; white-space: nowrap;">${total}</span>
+                </summary>
+                <div style="padding: 1rem;">
+                  ${q.summary ? `<p style="color: #555; margin-bottom: 0.75rem; font-size: 0.9rem;">${q.summary}</p>` : ''}
+                  ${q.description ? `<p style="color: #666; font-size: 0.85rem; margin-bottom: 0.75rem;"><strong>Request:</strong> ${q.description}</p>` : ''}
+                  ${lineItems.length ? `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                      <thead><tr style="background: #f3f4f6;">
+                        <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Type</th>
+                        <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Description</th>
+                        <th style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Qty</th>
+                        <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Unit</th>
+                        <th style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">$/Unit</th>
+                        <th style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Total</th>
+                      </tr></thead>
+                      <tbody>
+                        ${lineItems.map((item: any) => `
+                          <tr style="border-bottom: 1px solid #f9fafb;">
+                          <tr style="border-bottom: 1px solid #f9fafb;">
+                            <td style="padding: 0.5rem;"><span style="background: ${item.type === 'LABOR' ? '#dbeafe' : '#dcfce7'}; color: ${item.type === 'LABOR' ? '#1d4ed8' : '#166534'}; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600;">${item.type}</span></td>
+                            <td style="padding: 0.5rem; font-weight: 500;">${item.description || ''}</td>
+                            <td style="padding: 0.5rem; text-align: right; color: #555;">${item.qty || 0}</td>
+                            <td style="padding: 0.5rem; color: #555;">${item.unit || ''}</td>
+                            <td style="padding: 0.5rem; text-align: right; color: #555;">$${Number(item.price_per_unit || 0).toFixed(2)}</td>
+                            <td style="padding: 0.5rem; text-align: right; font-weight: 600; color: var(--primary);">$${Number(item.total || 0).toFixed(2)}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                      <tfoot><tr>
+                        <td colspan="5" style="padding: 0.5rem; font-weight: 700; text-align: right; border-top: 1px solid #e5e7eb;">Total</td>
+                        <td style="padding: 0.5rem; font-weight: 700; text-align: right; border-top: 1px solid #e5e7eb; color: var(--primary);">${total}</td>
+                      </tr></tfoot>
+                    </table>
+                  ` : '<p style="color: #999; font-size: 0.85rem;">No line items available.</p>'}
+                </div>
+              </details>
+            `;
+          }).join('')}
+        </div>
+      ` : '<p style="color: #999;">No quotes yet. Quotes generated by portal customers will appear here.</p>'}
+    </div>
   `;
-  
-  return c.html(adminLayout('AI Visualizer', content, 'visualizer', admin));
+
+  return c.html(adminLayout('AI Design Studio', content, 'visualizer', admin));
 };

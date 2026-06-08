@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getCookie } from 'hono/cookie';
 import { siteConfig } from '../config/site.config';
-import { sendGmail } from './utils/gmail';
+import { sendEmail } from './utils/email';
 
 // Pages
 import { homePage } from './pages/home';
@@ -28,9 +28,9 @@ import { adminCalendarMonthPage } from './pages/admin-calendar-month';
 import { adminInvoicesPage, adminInvoiceDetail } from './pages/admin-invoices';
 import { adminBlogPage } from './pages/admin-blog';
 import { adminFliersPage } from './pages/admin-fliers';
+import { adminJobMediaPage } from './pages/admin-job-media';
 import { adminCompetitorsPage } from './pages/admin-competitors';
 import { portalLoginPage, portalDashboard, portalQuotes, portalQuoteDetail, portalInvoices, portalInvoiceDetail, portalJobs, portalMessages, portalSubscription, portalPhotos, requirePortalAuth } from './pages/portal';
-import { adminJobMediaPage } from './pages/admin-job-media';
 import { galleryPage, galleryCategoryPage } from './pages/gallery';
 import { socialPage } from './pages/social';
 import { quoteSharePage, acceptQuote, addEmailToQuote } from './pages/quote-share';
@@ -64,17 +64,25 @@ import { squareInvoicesApi } from './routes/square-invoices';
 import { lilBeaverChatApi } from './routes/lil-beaver-chat';
 import { subscriptionApi } from './routes/subscription-api';
 import { signsCatalogApi } from './routes/signs-catalog-api';
+import { jobMediaApi } from './routes/job-media-api';
 
 // Auth
 import { getSession, requireCustomer, requireAdmin } from './lib/auth';
 
+
+// Workflows
+import { CalendarSyncWorkflow } from './workflows/CalendarSyncWorkflow';
+import { VoiceLeadSyncWorkflow } from './workflows/VoiceLeadSyncWorkflow';
+import { ContentPublishWorkflow } from './workflows/ContentPublishWorkflow';
+
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
-  BROWSER: any;
-  AI?: any;
-  LEAD_SCAN_WORKFLOW: Workflow;
+  IMAGES?: R2Bucket;          // Optional — R2 pending
+  KV: KVNamespace;             // Primary asset store while R2 is off
   ENVIRONMENT: string;
+  CLOUDINARY_CLOUD_NAME?: string;
+  CLOUDINARY_API_KEY?: string;
+  CLOUDINARY_API_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   RESEND_API_KEY?: string;
@@ -87,6 +95,10 @@ type Bindings = {
   GOOGLE_CALENDAR_ID?: string;
   CALENDAR_WEBHOOK_SECRET?: string;
   SEND_EMAIL?: any; // Cloudflare Email binding
+  // Workflows
+  CALENDAR_SYNC_WORKFLOW?: Workflow;
+  VOICE_SYNC_WORKFLOW?: Workflow;
+  CONTENT_PUBLISH_WORKFLOW?: Workflow;
   FACEBOOK_PAGE_ACCESS_TOKEN?: string;
   FACEBOOK_PAGE_ID?: string;
   ANTHROPIC_API_KEY?: string;
@@ -98,6 +110,37 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Middleware
 app.use('*', logger());
 app.use('/api/*', cors());
+
+// Security headers — applied to every response
+app.use('*', async (c, next) => {
+  await next();
+  // Prevent clickjacking
+  c.res.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  // Prevent MIME-type sniffing
+  c.res.headers.set('X-Content-Type-Options', 'nosniff');
+  // Enforce HTTPS for 1 year (including subdomains)
+  c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Control referrer leakage
+  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Disable browser features we don't use
+  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  // Content Security Policy
+  // unsafe-inline required: all CSS/JS is server-rendered inline
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://unpkg.com https://sandbox.web.squarecdn.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com",
+    "media-src 'self' https://res.cloudinary.com",
+    "frame-src https://www.google.com",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ');
+  c.res.headers.set('Content-Security-Policy', csp);
+});
 
 // ============ PUBLIC PAGES ============
 
@@ -242,21 +285,19 @@ app.post('/portal/login', async (c) => {
       </div>
     `;
     
-    // Send via Gmail API (using existing Google OAuth)
-    const result = await sendGmail(
+    // Send via CF Email Service (falls back to Gmail OAuth)
+    const result = await sendEmail(
       c.env,
       email as string,
       'Your Login Link 🦫',
-      htmlContent,
-      'The Handy Beaver'
+      htmlContent
     );
     
     if (result.success) {
-      console.log('Magic link email sent via Gmail to', email);
+      console.log('Magic link email sent via', result.method, 'to', email);
     } else {
-      console.error('Gmail send failed:', result.error);
-      // Fallback: log magic link for manual testing
-      console.log('Magic link (fallback):', magicLink);
+      console.error('Email send failed:', result.error);
+      console.log('Magic link (fallback for dev):', magicLink);
     }
   } catch (e) {
     console.error('Email error:', e);
@@ -500,30 +541,6 @@ api.route('/facebook', facebookSession);
 api.route('/facebook', facebookScraper);
 api.route('/facebook', facebookComment);
 
-// Manual trigger for lead scan workflow (since cron is at account limit)
-api.post('/facebook/lead-scan/trigger', async (c) => {
-  try {
-    const instance = await c.env.LEAD_SCAN_WORKFLOW.create({
-      params: { source: 'manual' as const },
-    });
-    return c.json({ success: true, workflow_id: instance.id });
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500);
-  }
-});
-
-// Get workflow instance status
-api.get('/facebook/lead-scan/:id', async (c) => {
-  try {
-    const id = c.req.param('id');
-    const instance = await c.env.LEAD_SCAN_WORKFLOW.get(id);
-    const status = await instance.status();
-    return c.json({ id, status });
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500);
-  }
-});
-
 // Mount portfolio/gallery API routes
 api.route('/images/portfolio', portfolioApi);
 api.route('/portfolio', portfolioApi);
@@ -532,17 +549,14 @@ api.route('/voice', voiceApi);
 api.route('/whatsapp', whatsappApi);
 api.route('/webhooks/meta', metaWebhook);
 api.route('/chat', chatApi);
+api.route('/calendar/notes', calendarNotesApi); // Must come before /calendar (Hono prefix match)
 api.route('/calendar', calendarApi);
-api.route('/calendar/notes', calendarNotesApi);
 api.route('/visualize', visualizeApi);
 api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
 api.route('/subscriptions', subscriptionApi);
-api.route('/signs', signsCatalogApi); // Signs catalog + Square product setup
-
-// Job Media (photos/videos per job — admin upload + Discord bot + client portal)
-import { jobMediaApi } from './routes/job-media-api';
-api.route('/job-media', jobMediaApi);
+api.route('/signs', signsCatalogApi);
+api.route('/job-media', jobMediaApi); // Signs catalog + Square product setup
 
 // Content queue for social media publishing
 import { contentQueueApi } from './routes/content-queue-api';
@@ -568,20 +582,47 @@ api.get('/debug/secrets', async (c) => {
   });
 });
 
-// Serve assets from R2
+// Serve assets — KV primary, R2 fallback, 404 if neither has the key
 api.get('/assets/:key{.+}', async (c) => {
   const key = c.req.param('key');
-  const object = await c.env.IMAGES.get(key);
-  
-  if (!object) {
-    return c.notFound();
+
+  // 1. Try KV first (primary store while R2 is being set up)
+  if (c.env.KV) {
+    const { value, metadata } = await c.env.KV.getWithMetadata<{ contentType: string }>(key, 'arrayBuffer');
+    if (value) {
+      return new Response(value, {
+        headers: {
+          'Content-Type': metadata?.contentType ?? 'application/octet-stream',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
   }
-  
-  const headers = new Headers();
-  headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
-  headers.set('Cache-Control', 'public, max-age=86400');
-  
-  return new Response(object.body, { headers });
+
+  // 2. Fall back to R2 if bound
+  if (c.env.IMAGES) {
+    const object = await c.env.IMAGES.get(key);
+    if (object) {
+      return new Response(object.body, {
+        headers: {
+          'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
+  }
+
+  // 3. Cloudinary fallback — redirect to CDN copy
+  // All portfolio/icon/testimonial assets were uploaded to Cloudinary under handy-beaver/
+  if (c.env.CLOUDINARY_CLOUD_NAME) {
+    const ext = (key.split('.').pop() ?? '').toLowerCase();
+    const isVideo = ['mp4', 'mov', 'webm', 'avi'].includes(ext);
+    const resourceType = isVideo ? 'video' : 'image';
+    const cloudUrl = `https://res.cloudinary.com/${c.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/handy-beaver/${key}`;
+    return c.redirect(cloudUrl, 302);
+  }
+
+  return c.notFound();
 });
 
 // Contact form submission
@@ -1014,168 +1055,27 @@ async function syncElevenLabsConversations(env: Bindings) {
 
 // Scheduled handler for cron triggers (Facebook group scanning)
 async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-  console.log('Cron triggered: periodic background jobs');
+  console.log('Cron triggered — launching Workflows');
 
-  // Keep existing placeholder Facebook session check
-  const session = await env.DB.prepare(
-    'SELECT cookies FROM facebook_sessions WHERE id = 1'
-  ).first<{ cookies: string }>();
+  // Each workflow runs as an independent durable execution.
+  // A failure in one does not affect the others.
+  // Steps inside each workflow are checkpointed and retried automatically.
+  const triggered: string[] = [];
 
-  if (!session?.cookies) {
-    console.log('No Facebook session stored, skipping Facebook scan');
+  if (env.CALENDAR_SYNC_WORKFLOW) {
+    await env.CALENDAR_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
+    triggered.push('calendar-sync');
   }
 
-  // Trigger lead scan workflow (runs as a durable workflow with 10-min review window)
-  try {
-    const instance = await env.LEAD_SCAN_WORKFLOW.create({
-      params: { source: 'cron' as const },
-    });
-    console.log(`Lead scan workflow started: ${instance.id}`);
-  } catch (err) {
-    console.error('Failed to start lead scan workflow:', err);
+  if (env.VOICE_SYNC_WORKFLOW) {
+    await env.VOICE_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
+    triggered.push('voice-lead-sync');
   }
 
-  // Calendar back-sync: pull Google changes and apply to bookings
-  const calendarSync = await backSyncGoogleCalendarToBookings(env);
-  if (calendarSync.success) {
-    console.log(`Calendar sync complete. Synced ${calendarSync.synced} booking(s).`);
-  } else {
-    console.log(`Calendar sync failed: ${calendarSync.error}`);
-  }
-  
-  // Sync ElevenLabs voice conversations
-  const elevenLabsSync = await syncElevenLabsConversations(env);
-  console.log(`ElevenLabs sync: ${elevenLabsSync.synced} conversation(s) synced`);
-
-  // Publish ready posts from content queue
-  const now = Math.floor(Date.now() / 1000);
-  const readyPosts = await env.DB.prepare(`
-    SELECT * FROM content_queue 
-    WHERE status = 'ready' 
-    AND scheduled_for <= ?
-    ORDER BY scheduled_for ASC
-    LIMIT 3
-  `).bind(now).all<any>();
-  
-  if (readyPosts.results && readyPosts.results.length > 0) {
-    console.log(`Found ${readyPosts.results.length} posts ready to publish`);
-    
-    for (const post of readyPosts.results) {
-      try {
-        // Post to Facebook if we have a token
-        const fbToken = env.FACEBOOK_PAGE_ACCESS_TOKEN;
-        const fbPageId = env.FACEBOOK_PAGE_ID || '1040910635768535';
-        
-        if (fbToken && (post.platform === 'facebook' || post.platform === 'both')) {
-          let fbUrl: string;
-          let fbParams: Record<string, string>;
-          
-          // Build the message with hashtags if present
-          const message = post.caption + (post.hashtags ? `\n\n${post.hashtags}` : '');
-          
-          // If we have an image, use /photos endpoint
-          if (post.image_url) {
-            // Convert relative URLs to absolute
-            const imageUrl = post.image_url.startsWith('/') 
-              ? `https://handybeaver.co${post.image_url}` 
-              : post.image_url;
-            
-            fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/photos`;
-            fbParams = {
-              access_token: fbToken,
-              url: imageUrl,
-              caption: message,
-            };
-          } else {
-            // Text-only post to /feed
-            fbUrl = `https://graph.facebook.com/v18.0/${fbPageId}/feed`;
-            fbParams = {
-              access_token: fbToken,
-              message: message,
-            };
-          }
-          
-          // Facebook requires application/x-www-form-urlencoded, NOT JSON
-          const fbRes = await fetch(fbUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(fbParams),
-          });
-          
-          const fbData = await fbRes.json() as any;
-          
-          if (fbData.id) {
-            await env.DB.prepare(`
-              UPDATE content_queue 
-              SET status = 'published', 
-                  fb_post_id = ?, 
-                  published_at = ?,
-                  updated_at = ?
-              WHERE id = ?
-            `).bind(fbData.id, now, now, post.id).run();
-            console.log(`Published post ${post.id} to Facebook: ${fbData.id}`);
-          } else {
-            await env.DB.prepare(`
-              UPDATE content_queue 
-              SET status = 'failed', 
-                  error_message = ?,
-                  updated_at = ?
-              WHERE id = ?
-            `).bind(JSON.stringify(fbData.error || fbData), now, post.id).run();
-            console.error(`Failed to publish post ${post.id}:`, fbData);
-          }
-        } else if (!fbToken) {
-          console.log('No FACEBOOK_PAGE_ACCESS_TOKEN set, skipping Facebook publish');
-        }
-      } catch (err) {
-        console.error(`Error publishing post ${post.id}:`, err);
-        await env.DB.prepare(`
-          UPDATE content_queue 
-          SET status = 'failed', 
-              error_message = ?,
-              updated_at = ?
-          WHERE id = ?
-        `).bind(String(err), now, post.id).run();
-      }
-    }
-  } else {
-    console.log('No posts ready to publish');
+  if (env.CONTENT_PUBLISH_WORKFLOW) {
+    await env.CONTENT_PUBLISH_WORKFLOW.create({ params: { triggered_by: 'cron', limit: 3 } });
+    triggered.push('content-publish');
   }
 
-  console.log('Cron completed');
-}
-
-// Email handler for inbound emails
-async function email(message: any, env: Bindings) {
-  const to = message.to;
-  const from = message.from;
-  const subject = message.headers.get('subject') || '';
-  const rawEmail = await new Response(message.raw).text();
-  
-  console.log(`Inbound email: ${from} -> ${to}, Subject: ${subject}`);
-  
-  // Store in messages table if we can identify the customer
-  const customer = await env.DB.prepare(
-    'SELECT * FROM customers WHERE email = ?'
-  ).bind(from).first<any>();
-  
-  if (customer) {
-    const now = Math.floor(Date.now() / 1000);
-    await env.DB.prepare(`
-      INSERT INTO messages (customer_id, sender, content, source, created_at)
-      VALUES (?, 'customer', ?, 'email', ?)
-    `).bind(customer.id, `Subject: ${subject}\n\n${rawEmail.slice(0, 2000)}`, now).run();
-  }
-  
-  // Forward to admin for non-portal emails
-  if (to.includes('contact@') || to.includes('admin@')) {
-    // Already forwarded via Cloudflare Email Routing to serviceflowagi@gmail.com
-    console.log('Contact/admin email will be forwarded via CF routing');
-  }
-}
-
-export default {
-  fetch: app.fetch,
-  scheduled,
-  email,
+  console.log('Workflows triggered:', triggered.join(', ') || 'none');
 };

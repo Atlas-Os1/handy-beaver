@@ -73,7 +73,7 @@ CNC-carved, hand-finished, weatherproof outdoor signs. Cedar or pine. AI mockup 
 
 - **Runtime:** Cloudflare Workers (Hono framework)
 - **Database:** Cloudflare D1 (SQLite)
-- **Storage:** Cloudflare R2 (images, assets)
+- **Storage:** Cloudflare R2 (primary) + Cloudinary (fallback/CDN for images)
 - **AI:** Cloudflare Workers AI (chat, image gen)
 - **Frontend:** Vite + vanilla HTML/CSS/JS
 - **Payments:** Square API
@@ -192,6 +192,56 @@ Key tables:
 - `customer_subscriptions` — Active customer subscriptions
 - `subscription_tasks` — Task queue for subscribers (with photo uploads)
 - `tiny_home_projects` — Tiny home finish projects
+- `job_media` — Photos/videos per job (schema-v17). Linked to `bookings` + `customers`. Uploaded via admin panel or Discord bot. Visible to clients at `/portal/photos`.
+
+## Job Media System
+
+Photos and videos from jobs are stored in R2 with Cloudinary as automatic fallback.
+
+### Upload endpoints
+
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/api/job-media/upload` | Admin session | Upload from admin panel (multipart) |
+| POST | `/api/job-media/discord` | `secret` field | Upload from Discord bot (Hermes/Lil Beaver) |
+| GET  | `/api/job-media` | Admin | List all media, filter by `booking_id` / `customer_id` |
+| GET  | `/api/job-media/portal/:customerId` | Portal session | Customer-facing list (visible only) |
+| PATCH | `/api/job-media/:id/visibility` | Admin | Toggle `visible_to_client` |
+| DELETE | `/api/job-media/:id` | Admin | Delete from R2 + DB |
+
+### Discord webhook (for Hermes / Lil Beaver admin bot)
+
+```
+POST https://handybeaver.co/api/job-media/discord
+Content-Type: application/json  (or multipart/form-data)
+
+{
+  "image_url": "https://cdn.discordapp.com/...",  // OR send file directly
+  "booking_id": "42",          // optional — attaches to job
+  "customer_email": "...",     // optional — fallback customer lookup
+  "title": "Deck framing day 1",
+  "description": "Progress shot",
+  "discord_message_id": "...",
+  "discord_channel_id": "1479913371326353590",
+  "secret": "<DISCORD_WEBHOOK_SECRET env var>"
+}
+```
+
+The bot should watch channel `1479913371326353590` (#lil-beaver-admin). When an image/video is posted with a message, parse `booking:<id>` or `client:<email>` from the caption and include in the payload.
+
+### Cloudinary asset library (CDN backup + gallery)
+
+All static assets are mirrored to Cloudinary under `https://res.cloudinary.com/din7n5qzx/`:
+
+| Cloudinary folder | Contents |
+|-------------------|----------|
+| `handy-beaver/brand/` | Logos, avatars (beaver-avatar, lil-beaver-mascot, handy-beaver-official) |
+| `handy-beaver/icons/` | All UI icons (calendar, jobs, messages, etc.) |
+| `handy-beaver/portfolio/` | Portfolio images by category (bathroom, flooring, signs, tiny-home, etc.) |
+| `handy-beaver/testimonials/` | Testimonial photos |
+| `handy-beaver/job-media/` | Job photos uploaded via admin/Discord |
+
+The serve route (`/api/job-media/file/*`) tries R2 first and 302-redirects to Cloudinary if R2 misses. **Worker env vars required:** `CLOUDINARY_CLOUD_NAME=din7n5qzx`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
 
 ## Agent Architecture
 

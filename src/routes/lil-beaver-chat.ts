@@ -3,9 +3,12 @@ import { Hono } from 'hono';
 type Bindings = {
   DB: D1Database;
   IMAGES: R2Bucket;
+  R2?: R2Bucket;
+  R2_PUBLIC_DOMAIN?: string;
   OPENCLAW_GATEWAY_URL?: string;
   OPENCLAW_GATEWAY_TOKEN?: string;
   ADMIN_API_KEY?: string;
+  DISCORD_WEBHOOK_NOTIFICATIONS?: string;
 };
 
 export const lilBeaverChatApi = new Hono<{ Bindings: Bindings }>();
@@ -106,29 +109,43 @@ lilBeaverChatApi.post('/customer', async (c) => {
     return c.json({ error: 'Customer not found' }, 404);
   }
   
+  const now = Math.floor(Date.now() / 1000);
+
+  // Save customer message to DB for admin visibility
+  await c.env.DB.prepare(
+    `INSERT INTO messages (customer_id, sender, content, source, created_at) VALUES (?, 'customer', ?, 'lil-beaver', ?)`
+  ).bind(customer.id, body.message, now).run().catch(e => console.error('Failed to save customer msg:', e));
+
   try {
     // System prompt for customer context - LIMITED access
-    const systemPrompt = `You are Lil Beaver, the friendly assistant for The Handy Beaver handyman service.
+    const systemPrompt = `You are Lil Beaver 🦫, the friendly assistant for The Handy Beaver handyman service based in Southeast Oklahoma.
 
-You are helping customer: ${customer.name} (ID: ${customer.id}, Email: ${customer.email})
+You are helping: ${customer.name} (customer ID: ${customer.id})
 
-IMPORTANT: You can ONLY access this customer's data. You CANNOT:
-- Create or modify quotes, invoices, or jobs
-- Access other customers' information
-- Perform admin actions
+IMPORTANT RULES:
+- You can ONLY access this customer's own data
+- You CANNOT create or modify quotes, invoices, or jobs
+- You CANNOT access other customers' information
+- This conversation IS recorded and visible to the admin team
 
-You CAN help with:
+YOU CAN help with:
 - Answering questions about their quotes, jobs, and invoices
-- Explaining pricing and services
-- Scheduling questions
-- General customer service
+- Explaining our services, pricing, and subscription plans
+- General customer service questions
+- Passing messages to the owner
 
-When they ask about their account, use the customer API to fetch their specific data:
+ACCOUNT DATA (fetch when needed):
 - GET /api/portal/quotes?customer_id=${customer.id}
 - GET /api/portal/jobs?customer_id=${customer.id}
 - GET /api/portal/invoices?customer_id=${customer.id}
 
-Be friendly, helpful, and professional. If they need admin help (like changing a quote), tell them to contact us directly.`;
+PASSING A MESSAGE TO THE OWNER:
+If the customer wants to leave a message, relay contact info, or request a callback, call:
+POST https://handybeaver.co/api/chat/forward-message
+Body: { "customer_id": ${customer.id}, "message": "<their message>", "phone": "<phone if given>", "context": "<brief summary>" }
+After calling it, tell the customer: "I've passed your message to the owner. You can expect a call back within 1 business day."
+
+Be warm, friendly, and concise. Always address ${customer.name.split(' ')[0]} by first name.`;
 
     const response = await fetch(`${gatewayUrl}/api/v1/responses`, {
       method: 'POST',
@@ -144,25 +161,90 @@ Be friendly, helpful, and professional. If they need admin help (like changing a
         instructions: systemPrompt,
       }),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       console.error('Gateway error:', error);
       return c.json({ error: 'Failed to get response' }, 500);
     }
-    
+
     const data = await response.json() as any;
-    
+    const agentReply = data.output_text || data.content || data.message || 'No response';
+
+    // Save agent reply to DB
+    await c.env.DB.prepare(
+      `INSERT INTO messages (customer_id, sender, content, source, created_at) VALUES (?, 'ai', ?, 'lil-beaver', ?)`
+    ).bind(customer.id, agentReply, Math.floor(Date.now() / 1000)).run().catch(e => console.error('Failed to save agent msg:', e));
+
     return c.json({
-      response: data.output_text || data.content || data.message || 'No response',
+      response: agentReply,
       session_key: data.session_key,
       customer_id: customer.id,
     });
-    
+
   } catch (error: any) {
     console.error('Lil Beaver customer chat error:', error);
     return c.json({ error: error.message || 'Chat failed' }, 500);
   }
+});
+
+// Forward a customer message to the owner via Discord
+lilBeaverChatApi.post('/forward-message', async (c) => {
+  const body = await c.req.json<{
+    customer_id: number;
+    message: string;
+    phone?: string;
+    context?: string;
+  }>();
+
+  if (!body.customer_id || !body.message) {
+    return c.json({ error: 'customer_id and message are required' }, 400);
+  }
+
+  const customer = await c.env.DB.prepare(
+    'SELECT id, name, email, phone FROM customers WHERE id = ?'
+  ).bind(body.customer_id).first<any>();
+
+  if (!customer) {
+    return c.json({ error: 'Customer not found' }, 404);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Save to messages table so admin can see it
+  await c.env.DB.prepare(
+    `INSERT INTO messages (customer_id, sender, content, source, created_at) VALUES (?, 'customer', ?, 'forwarded', ?)`
+  ).bind(customer.id, body.message, now).run().catch(e => console.error('Failed to save forwarded msg:', e));
+
+  // Fire Discord notification
+  if (c.env.DISCORD_WEBHOOK_NOTIFICATIONS) {
+    try {
+      await fetch(c.env.DISCORD_WEBHOOK_NOTIFICATIONS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: null,
+          embeds: [{
+            title: '📬 Message from Client Portal',
+            color: 0xf59e0b, // Amber — distinct from lead (green) and quote (blue)
+            fields: [
+              { name: '👤 Client', value: customer.name, inline: true },
+              { name: '📧 Email', value: customer.email, inline: true },
+              { name: '📱 Phone', value: body.phone || customer.phone || 'Not provided', inline: true },
+              { name: '💬 Message', value: body.message.substring(0, 500), inline: false },
+              ...(body.context ? [{ name: '📋 Context', value: body.context, inline: false }] : []),
+            ],
+            footer: { text: 'Via Lil Beaver client portal agent' },
+            timestamp: new Date().toISOString(),
+          }],
+        }),
+      });
+    } catch (e) {
+      console.error('Discord forward notification failed:', e);
+    }
+  }
+
+  return c.json({ success: true, message: 'Message forwarded to owner' });
 });
 
 // Health check
@@ -215,107 +297,18 @@ lilBeaverChatApi.post('/upload', async (c) => {
     const folder = context === 'task' ? 'tasks' : 'chat';
     const key = `uploads/${folder}/${customerId || 'unknown'}/${timestamp}.${ext}`;
     
-    // Upload to R2
+       // Upload to R2
     const arrayBuffer = await file.arrayBuffer();
-    await c.env.IMAGES.put(key, arrayBuffer, {
-      httpMetadata: {
-        contentType: file.type,
-      },
-      customMetadata: {
-        customerId: customerId || '',
-        taskId: taskId || '',
-        originalName: file.name,
-        uploadedAt: new Date().toISOString(),
-      },
+    await c.env.R2.put(key, arrayBuffer, {
+      httpMetadata: { contentType: file.type }
     });
-    
-    // Return the R2 key and public URL
-    const publicUrl = `https://handybeaver.co/api/assets/${key}`;
-    
-    return c.json({
-      success: true,
-      key,
-      url: publicUrl,
-      filename: file.name,
-      size: file.size,
-    });
-    
-  } catch (error: any) {
-    console.error('Photo upload error:', error);
-    return c.json({ error: error.message || 'Upload failed' }, 500);
+
+    const url = `https://${c.env.R2_PUBLIC_DOMAIN}/${key}`;
+    return c.json({ success: true, url, key });
+  } catch (err: any) {
+    console.error('Upload error:', err);
+    return c.json({ success: false, error: err.message }, 500);
   }
 });
 
-// Bulk photo upload (multiple photos at once)
-lilBeaverChatApi.post('/upload-multiple', async (c) => {
-  const contentType = c.req.header('Content-Type') || '';
-  
-  if (!contentType.includes('multipart/form-data')) {
-    return c.json({ error: 'multipart/form-data required' }, 400);
-  }
-  
-  try {
-    const formData = await c.req.formData();
-    const customerId = formData.get('customer_id') as string | null;
-    const taskId = formData.get('task_id') as string | null;
-    const context = formData.get('context') as string || 'chat';
-    
-    const uploads: { key: string; url: string; filename: string }[] = [];
-    const errors: { filename: string; error: string }[] = [];
-    
-    // Process all files in the form
-    for (const [name, value] of formData.entries()) {
-      if (name.startsWith('photo') && value instanceof File) {
-        const file = value;
-        
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
-        if (!allowedTypes.includes(file.type)) {
-          errors.push({ filename: file.name, error: 'Invalid file type' });
-          continue;
-        }
-        
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          errors.push({ filename: file.name, error: 'File too large (max 10MB)' });
-          continue;
-        }
-        
-        // Generate unique filename
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substring(7);
-        const ext = file.name.split('.').pop() || 'jpg';
-        const folder = context === 'task' ? 'tasks' : 'chat';
-        const key = `uploads/${folder}/${customerId || 'unknown'}/${timestamp}-${random}.${ext}`;
-        
-        // Upload to R2
-        const arrayBuffer = await file.arrayBuffer();
-        await c.env.IMAGES.put(key, arrayBuffer, {
-          httpMetadata: {
-            contentType: file.type,
-          },
-          customMetadata: {
-            customerId: customerId || '',
-            taskId: taskId || '',
-            originalName: file.name,
-            uploadedAt: new Date().toISOString(),
-          },
-        });
-        
-        const publicUrl = `https://handybeaver.co/api/assets/${key}`;
-        uploads.push({ key, url: publicUrl, filename: file.name });
-      }
-    }
-    
-    return c.json({
-      success: true,
-      uploads,
-      errors: errors.length > 0 ? errors : undefined,
-      count: uploads.length,
-    });
-    
-  } catch (error: any) {
-    console.error('Bulk photo upload error:', error);
-    return c.json({ error: error.message || 'Upload failed' }, 500);
-  }
-});
+export default lilBeaverChatApi;

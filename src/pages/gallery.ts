@@ -2,19 +2,11 @@ import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { siteConfig } from '../../config/site.config';
 import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
-import { r2PortfolioImages } from '../../config/r2-portfolio';
+// r2PortfolioImages disabled: R2 bucket is offline and images aren't backed up to Cloudinary.
+// Re-enable once images are uploaded: import { r2PortfolioImages } from '../../config/r2-portfolio';
 
-// Combined portfolio: original + R2 images (160+ total)
-const fullPortfolio = [
-  ...portfolioManifest,
-  ...r2PortfolioImages.map(img => ({
-    ...img,
-    type: 'gallery' as const,
-  }))
-];
-
-// Get R2 image URL
-const getR2ImageUrl = (img: typeof r2PortfolioImages[0]) => `/api/assets/${img.r2Path}`;
+// Portfolio from manifest only (static assets in public/portfolio/)
+const fullPortfolio = [...portfolioManifest];
 
 const { business } = siteConfig;
 
@@ -28,6 +20,7 @@ const categories: Array<{ slug: PortfolioCategory; name: string; icon: string; d
   { slug: 'kitchen-bar', name: 'Kitchen & Bar', icon: '🍺', description: 'Custom bars, epoxy counters, and kitchen renovations' },
   { slug: 'trim-carpentry', name: 'Trim & Carpentry', icon: '🔨', description: 'Crown molding, door trim, T&G accent walls' },
   { slug: 'doors', name: 'Door Installation', icon: '🚪', description: 'Entry doors, French doors, and custom trim work' },
+  { slug: 'signs', name: 'Cabin Signs', icon: '🪵', description: 'Custom cedar signs — cabin, business, address markers, and more' },
 ];
 
 export const galleryPage = (c: Context) => {
@@ -518,10 +511,11 @@ export const galleryCategoryPage = async (c: Context) => {
       }
       
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeLightbox();
+              if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowRight') navigateGallery(1);
+        if (e.key === 'ArrowLeft') navigateGallery(-1);
       });
     </script>
   `;
-  
-  return c.html(layout(category.name, content, 'gallery'));
+  return c.html(layout('Gallery', content));
 };
