@@ -517,4 +517,3 @@ export const galleryCategoryPage = async (c: Context) => {
   
   return c.html(layout(category.name, content, 'gallery'));
 };
-                                                     
