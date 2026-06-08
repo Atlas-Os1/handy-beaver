@@ -80,6 +80,9 @@ type Bindings = {
   IMAGES?: R2Bucket;          // Optional — R2 pending
   KV: KVNamespace;             // Primary asset store while R2 is off
   ENVIRONMENT: string;
+  CLOUDINARY_CLOUD_NAME?: string;
+  CLOUDINARY_API_KEY?: string;
+  CLOUDINARY_API_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   RESEND_API_KEY?: string;
@@ -576,6 +579,16 @@ api.get('/assets/:key{.+}', async (c) => {
         },
       });
     }
+  }
+
+  // 3. Cloudinary fallback — redirect to CDN copy
+  // All portfolio/icon/testimonial assets were uploaded to Cloudinary under handy-beaver/
+  if (c.env.CLOUDINARY_CLOUD_NAME) {
+    const ext = (key.split('.').pop() ?? '').toLowerCase();
+    const isVideo = ['mp4', 'mov', 'webm', 'avi'].includes(ext);
+    const resourceType = isVideo ? 'video' : 'image';
+    const cloudUrl = \`https://res.cloudinary.com/\${c.env.CLOUDINARY_CLOUD_NAME}/\${resourceType}/upload/handy-beaver/\${key}\`;
+    return c.redirect(cloudUrl, 302);
   }
 
   return c.notFound();

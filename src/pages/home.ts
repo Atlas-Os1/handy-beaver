@@ -1,6 +1,5 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
-import { buildHead, pageSeo } from '../lib/seo';
 import { siteConfig } from '../../config/site.config';
 import { detectIntent, getHeroContent } from '../lib/intent-detection';
 
@@ -19,7 +18,7 @@ const SERVICE_CARDS = [
   { id: 'carpentry', media: '/pick-a-service/carpentry.mp4', type: 'video' as const, label: 'Carpentry', desc: 'Trim, molding, custom woodwork', priceHint: 'From $175' },
   { id: 'flooring', media: '/pick-a-service/Flooring-1.mp4', type: 'video' as const, label: 'Flooring', desc: 'Install, repair, refinish', priceHint: 'From $175' },
   { id: 'deck', media: '/pick-a-service/deck_repair.jpg', type: 'image' as const, label: 'Deck Repair', desc: 'Restore, replace, seal', priceHint: 'From $175' },
-  { id: 'maintenance', media: '/pick-a-service/maintenance.MOV', type: 'video' as const, label: 'Maintenance', desc: 'Monthly cabin care plans', priceHint: 'From $199/mo' },
+  { id: 'maintenance', media: '/pick-a-service/deck_repair.jpg', type: 'image' as const, label: 'Maintenance', desc: 'Monthly cabin care plans', priceHint: 'From $199/mo' },
   { id: 'signs', media: '/portfolio/signs/handy-beaver-business-sign.png', type: 'image' as const, label: 'Cabin Signs', desc: 'Custom cedar, personalized', priceHint: 'From $125' },
   { id: 'other', media: '/pick-a-service/other.mp4', type: 'video' as const, label: 'Other', desc: 'General handyman work', priceHint: 'From $175' },
 ] as const;
@@ -823,5 +822,5 @@ export const homePage = (c: Context) => {
     </section>
   `;
 
-  return c.html(layout('Home', content, 'home', buildHead(pageSeo.home)));
+  return c.html(layout('Home', content, 'home'));
 };
