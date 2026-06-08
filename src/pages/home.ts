@@ -38,7 +38,7 @@ export const homePage = (c: Context) => {
       background: linear-gradient(180deg, rgba(139, 69, 19, 0.3) 0%, transparent 100%);
     ">
       <img 
-        src="/api/assets/beaver-avatar.png" 
+        src="/handy-beaver-avatar-v2.png" 
         alt="${business.name} mascot"
         style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--secondary); box-shadow: 0 0 40px var(--card-glow);"
       >
@@ -66,25 +66,25 @@ export const homePage = (c: Context) => {
       
       <div class="grid grid-4">
         <a href="/services#carpentry" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <img src="/api/assets/icons/carpentry.png" alt="Carpentry" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
+          <img src="/icons/carpentry.png" alt="Carpentry" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Trim Carpentry</h3>
           <p style="color: #666; margin-top: 0.5rem;">Crown molding, baseboards, door frames, and custom woodwork</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
         </a>
         <a href="/services#flooring" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <img src="/api/assets/icons/flooring.png" alt="Flooring" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
+          <img src="/icons/flooring.png" alt="Flooring" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Flooring</h3>
           <p style="color: #666; margin-top: 0.5rem;">Installation, repair, and refinishing for all floor types</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
         </a>
         <a href="/services#deck" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <img src="/api/assets/icons/deck.png" alt="Deck" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
+          <img src="/icons/deck.png" alt="Deck" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Deck Repair</h3>
           <p style="color: #666; margin-top: 0.5rem;">Restoration, board replacement, and sealing</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
         </a>
         <a href="/services#maintenance" class="card service-card" style="text-align: center; text-decoration: none; color: inherit;">
-          <img src="/api/assets/icons/maintenance.png" alt="Maintenance" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
+          <img src="/icons/maintenance.png" alt="Maintenance" class="service-icon" style="width: 64px; height: 64px; margin-bottom: 1rem;">
           <h3>Maintenance</h3>
           <p style="color: #666; margin-top: 0.5rem;">General repairs and home improvement projects</p>
           <span class="learn-more" style="margin-top: 1rem;">Learn More</span>
@@ -132,6 +132,64 @@ export const homePage = (c: Context) => {
       </p>
     </section>
     
+    
+    <!-- 🏕️ Vacation Rental Maintenance Plans -->
+    <section class="container" style="margin-top: 4rem;">
+      <h2 class="section-title">🏕️ Vacation Rental Maintenance</h2>
+      <p class="section-subtitle">Monthly plans designed for Hochatown cabins — inspections, hot tubs, seasonal prep</p>
+      
+      <div class="grid grid-3" style="max-width: 900px; margin: 2rem auto;">
+        <!-- Cabin Care -->
+        <div class="card" style="text-align: center; position: relative; border: 3px solid var(--secondary);">
+          <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--secondary); color: white; padding: 0.25rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">🏆 MOST POPULAR<\/div>
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem; margin-top: 0.5rem;">Cabin Care<\/h3>
+          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 0.75rem 0;">\$199<span style="font-size: 1rem; color: #666; font-weight: normal;">\/mo<\/span><\/p>
+          <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">1 hour · Monthly inspections<\/p>
+          <p style="color: #888; font-size: 0.8rem; font-style: italic; margin-bottom: 1rem;">Best for 1-2 BR cabins<\/p>
+          <ul style="list-style: none; padding: 0; text-align: left; font-size: 0.85rem; color: #555; margin-bottom: 1.5rem;">
+            <li style="padding: 0.25rem 0;">✓ Monthly walk-through inspection<\/li>
+            <li style="padding: 0.25rem 0;">✓ Hot tub check & chemical balance<\/li>
+            <li style="padding: 0.25rem 0;">✓ Photo report after each visit<\/li>
+            <li style="padding: 0.25rem 0;">✓ Priority scheduling for repairs<\/li>
+          <\/ul>
+          <a href="/contact?plan=cabin-care" class="btn btn-primary" style="width: 100%; text-align: center;">Get Started<\/a>
+        <\/div>
+        
+        <!-- Lodge Keeper -->
+        <div class="card" style="text-align: center; position: relative;">
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Lodge Keeper<\/h3>
+          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 0.75rem 0;">\$299<span style="font-size: 1rem; color: #666; font-weight: normal;">\/mo<\/span><\/p>
+          <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">2 hours · Bi-weekly checks<\/p>
+          <p style="color: #888; font-size: 0.8rem; font-style: italic; margin-bottom: 1rem;">Best for 3-4 BR lodges<\/p>
+          <ul style="list-style: none; padding: 0; text-align: left; font-size: 0.85rem; color: #555; margin-bottom: 1.5rem;">
+            <li style="padding: 0.25rem 0;">✓ Bi-weekly property inspections<\/li>
+            <li style="padding: 0.25rem 0;">✓ Hot tub + pool maintenance<\/li>
+            <li style="padding: 0.25rem 0;">✓ Seasonal prep & winterization<\/li>
+            <li style="padding: 0.25rem 0;">✓ Minor repairs included<\/li>
+          <\/ul>
+          <a href="/contact?plan=lodge-keeper" class="btn btn-secondary" style="width: 100%; text-align: center;">Get Started<\/a>
+        <\/div>
+        
+        <!-- Premium Care -->
+        <div class="card" style="text-align: center; position: relative;">
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Premium Care<\/h3>
+          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 0.75rem 0;">\$399<span style="font-size: 1rem; color: #666; font-weight: normal;">\/mo<\/span><\/p>
+          <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">4 hours · Full oversight<\/p>
+          <p style="color: #888; font-size: 0.8rem; font-style: italic; margin-bottom: 1rem;">Best for 5+ BR luxury cabins<\/p>
+          <ul style="list-style: none; padding: 0; text-align: left; font-size: 0.85rem; color: #555; margin-bottom: 1.5rem;">
+            <li style="padding: 0.25rem 0;">✓ Weekly property oversight<\/li>
+            <li style="padding: 0.25rem 0;">✓ Full hot tub & amenity care<\/li>
+            <li style="padding: 0.25rem 0;">✓ Vendor coordination<\/li>
+            <li style="padding: 0.25rem 0;">✓ Unlimited minor repairs<\/li>
+          <\/ul>
+          <a href="/contact?plan=premium-care" class="btn btn-primary" style="width: 100%; text-align: center;">Get Started<\/a>
+        <\/div>
+      <\/div>
+      
+      <p style="text-align: center; margin-top: 1.5rem;">
+        <a href="/pricing" style="color: var(--secondary); font-weight: 600;">View All Plans & Add-Ons →<\/a>
+      <\/p>
+    <\/section>
     <!-- AI Visualizer Teaser -->
     <section class="container" style="margin-top: 4rem;">
       <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; text-align: center; padding: 3rem;">

@@ -556,6 +556,9 @@ api.route('/square', squareInvoicesApi);
 api.route('/lilbeaver', lilBeaverChatApi);
 api.route('/subscriptions', subscriptionApi);
 api.route('/signs', signsCatalogApi);
+
+// Job Media (photos/videos per job — admin + Discord bot + client portal)
+import { jobMediaApi } from './routes/job-media-api';
 api.route('/job-media', jobMediaApi); // Signs catalog + Square product setup
 
 // Content queue for social media publishing
@@ -1036,46 +1039,4 @@ async function syncElevenLabsConversations(env: Bindings) {
                 { name: 'Duration', value: `${Math.round(conv.call_duration_secs / 60)} min`, inline: true },
                 { name: 'Transcript', value: transcriptText.slice(0, 500) || 'No transcript', inline: false },
               ],
-              timestamp: new Date(conv.start_time_unix_secs * 1000).toISOString(),
-            }],
-          }),
-        }).catch(err => console.error('Discord notify failed:', err));
-      }
-      
-      synced++;
-      console.log(`Synced voice lead: ${callerName} - ${conv.call_summary_title}`);
-    }
-    
-    return { synced };
-  } catch (error) {
-    console.error('ElevenLabs sync error:', error);
-    return { synced: 0, error: String(error) };
-  }
-}
-
-// Scheduled handler for cron triggers (Facebook group scanning)
-async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-  console.log('Cron triggered — launching Workflows');
-
-  // Each workflow runs as an independent durable execution.
-  // A failure in one does not affect the others.
-  // Steps inside each workflow are checkpointed and retried automatically.
-  const triggered: string[] = [];
-
-  if (env.CALENDAR_SYNC_WORKFLOW) {
-    await env.CALENDAR_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
-    triggered.push('calendar-sync');
-  }
-
-  if (env.VOICE_SYNC_WORKFLOW) {
-    await env.VOICE_SYNC_WORKFLOW.create({ params: { triggered_by: 'cron' } });
-    triggered.push('voice-lead-sync');
-  }
-
-  if (env.CONTENT_PUBLISH_WORKFLOW) {
-    await env.CONTENT_PUBLISH_WORKFLOW.create({ params: { triggered_by: 'cron', limit: 3 } });
-    triggered.push('content-publish');
-  }
-
-  console.log('Workflows triggered:', triggered.join(', ') || 'none');
-};
+        
