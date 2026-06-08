@@ -1,11 +1,12 @@
 import { Context } from 'hono';
 import { layout } from '../lib/html';
-import { buildHead, pageSeo } from '../lib/seo';
 import { siteConfig } from '../../config/site.config';
 import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
+// r2PortfolioImages disabled: R2 bucket is offline and images aren't backed up to Cloudinary.
+// Re-enable once images are uploaded: import { r2PortfolioImages } from '../../config/r2-portfolio';
 
-// Portfolio images from public/portfolio/ (static assets — no R2 needed)
-const fullPortfolio = portfolioManifest;
+// Portfolio from manifest only (static assets in public/portfolio/)
+const fullPortfolio = [...portfolioManifest];
 
 const { business } = siteConfig;
 
@@ -308,7 +309,7 @@ export const galleryPage = (c: Context) => {
     </script>
   `;
   
-  return c.html(layout('Gallery', content, 'gallery', buildHead(pageSeo.gallery)));
+  return c.html(layout('Gallery', content, 'gallery'));
 };
 
 export const galleryCategoryPage = async (c: Context) => {
@@ -516,3 +517,4 @@ export const galleryCategoryPage = async (c: Context) => {
   
   return c.html(layout(category.name, content, 'gallery'));
 };
+                                                     
