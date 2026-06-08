@@ -111,6 +111,37 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', logger());
 app.use('/api/*', cors());
 
+// Security headers — applied to every response
+app.use('*', async (c, next) => {
+  await next();
+  // Prevent clickjacking
+  c.res.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  // Prevent MIME-type sniffing
+  c.res.headers.set('X-Content-Type-Options', 'nosniff');
+  // Enforce HTTPS for 1 year (including subdomains)
+  c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Control referrer leakage
+  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Disable browser features we don't use
+  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  // Content Security Policy
+  // unsafe-inline required: all CSS/JS is server-rendered inline
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://unpkg.com https://sandbox.web.squarecdn.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com",
+    "media-src 'self' https://res.cloudinary.com",
+    "frame-src https://www.google.com",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ');
+  c.res.headers.set('Content-Security-Policy', csp);
+});
+
 // ============ PUBLIC PAGES ============
 
 // Sitemap for SEO and AI Search indexing
@@ -1046,43 +1077,4 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
     triggered.push('content-publish');
   }
 
-  console.log('Workflows triggered:', triggered.join(', ') || 'none (bindings not configured)');
-}
-
-// Email handler for inbound emails
-async function email(message: any, env: Bindings) {
-  const to = message.to;
-  const from = message.from;
-  const subject = message.headers.get('subject') || '';
-  const rawEmail = await new Response(message.raw).text();
-  
-  console.log(`Inbound email: ${from} -> ${to}, Subject: ${subject}`);
-  
-  // Store in messages table if we can identify the customer
-  const customer = await env.DB.prepare(
-    'SELECT * FROM customers WHERE email = ?'
-  ).bind(from).first<any>();
-  
-  if (customer) {
-    const now = Math.floor(Date.now() / 1000);
-    await env.DB.prepare(`
-      INSERT INTO messages (customer_id, sender, content, source, created_at)
-      VALUES (?, 'customer', ?, 'email', ?)
-    `).bind(customer.id, `Subject: ${subject}\n\n${rawEmail.slice(0, 2000)}`, now).run();
-  }
-  
-  // Forward to admin for non-portal emails
-  if (to.includes('contact@') || to.includes('admin@')) {
-    // Already forwarded via Cloudflare Email Routing to serviceflowagi@gmail.com
-    console.log('Contact/admin email will be forwarded via CF routing');
-  }
-}
-
-export default {
-  fetch: app.fetch,
-  scheduled,
-  email,
-};
-
-// Workflow class exports (required by Cloudflare Workflows runtime)
-export { CalendarSyncWorkflow, VoiceLeadSyncWorkflow, ContentPublishWorkflow };
+  console.log('Workflows triggered:', triggered.join(', ') || 'none
