@@ -586,4 +586,3 @@ visualizeApi.get('/history', async (c) => {
   return c.json({ error: 'Unauthorized' }, 401);
 });
 
-export { visualizeApi };
