@@ -30,7 +30,8 @@ export type PortfolioCategory =
   | 'tiny-home'
   | 'kitchen-bar'
   | 'office'
-  | 'about';
+  | 'about'
+  | 'signs';
 
 /**
  * Actual images from public/portfolio/
