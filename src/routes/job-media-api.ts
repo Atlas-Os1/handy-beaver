@@ -272,4 +272,3 @@ jobMediaApi.post('/discord', async (c) => {
   return  c.json({ success: true });
 });
 
-export { jobMediaApi };
