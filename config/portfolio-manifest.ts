@@ -490,6 +490,10 @@ export const portfolioManifest: PortfolioImage[] = [
   },
 ];
 
+export function getImagesByCategory(category: PortfolioCategory): PortfolioImage[] {
+  return portfolioManifest.filter(img => img.category === category);
+}
+
 export function getFeaturedImages() {
   return portfolioManifest.filter(img => img.featured);
 }
