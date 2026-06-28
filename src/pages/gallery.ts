@@ -2,11 +2,21 @@ import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { siteConfig } from '../../config/site.config';
 import { portfolioManifest, getFeaturedImages, getBeforeAfterPairs, getImageUrl, type PortfolioCategory } from '../../config/portfolio-manifest';
-// r2PortfolioImages disabled: R2 bucket is offline and images aren't backed up to Cloudinary.
-// Re-enable once images are uploaded: import { r2PortfolioImages } from '../../config/r2-portfolio';
+import { r2PortfolioImages } from '../../config/r2-portfolio';
 
-// Portfolio from manifest only (static assets in public/portfolio/)
-const fullPortfolio = [...portfolioManifest];
+// Map R2 images to use /api/assets/ URL (served via KV→R2 assets route)
+const r2WithUrl = r2PortfolioImages.map(img => ({
+  ...img,
+  imageUrl: `/api/assets/${img.r2Path}`,
+}));
+
+// Combined portfolio: static manifest + R2 images
+const fullPortfolio = [...portfolioManifest, ...r2WithUrl];
+
+// URL helper: R2 images use /api/assets/ route, manifest images use static /portfolio/ path
+function imgUrl(img: any): string {
+  return img.imageUrl ?? getImageUrl(img);
+}
 
 const { business } = siteConfig;
 
@@ -45,11 +55,11 @@ export const galleryPage = (c: Context) => {
               <div class="ba-card">
                 <div class="ba-images">
                   <div class="ba-before">
-                    <img src="${getImageUrl(before)}" alt="${before.title}" loading="lazy">
+                    <img src="${imgUrl(before)}" alt="${before.title}" loading="lazy">
                     <span class="ba-label">Before</span>
                   </div>
                   <div class="ba-after">
-                    <img src="${getImageUrl(after)}" alt="${after.title}" loading="lazy">
+                    <img src="${imgUrl(after)}" alt="${after.title}" loading="lazy">
                     <span class="ba-label">After</span>
                   </div>
                 </div>
@@ -100,7 +110,7 @@ export const galleryPage = (c: Context) => {
         ${featured.map(img => `
           <div class="gallery-item ${img.featured ? 'featured' : ''}" data-category="${img.category}">
             <img 
-              src="${getImageUrl(img)}" 
+              src="${imgUrl(img)}" 
               alt="${img.title}"
               loading="lazy"
               onclick="openLightbox(this)"
@@ -346,7 +356,7 @@ export const galleryCategoryPage = async (c: Context) => {
           ${images.map(img => `
             <div class="gallery-item ${img.featured ? 'featured' : ''}" data-type="${img.type}">
               <img 
-                src="${getImageUrl(img)}" 
+                src="${imgUrl(img)}" 
                 alt="${img.title}"
                 loading="lazy"
                 onclick="openLightbox(this)"
@@ -515,3 +525,4 @@ export const galleryCategoryPage = async (c: Context) => {
   `;
   return c.html(layout('Gallery', content));
 };
+
