@@ -50,10 +50,10 @@ GOOGLE_CALENDAR_ID = "primary"
 # OPENCLAW_GATEWAY_URL       — Local dev gateway (dev only, not used in prod)
 # OPENCLAW_GATEWAY_TOKEN     — Local dev gateway token
 
-# ── R2 Storage — enable once R2 is activated on the account ──────────────────
-# [[r2_buckets]]
-# binding = "IMAGES"
-# bucket_name = "handy-beaver-images"
+# ── R2 Storage ────────────────────────────────────────────────────────────────
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "handy-beaver-images"
 
 # ── Browser Rendering — enable once Browser Run is confirmed on account ───────
 # [browser]
