@@ -79,7 +79,7 @@ function getImageUrl(img: R2PortfolioImage): string {
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;
   AI: any;
   ADMIN_API_KEY?: string;
 };

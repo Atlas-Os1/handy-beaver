@@ -1,16 +1,12 @@
 name = "handy-beaver"
 main = "src/index.ts"
-compatibility_date = "2025-09-01"
+compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Static assets served directly from public/ directory
-[assets]
-directory = "./public"
-
-# Observability — 100% request sampling
+# Observability - logs and traces
 [observability]
 enabled = true
-head_sampling_rate = 1
+head_sampling_rate = 1  # 100% of requests logged
 
 # D1 Database
 [[d1_databases]]
@@ -18,79 +14,49 @@ binding = "DB"
 database_name = "handy-beaver-db"
 database_id = "20a0e8d8-37eb-4445-af1a-3e295d724abd"
 
-# Workers AI
+# Browser Rendering (for Facebook group scraping)
+[browser]
+binding = "BROWSER"
+
+# Workers AI (fallback for image generation)
 [ai]
 binding = "AI"
-# KV Storage — image/asset store while R2 is being set up
-# Replaces R2 for visualizer output, uploaded photos, portfolio assets
-[[kv_namespaces]]
-binding = "KV"
-id = "46d20a7cccba4092a742b320fcdb1643"
 
+[assets]
+directory = "./public"
+not_found_handling = "none"
 
 # Environment Variables
 [vars]
-ENVIRONMENT = "production"
+ENVIRONMENT = "development"
 GOOGLE_CALENDAR_ID = "primary"
 
-# ── Secrets (set via: wrangler secret put <NAME>) ─────────────────────────────
-# ADMIN_API_KEY              — admin panel access key
-# DISCORD_WEBHOOK_NOTIFICATIONS — Discord alerts webhook URL
-# OWNER_EMAIL                — forward contact emails to this address
-# SQUARE_ACCESS_TOKEN        — Square payments API
-# CALENDAR_WEBHOOK_SECRET    — Google Calendar webhook protection
-# FACEBOOK_PAGE_ID           — Facebook page ID for social posting
-# FACEBOOK_PAGE_ACCESS_TOKEN — Facebook Graph API token
-# ANTHROPIC_API_KEY          — Anthropic fallback (if needed outside Workers AI)
-# ELEVENLABS_API_KEY         — ElevenLabs voice agent
-# RESEND_API_KEY             — Resend email service (alternative to CF Email)
-# GOOGLE_CLIENT_ID           — Google OAuth
-# GOOGLE_CLIENT_SECRET       — Google OAuth
-# GOOGLE_REFRESH_TOKEN       — Google Calendar sync
-# OPENCLAW_GATEWAY_URL       — Local dev gateway (dev only, not used in prod)
-# OPENCLAW_GATEWAY_TOKEN     — Local dev gateway token
+# Secrets (set via wrangler secret put):
+# - GITHUB_CLIENT_ID ✓
+# - GITHUB_CLIENT_SECRET ✓
+# - ADMIN_API_KEY (for agent API access)
+# - DISCORD_WEBHOOK_NOTIFICATIONS (for alerts)
+# - OWNER_EMAIL (forward emails to)
+# - SQUARE_ACCESS_TOKEN (for payments)
+# - GEMINI_API_KEY (for AI visualizer)
+# - CALENDAR_WEBHOOK_SECRET (for calendar sync webhook protection)
+# - FACEBOOK_PAGE_ID
+# - FACEBOOK_PAGE_ACCESS_TOKEN
 
-# ── R2 Storage — enable once R2 is activated on the account ──────────────────
-# [[r2_buckets]]
-# binding = "IMAGES"
-# bucket_name = "handy-beaver-images"
-
-# ── Browser Rendering — enable once Browser Run is confirmed on account ───────
-# [browser]
-# binding = "BROWSER"
-
-
-# ── Cloudflare Workflows — durable background tasks ──────────────────────────
-# Each workflow runs independently; a failure in one doesn't affect the others.
-
-[[workflows]]
-name = "handy-beaver-calendar-sync"
-binding = "CALENDAR_SYNC_WORKFLOW"
-class_name = "CalendarSyncWorkflow"
-script_name = "handy-beaver"
-
-[[workflows]]
-name = "handy-beaver-voice-sync"
-binding = "VOICE_SYNC_WORKFLOW"
-class_name = "VoiceLeadSyncWorkflow"
-script_name = "handy-beaver"
-
-[[workflows]]
-name = "handy-beaver-content-publish"
-binding = "CONTENT_PUBLISH_WORKFLOW"
-class_name = "ContentPublishWorkflow"
-script_name = "handy-beaver"
-
-# Email routing (Cloudflare Email Routing must be configured in dashboard)
+# Email routing - send emails from the worker
+# Addresses configured in Cloudflare Email Routing:
+# - noreply@handybeaver.co (send to worker)
+# - portal@handybeaver.co (send to worker)
+# - admin@handybeaver.co (send to worker)
 send_email = [
   { name = "SEND_EMAIL" }
 ]
 
-# Cron triggers
-[triggers]
-crons = ["*/30 * * * *"]
+# Cron triggers disabled (account limit reached)
+# [triggers]
+# crons = ["*/30 * * * *"]
 
-# Custom domains
+# Custom domain (separate from triggers)
 [[routes]]
 pattern = "handybeaver.co"
 custom_domain = true

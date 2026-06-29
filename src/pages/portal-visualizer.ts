@@ -279,27 +279,12 @@ export const portalGalleryPage = async (c: Context) => {
           
           return `
             <div class="gallery-item" data-id="${item.id}">
-              <img src="${item.result_url || '/api/assets/placeholder.png'}" alt="Visualization" 
-                   onerror="this.src='/api/assets/beaver-avatar.png'">
               <div class="info">
-                <div class="prompt">${item.prompt?.replace(/^\[(gemini|workers-ai)\]\s*/i, '') || 'No prompt'}</div>
+                <div class="prompt">${item.prompt?.replace(/^\[(imagen|flux-2-dev|flux-1-schnell|dreamshaper)\]\s*/i, '') || 'No prompt'}</div>
                 <div class="meta">
                   <span>${new Date(createdAt * 1000).toLocaleDateString()}</span>
-                  ${isSaved 
-                    ? '<span class="save-badge">✓ Saved</span>' 
-                    : `<span class="expires-badge">${daysLeft}d left</span>`
-                  }
+                  <span class="expires-badge">Expired</span>
                 </div>
-              </div>
-              <div class="actions">
-                <a href="${item.result_url}" download class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">
-                  📥 Download
-                </a>
-                ${!isSaved ? `
-                  <button onclick="saveIndefinitely(${item.id})" class="btn btn-primary btn-sm">
-                    💾 Keep
-                  </button>
-                ` : ''}
               </div>
             </div>
           `;
@@ -494,10 +479,17 @@ export const portalVisualizerPage = async (c: Context) => {
           
           if (!result.success) throw new Error(result.error || 'Generation failed');
           
-          resultImageUrl = result.resultUrl;
-          resultImage.innerHTML = result.demo 
-            ? '<p style="color: #666;">Demo mode - visualization coming soon!</p>'
-            : '<img src="' + result.resultUrl + '" style="max-width: 100%; border-radius: 8px;">';
+          if (result.demo) {
+            resultImage.innerHTML = '<p style="color: #666;">' + (result.message || 'Demo mode - visualization coming soon!') + '</p>';
+          } else if (result.resultDataUrl) {
+            const imgRes = await fetch(result.resultDataUrl);
+            const blob = await imgRes.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            resultImageUrl = objectUrl;
+            resultImage.innerHTML = '<img src="' + objectUrl + '" style="max-width: 100%; border-radius: 8px;">';
+          } else {
+            resultImage.innerHTML = '<p style="color: #999;">No result returned</p>';
+          }
         } catch (error) {
           resultImage.innerHTML = '<p style="color: #991b1b;">Error: ' + error.message + '</p>';
         } finally {

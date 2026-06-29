@@ -74,12 +74,16 @@ LABOR RATES:
 • Full day (6+ hours): $300 (main) / $225 (helper)
 • Customer pays all materials, consumables, and equipment rental
 
-SUBSCRIPTION PLANS (Monthly):
-• Starter: $75/month - 1 hour labor, priority scheduling, photo task queue
-• Standard: $140/month - 2 hours labor, priority scheduling, 10% off projects
-• Premium: $280/month - 4 hours labor, same-week scheduling, 15% off projects, seasonal checkup
+SUBSCRIPTION PLANS — CABIN & VACATION RENTAL MAINTENANCE (Monthly):
+• Cabin Care: $199/month — 1 hour, monthly inspection, HVAC filters, smoke/CO tests, minor fixes, priority scheduling
+• Lodge Keeper: $299/month — 2 hours, bi-weekly checks, full 6-point checklist, hot tub check, 10% off repairs
+• Premium Care: $399/month — 4 hours, weekly oversight, full inspection report, hot tub service, winterization, 15% off, 24/7 emergency
 
-SERVICES: Carpentry, Flooring, Deck & Outdoor, General Maintenance, Tiny Homes ($75-110/sq ft)
+ADD-ON SERVICES:
+• Hot Tub Service: +$125/month | Winterization: $250/season | Deep Inspection: $150/qtr
+• Annual billing: 1 month free (pay 11, get 12)
+
+SERVICES: Carpentry, Flooring, Deck & Outdoor, General Maintenance, Tiny Homes ($75-110/sq ft), Cabin Vacation Rental Maintenance (6-point checklist)
 SERVICE AREA: SE Oklahoma (McCurtain, Choctaw, Pushmataha counties) + AR border towns
 CONTACT: (580) 392-9061, handybeaver.co
 
@@ -164,12 +168,17 @@ LABOR RATES:
 • Full day (6+ hours): $300 (main) / $225 (helper)
 • Customer pays all materials, consumables, and equipment rental
 
-SUBSCRIPTION PLANS (Monthly):
-• Starter: $75/month - 1 hour labor, priority scheduling, photo task queue
-• Standard: $140/month - 2 hours labor, priority scheduling, photo task queue, 10% off projects
-• Premium: $280/month - 4 hours labor, same-week scheduling, photo task queue, 15% off projects, seasonal checkup
+SUBSCRIPTION PLANS — CABIN & VACATION RENTAL MAINTENANCE (Monthly):
+• Cabin Care: $199/month - 1 hour, monthly inspection, HVAC filters, smoke/CO tests, photo task queue, priority scheduling
+• Lodge Keeper: $299/month - 2 hours, bi-weekly checks, full 6-point checklist, hot tub check, 10% off repairs
+• Premium Care: $399/month - 4 hours, weekly oversight, full inspection report, hot tub service, winterization, 15% off, 24/7 emergency
+
+ADD-ON SERVICES:
+• Hot Tub Service: +$125/month | Winterization: $250/season | Deep Inspection: $150/qtr
+• Annual billing: 1 month free (pay 11, get 12)
 
 SERVICES OFFERED:
+• Cabin Vacation Rental Maintenance: Monthly inspections, 6-point checklist, hot tub service, seasonal prep
 • Carpentry: Custom shelving, trim/molding, door/window repairs, deck building, fence work
 • Flooring: Hardwood, laminate, vinyl, tile, subfloor repair
 • Deck & Outdoor: Staining/sealing, repairs, pergolas, arbors, fence staining

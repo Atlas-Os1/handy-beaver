@@ -9,7 +9,7 @@ export const siteConfig = {
   // Business Identity
   business: {
     name: "The Handy Beaver",
-    tagline: "Your Detail-Oriented Craftsman & Maintenance Service",
+    tagline: "Your Cabin & Home Maintenance Service — SE Oklahoma",
     description: "Professional carpentry, flooring, deck repair, and residential maintenance for Southeast Oklahoma",
     mascot: "🦫",
     email: "contact@handybeaver.co",
@@ -62,26 +62,58 @@ export const siteConfig = {
     fullDay: { hours: 8, price: 650, label: "Full Day" },
   },
 
-  // Subscription Plans (monthly recurring maintenance)
+  // Subscription Plans (monthly recurring cabin maintenance)
   subscriptionPlans: {
-    basic: { 
+    cabinCare: { 
       hours: 1, 
-      price: 75, 
-      label: "Basic",
-      features: ["1 hour/month", "Priority scheduling", "Photo task queue"]
+      price: 199, 
+      label: "Cabin Care",
+      features: [
+        "Monthly cabin safety inspection",
+        "HVAC filter replacement",
+        "Smoke/CO detector test",
+        "Minor fix-it service on the spot",
+        "Photo task queue",
+        "Priority scheduling"
+      ]
     },
-    standard: { 
+    lodgeKeeper: { 
       hours: 2, 
-      price: 140, 
-      label: "Standard",
-      features: ["2 hours/month", "Priority scheduling", "Photo task queue", "10% off projects"]
+      price: 299, 
+      label: "Lodge Keeper",
+      features: [
+        "Bi-weekly cabin inspection & checkup",
+        "Full 6-point maintenance checklist",
+        "Hot tub health check",
+        "HVAC filter + coil clean",
+        "Minor repairs included",
+        "10% off larger repairs",
+        "Same-week scheduling"
+      ]
     },
-    premium: { 
+    premiumCare: { 
       hours: 4, 
-      price: 280, 
-      label: "Premium",
-      features: ["4 hours/month", "Same-week scheduling", "Photo task queue", "15% off projects", "Seasonal home checkup"]
+      price: 399, 
+      label: "Premium Care",
+      features: [
+        "Weekly cabin oversight",
+        "Full 6-point inspection with photo report",
+        "Hot tub service + chemicals",
+        "HVAC tune-up (spring & fall)",
+        "Winterization prep (pipes, heat tape)",
+        "15% off all repairs",
+        "24/7 emergency dispatch",
+        "Seasonal deep inspection"
+      ]
     },
+  },
+
+  // Cabin Add-On Services
+  cabinAddOns: {
+    hotTubService: { price: 125, label: "Hot Tub Service", description: "Weekly chemical check, filter clean, pump check" },
+    winterization: { price: 250, label: "Seasonal Winterization", description: "Pipe wrap, heat tape, faucet blowout, fireplace check" },
+    deepInspection: { price: 150, label: "Quarterly Deep Inspection", description: "Full 6-point checklist with photo report sent to owner" },
+    annualBilling: { savings: "1 month free", label: "Annual Billing", description: "Pay for 11 months, get 12. Save ~8%" },
   },
 
   // Tiny Home Finish Packages (price per sq.ft.)

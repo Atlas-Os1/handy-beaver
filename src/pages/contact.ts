@@ -172,5 +172,8 @@ export const contactPage = (c: Context) => {
     </section>
   `;
   
-  return c.html(layout('Contact Us', content, 'contact'));
+    return c.html(layout('Contact Us', content, 'contact', {
+    description: "Get a free quote for cabin maintenance or handyman services in SE Oklahoma. We respond within 24 hours.",
+    canonical: "/contact",
+  }));
 };

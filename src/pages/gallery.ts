@@ -310,7 +310,10 @@ export const galleryPage = (c: Context) => {
     </script>
   `;
   
-  return c.html(layout('Gallery', content, 'gallery'));
+    return c.html(layout('Gallery', content, 'gallery', {
+    description: "Before and after photos of cabin renovations, deck repairs, flooring, and handyman projects in Hochatown and Broken Bow.",
+    canonical: "/gallery",
+  }));
 };
 
 export const galleryCategoryPage = async (c: Context) => {

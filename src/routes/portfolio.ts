@@ -4,7 +4,7 @@ import { r2PortfolioImages } from '../../config/r2-portfolio';
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;
 };
 
 export const portfolioApi = new Hono<{ Bindings: Bindings }>();

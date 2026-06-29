@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;
   AI: Ai;
   GEMINI_API_KEY?: string;
   ADMIN_API_KEY?: string;

@@ -19,7 +19,7 @@ import {
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;
   AI: Ai;
   ADMIN_API_KEY?: string;
 };

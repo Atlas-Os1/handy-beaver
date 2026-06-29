@@ -331,6 +331,7 @@ export const adminVisualizerPage = async (c: Context) => {
               <tr style="border-bottom: 2px solid #eee;">
                 <th style="text-align: left; padding: 0.75rem;">Customer</th>
                 <th style="text-align: left; padding: 0.75rem;">Prompt</th>
+                <th style="text-align: center; padding: 0.75rem;">Preview</th>
                 <th style="text-align: left; padding: 0.75rem;">Date</th>
               </tr>
             </thead>
@@ -338,16 +339,19 @@ export const adminVisualizerPage = async (c: Context) => {
               ${recentHistory.results?.map((row: any) => `
                 <tr style="border-bottom: 1px solid #eee;">
                   <td style="padding: 0.75rem;">
-                    ${row.customer_id === 0 ? '👑 Admin' : row.name || row.email || 'Unknown'}
+                    ${row.customer_id === null ? '👑 Admin' : row.name || row.email || 'Unknown'}
                   </td>
                   <td style="padding: 0.75rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ${row.prompt}
                   </td>
+                  <td style="padding: 0.5rem;">
+                    ${row.result_url ? '<img src="' + row.result_url + '" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" onclick="window.open(\'' + row.result_url + '\')">' : ''}
+                  </td>
                   <td style="padding: 0.75rem; color: #666; font-size: 0.9rem;">
-                    ${new Date(row.created_at * 1000).toLocaleDateString()}
+                    ${new Date(row.created_at * 1000).toLocaleString()}
                   </td>
                 </tr>
-              `).join('') || '<tr><td colspan="3" style="padding: 1rem; color: #999;">No activity yet</td></tr>'}
+              `).join('') || '<tr><td colspan="4" style="padding: 1rem; color: #999;">No activity yet</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -427,12 +431,15 @@ export const adminVisualizerPage = async (c: Context) => {
           if (!result.success) throw new Error(result.error);
           
           resultContainer.style.display = 'block';
-          resultImageUrl = result.resultUrl;
           
+          // Convert data URL to blob URL for reliable display and download
           if (result.demo) {
-            resultImage.innerHTML = '<p style="color: #666;">Demo mode - no GEMINI_API_KEY set</p>';
+            resultImage.innerHTML = '<p style="color: #666;">' + (result.message || 'Demo mode') + '</p>';
+          } else if (result.resultDataUrl) {
+            resultImageUrl = result.resultDataUrl;
+            resultImage.innerHTML = '<img src="' + result.resultDataUrl + '" style="max-width: 100%; border-radius: 8px;">';
           } else {
-            resultImage.innerHTML = '<img src="' + result.resultUrl + '" style="max-width: 100%; border-radius: 8px;">';
+            resultImage.innerHTML = '<p style="color: #999;">No result returned</p>';
           }
         } catch (error) {
           alert('Error: ' + error.message);
@@ -444,13 +451,23 @@ export const adminVisualizerPage = async (c: Context) => {
       
       document.getElementById('download-btn').addEventListener('click', async () => {
         if (!resultImageUrl) return;
-        const res = await fetch(resultImageUrl);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'visualization.jpg';
-        a.click();
+        // Try blob URL approach first
+        try {
+          const res = await fetch(resultImageUrl);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'visualization.jpg';
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          // Fallback: open data URL directly
+          const a = document.createElement('a');
+          a.href = resultImageUrl;
+          a.download = 'visualization.jpg';
+          a.click();
+        }
       });
     </script>
   `;

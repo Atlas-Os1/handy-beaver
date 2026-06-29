@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 
 type Bindings = {
   DB: D1Database;
-  IMAGES: R2Bucket;
+  IMAGES?: R2Bucket;
   OPENCLAW_GATEWAY_URL?: string;
   OPENCLAW_GATEWAY_TOKEN?: string;
   ADMIN_API_KEY?: string;

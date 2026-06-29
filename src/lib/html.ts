@@ -176,7 +176,7 @@ export const baseStyles = `
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     max-width: 350px;
-    z-index: 1000;
+    z-index: 99998;
     animation: slideIn 0.5s ease-out;
     display: none;
   }
@@ -207,7 +207,7 @@ export const baseStyles = `
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* Mobile CTA Buttons */
+  /* Mobile CTA Buttons - sits below chat trigger */
   .mobile-cta-bar {
     display: none;
     position: fixed;
@@ -216,7 +216,7 @@ export const baseStyles = `
     right: 0;
     background: linear-gradient(135deg, var(--primary), #6B3410);
     padding: 0.75rem 1rem;
-    z-index: 1001;
+    z-index: 9999;
     box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
   }
 
@@ -254,6 +254,12 @@ export const baseStyles = `
     
     .promo-popup {
       bottom: 80px;
+      z-index: 9998;
+    }
+    
+    /* ElevenLabs widget must be above mobile bar */
+    elevenlabs-convai {
+      z-index: 9998 !important;
     }
   }
 
@@ -351,7 +357,7 @@ export const baseStyles = `
     gap: 0.75rem;
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(139, 69, 19, 0.4);
-    z-index: 999;
+    z-index: 99999;
     border: none;
     font-size: 1rem;
     font-weight: 600;
@@ -380,6 +386,12 @@ export const baseStyles = `
       right: 12px;
       padding: 0.75rem 1rem;
       font-size: 0.9rem;
+    }
+    
+    /* Ensure ElevenLabs conversation panel is above mobile bar */
+    elevenlabs-convai {
+      --elevenlabs-button-display: none;
+      bottom: 80px !important;
     }
     
     .trust-banner {
@@ -459,32 +471,79 @@ export const baseStyles = `
   }
 `;
 
-export const layout = (title: string, content: string, activeNav?: string, seoHead?: string) => `
-<!DOCTYPE html>
+export function layout(title: string, content: string, activeNav?: string, seo?: {
+  description?: string;
+  image?: string;
+  canonical?: string;
+  type?: 'website' | 'article';
+}) {
+  const siteUrl = "https://handybeaver.co";
+  const defaultDesc = "Professional carpentry, flooring, deck repair, and vacation rental maintenance for SE Oklahoma cabins and homes.";
+  const defaultImage = "/api/assets/lil-beaver-mascot.png";
+  
+  const seoTitle = `${title} | ${business.name}`;
+  const seoDesc = seo?.description || defaultDesc;
+  const seoImage = seo?.image ? `${siteUrl}${seo.image}` : `${siteUrl}${defaultImage}`;
+  const seoCanonical = seo?.canonical ? `${siteUrl}${seo.canonical}` : `${siteUrl}/`;
+  const seoType = seo?.type || 'website';
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
-  ${seoHead || `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="${business.description}">
-  <title>${title} | ${business.name}</title>
-  <link rel="canonical" href="https://handybeaver.co/">
-  <meta name="robots" content="index,follow">
-  <meta property="og:title" content="${title} | ${business.name}">
-  <meta property="og:description" content="${business.description}">
-  <meta property="og:image" content="https://handybeaver.co/beaver-avatar.png">
-  <meta property="og:type" content="website">
-  <meta name="geo.region" content="US-OK">
-  <meta name="geo.placename" content="Southeast Oklahoma">
-  <link rel="icon" type="image/png" href="/beaver-avatar.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  `}
+  
+  <!-- Primary Meta Tags -->
+  <title>${seoTitle}</title>
+  <meta name="description" content="${seoDesc}">
+  <link rel="canonical" href="${seoCanonical}">
+  <link rel="icon" type="image/png" href="/api/assets/beaver-avatar.png">
+  <link rel="apple-touch-icon" href="/api/assets/beaver-avatar.png">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="${seoType}">
+  <meta property="og:url" content="${seoCanonical}">
+  <meta property="og:title" content="${seoTitle}">
+  <meta property="og:description" content="${seoDesc}">
+  <meta property="og:image" content="${seoImage}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="${business.name}">
+  <meta property="og:locale" content="en_US">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${seoTitle}">
+  <meta name="twitter:description" content="${seoDesc}">
+  <meta name="twitter:image" content="${seoImage}">
+  
+  <!-- JSON-LD Structured Data / LocalBusiness -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "${business.name}",
+    "image": "${siteUrl}/api/assets/beaver-avatar.png",
+    "url": "${siteUrl}",
+    "telephone": "${business.phone}",
+    "email": "${business.email}",
+    "description": "${seoDesc}",
+    "areaServed": "${business.serviceArea}",
+    "priceRange": "$$-$$$",
+    "openingHours": "Mo-Fr 08:00-17:00",
+    "sameAs": [
+      "https://www.facebook.com/1040910635768535",
+      "https://instagram.com/lilhandybeaver"
+    ]
+  }
+  </script>
+  
   <style>${baseStyles}</style>
 </head>
 <body>
   <nav>
     <a href="/" class="nav-brand">
-      <img src="/beaver-avatar.png" alt="${business.name} mascot">
+      <img src="/api/assets/beaver-avatar.png" alt="${business.name} mascot">
       <span>${business.name}</span>
     </a>
     <ul class="nav-links">
@@ -492,7 +551,6 @@ export const layout = (title: string, content: string, activeNav?: string, seoHe
       <li><a href="/services" ${activeNav === 'services' ? 'style="color: var(--secondary)"' : ''}>Services</a></li>
       <li><a href="/pricing" ${activeNav === 'pricing' ? 'style="color: var(--secondary)"' : ''}>Pricing</a></li>
       <li><a href="/tiny-homes" ${activeNav === 'tiny-homes' ? 'style="color: var(--secondary)"' : ''}>Tiny Homes</a></li>
-      <li><a href="/signs" ${activeNav === 'signs' ? 'style="color: var(--secondary)"' : ''}>🪵 Cabin Signs</a></li>
       <li><a href="/gallery" ${activeNav === 'gallery' ? 'style="color: var(--secondary)"' : ''}>Gallery</a></li>
       <li><a href="/service-area" ${activeNav === 'service-area' ? 'style="color: var(--secondary)"' : ''}>Service Area</a></li>
       <li><a href="/contact" ${activeNav === 'contact' ? 'style="color: var(--secondary)"' : ''}>Contact</a></li>
@@ -514,7 +572,7 @@ export const layout = (title: string, content: string, activeNav?: string, seoHe
   <div id="promo-popup" class="promo-popup">
     <button class="close" onclick="closePromo()">&times;</button>
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <img src="/icons/new-badge.png" alt="New" style="width: 40px; height: 40px;">
+      <img src="/api/assets/icons/new-badge.png" alt="New" style="width: 40px; height: 40px;">
       <h4 style="margin: 0;">New Customer Special!</h4>
     </div>
     <p><strong>FREE consultation</strong> + <strong>10% off</strong> your first job!</p>
@@ -542,13 +600,18 @@ export const layout = (title: string, content: string, activeNav?: string, seoHe
     </div>
   </div>
   
-  <!-- Chat Trigger Button -->
-  <button class="chat-trigger" onclick="document.querySelector('elevenlabs-convai').click(); this.style.display='none';">
+  <!-- Chat Trigger Button - shown on public pages for customer leads -->
+  <button class="chat-trigger" id="chat-trigger" style="display:none;" onclick="document.querySelector('elevenlabs-convai').click(); this.style.display='none';">
     🦫 Chat with Lil Beaver
   </button>
   
-  <!-- Promo Popup -->
   <script>
+    // Show chat trigger on ALL pages (main landing = customer leads)
+    // Only hide on admin/portal where customers don't browse
+    if (!window.location.pathname.startsWith('/admin') && !window.location.pathname.startsWith('/portal')) {
+      document.getElementById('chat-trigger').style.display = '';
+    }
+    
     // Show promo after 5 seconds for new visitors
     setTimeout(() => {
       if (!localStorage.getItem('promoShown')) {
@@ -571,9 +634,18 @@ export const layout = (title: string, content: string, activeNav?: string, seoHe
     }, 10000);
   </script>
   
-  <!-- Lil Beaver Voice Agent Widget -->
-  <elevenlabs-convai agent-id="agent_6401kk7jr6ngey2ancnk6nf7kpwy"></elevenlabs-convai>
-  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+  <!-- Lil Beaver Voice Agent Widget - loads on public pages for customer call leads -->
+  <span id="lilbeaver-widget"></span>
+  <script>
+    // Load ElevenLabs widget on public pages (not admin/portal) for customer voice leads
+    if (!window.location.pathname.startsWith('/admin') && !window.location.pathname.startsWith('/portal')) {
+      document.getElementById('lilbeaver-widget').innerHTML = '<elevenlabs-convai agent-id="agent_6401kk7jr6ngey2ancnk6nf7kpwy"></elevenlabs-convai>';
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
 </body>
-</html>
-`;
+</html>`;
+}

@@ -271,5 +271,8 @@ export const tinyHomesPage = (c: Context) => {
     </section>
   `;
   
-  return c.html(layout('Tiny Home Finish Packages', content, 'tiny-homes'));
+    return c.html(layout('Tiny Home Finish Packages', content, 'tiny-homes', {
+    description: "Complete tiny home interior finish packages in SE Oklahoma. Modern Minimal from $75/sqft, Rustic Cabin from $110/sqft.",
+    canonical: "/tiny-homes",
+  }));
 };

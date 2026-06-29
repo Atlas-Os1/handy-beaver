@@ -38,25 +38,46 @@
 
 ---
 
-## Subscription Plans
+## Subscription Plans — Cabin & Vacation Rental Maintenance
 
-### Starter - $75/month
-- 1 hour of labor included
-- Priority scheduling
-- Photo task queue (send pics, we add to list)
-
-### Standard - $140/month
-- 2 hours of labor included
-- Priority scheduling
+### Cabin Care - $199/month
+- 1 hour of labor included per month
+- Monthly safety & systems inspection
+- HVAC filter replacement
+- Smoke/CO detector tests
+- Minor fix-it service on the spot
 - Photo task queue
-- 10% off additional projects
+- Priority scheduling for cabin owners
+- Best for 1-2 bedroom cabins
 
-### Premium - $280/month
-- 4 hours of labor included
+### Lodge Keeper - $299/month
+- 2 hours of labor included per month
+- Bi-weekly cabin inspection & checkup
+- Full 6-point vacation rental checklist
+- Hot tub health check
+- HVAC filter + coil clean
+- Minor repairs included
+- 10% off larger repairs & projects
 - Same-week scheduling
-- Photo task queue
-- 15% off additional projects
-- Seasonal home checkup
+- Best for 3-4 bedroom lodges
+
+### Premium Care - $399/month
+- 4 hours of labor included per month
+- Weekly cabin oversight
+- Full 6-point inspection with photo report
+- Hot tub service + chemicals
+- HVAC tune-up (spring & fall)
+- Winterization prep (pipes, heat tape)
+- 15% off all repairs & projects
+- 24/7 emergency dispatch
+- Seasonal deep inspection
+- Best for 5+ bedroom luxury cabins
+
+### Add-On Services
+- Hot Tub Service: +$125/month (weekly chemical check, filter clean, pump check)
+- Seasonal Winterization: $250/season (pipe wrap, heat tape, faucet blowout)
+- Quarterly Deep Inspection: $150/qtr (full 6-point with photo report)
+- Annual Billing: Save 1 month (pay 11 months, get 12)
 
 ---
 

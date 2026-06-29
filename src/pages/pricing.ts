@@ -2,19 +2,107 @@ import { Context } from 'hono';
 import { layout } from '../lib/html';
 import { siteConfig } from '../../config/site.config';
 
-const { serviceBlocks, subscriptionPlans, tinyHomePackages } = siteConfig;
+const { serviceBlocks, subscriptionPlans, tinyHomePackages, cabinAddOns } = siteConfig;
 
 export const pricingPage = (c: Context) => {
   const content = `
+    <!-- Hero Section — Cabin Maintenance Focus -->
     <section style="padding: 4rem 2rem; text-align: center; background: linear-gradient(180deg, rgba(139, 69, 19, 0.3) 0%, transparent 100%);">
-      <h1 class="section-title" style="font-size: 3rem;">Simple, Honest Pricing</h1>
-      <p class="section-subtitle" style="font-size: 1.25rem;">No hidden fees. You pay for materials directly.</p>
+      <h1 class="section-title" style="font-size: 3rem;">🏕️ Cabin Maintenance Plans</h1>
+      <p class="section-subtitle" style="font-size: 1.25rem;">Protect your vacation rental investment — proactive care for Hochatown cabins</p>
     </section>
     
-    <!-- Service Blocks (One-Time) -->
-    <section class="container" style="margin-top: 2rem;">
-      <h2 class="section-title">🔧 Service Blocks</h2>
-      <p class="section-subtitle">One-time handyman visits — book when you need us</p>
+    <!-- Cabin Subscription Plans — PRIMARY OFFERING -->
+    <section class="container" style="margin-top: 2rem; padding: 3rem 0; background: linear-gradient(180deg, rgba(139, 69, 19, 0.1) 0%, transparent 100%); border-radius: 20px;">
+      <h2 class="section-title">🦫 Vacation Rental Maintenance</h2>
+      <p class="section-subtitle">Monthly subscriptions — guaranteed hours, peace of mind for remote cabin owners</p>
+      
+      <div class="grid grid-3" style="max-width: 1100px; margin: 2rem auto;">
+        <!-- Cabin Care -->
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏠</div>
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${subscriptionPlans.cabinCare.label}</h3>
+          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${subscriptionPlans.cabinCare.price}<span style="font-size: 1rem; color: #666;">/mo</span></p>
+          <p style="color: #666; margin-bottom: 1.5rem;">${subscriptionPlans.cabinCare.hours} hour per month</p>
+          <ul style="list-style: none; padding: 0; text-align: left;">
+            ${subscriptionPlans.cabinCare.features.map(f => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">✓ ${f}</li>`).join('')}
+          </ul>
+          <a href="/contact?plan=cabin-care" class="btn btn-secondary" style="margin-top: 1.5rem; display: block;">Get Started</a>
+        </div>
+        
+        <!-- Lodge Keeper — BEST VALUE -->
+        <div class="card" style="text-align: center; border: 3px solid var(--secondary);">
+          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1rem; border-radius: 14px 14px 0 0; font-weight: bold;">🏆 MOST POPULAR</div>
+          <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏡</div>
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${subscriptionPlans.lodgeKeeper.label}</h3>
+          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${subscriptionPlans.lodgeKeeper.price}<span style="font-size: 1rem; color: #666;">/mo</span></p>
+          <p style="color: #666; margin-bottom: 1.5rem;">${subscriptionPlans.lodgeKeeper.hours} hours per month</p>
+          <ul style="list-style: none; padding: 0; text-align: left;">
+            ${subscriptionPlans.lodgeKeeper.features.map(f => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">✓ ${f}</li>`).join('')}
+          </ul>
+          <a href="/contact?plan=lodge-keeper" class="btn btn-primary" style="margin-top: 1.5rem; display: block;">Get Started</a>
+        </div>
+        
+        <!-- Premium Care -->
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏔️</div>
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${subscriptionPlans.premiumCare.label}</h3>
+          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${subscriptionPlans.premiumCare.price}<span style="font-size: 1rem; color: #666;">/mo</span></p>
+          <p style="color: #666; margin-bottom: 1.5rem;">${subscriptionPlans.premiumCare.hours} hours per month</p>
+          <ul style="list-style: none; padding: 0; text-align: left;">
+            ${subscriptionPlans.premiumCare.features.map(f => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">✓ ${f}</li>`).join('')}
+          </ul>
+          <a href="/contact?plan=premium-care" class="btn btn-secondary" style="margin-top: 1.5rem; display: block;">Get Started</a>
+        </div>
+      </div>
+      
+      <!-- How Subscriptions Work -->
+      <div style="max-width: 700px; margin: 2rem auto; padding: 1.5rem; background: #fff; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h4 style="color: var(--primary); margin: 0 0 0.5rem;">How It Works</h4>
+        <p style="color: #666; margin: 0; font-size: 0.95rem;">
+          We handle a full inspection checklist every visit. Remote owners get a photo report + status update. 
+          Tasks are tracked through your customer portal — just upload photos of what needs attention.
+        </p>
+      </div>
+    </section>
+    
+    <!-- Add-On Services -->
+    <section class="container" style="margin-top: 3rem;">
+      <h2 class="section-title">🔧 Add-On Services</h2>
+      <p class="section-subtitle">Enhance your plan with cabin-specific extras</p>
+      
+      <div class="grid grid-4" style="max-width: 1000px; margin: 2rem auto;">
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🫧</div>
+          <h4 style="color: var(--primary); margin-bottom: 0.25rem;">${cabinAddOns.hotTubService.label}</h4>
+          <p style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);">$${cabinAddOns.hotTubService.price}<span style="font-size: 0.9rem; color: #666;">/mo</span></p>
+          <p style="color: #666; font-size: 0.85rem;">${cabinAddOns.hotTubService.description}</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❄️</div>
+          <h4 style="color: var(--primary); margin-bottom: 0.25rem;">${cabinAddOns.winterization.label}</h4>
+          <p style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);">$${cabinAddOns.winterization.price}<span style="font-size: 0.9rem; color: #666;">/season</span></p>
+          <p style="color: #666; font-size: 0.85rem;">${cabinAddOns.winterization.description}</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋</div>
+          <h4 style="color: var(--primary); margin-bottom: 0.25rem;">${cabinAddOns.deepInspection.label}</h4>
+          <p style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);">$${cabinAddOns.deepInspection.price}<span style="font-size: 0.9rem; color: #666;">/qtr</span></p>
+          <p style="color: #666; font-size: 0.85rem;">${cabinAddOns.deepInspection.description}</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
+          <h4 style="color: var(--primary); margin-bottom: 0.25rem;">${cabinAddOns.annualBilling.label}</h4>
+          <p style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);">${cabinAddOns.annualBilling.savings}<span style="font-size: 0.9rem; color: #666;"> saved</span></p>
+          <p style="color: #666; font-size: 0.85rem;">${cabinAddOns.annualBilling.description}</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- One-Time Handyman Services — SECONDARY -->
+    <section class="container" style="margin-top: 3rem;">
+      <h2 class="section-title">🔧 Handyman Services</h2>
+      <p class="section-subtitle">One-time visits for repairs, installations, and projects</p>
       
       <div class="grid grid-3" style="max-width: 900px; margin: 2rem auto;">
         <!-- Service Call -->
@@ -26,14 +114,13 @@ export const pricingPage = (c: Context) => {
           <ul style="list-style: none; padding: 0; text-align: left; font-size: 0.9rem; color: #666;">
             <li style="padding: 0.3rem 0;">✓ Quick fixes & repairs</li>
             <li style="padding: 0.3rem 0;">✓ Minor installations</li>
-            <li style="padding: 0.3rem 0;">✓ Home assessments</li>
+            <li style="padding: 0.3rem 0;">✓ One-off maintenance</li>
           </ul>
           <a href="/quote?block=service-call" class="btn btn-secondary" style="margin-top: 1.5rem; display: block;">Book Now</a>
         </div>
         
         <!-- Half Day -->
-        <div class="card" style="text-align: center; position: relative; border: 3px solid var(--secondary);">
-          <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--secondary); color: white; padding: 0.25rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">MOST POPULAR</div>
+        <div class="card" style="text-align: center; position: relative;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">🏠</div>
           <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${serviceBlocks.halfDay.label}</h3>
           <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${serviceBlocks.halfDay.price}</p>
@@ -43,7 +130,7 @@ export const pricingPage = (c: Context) => {
             <li style="padding: 0.3rem 0;">✓ Multiple small tasks</li>
             <li style="padding: 0.3rem 0;">✓ Deck/trim repairs</li>
           </ul>
-          <a href="/quote?block=half-day" class="btn btn-primary" style="margin-top: 1.5rem; display: block;">Book Now</a>
+          <a href="/quote?block=half-day" class="btn btn-secondary" style="margin-top: 1.5rem; display: block;">Book Now</a>
         </div>
         
         <!-- Full Day -->
@@ -64,56 +151,6 @@ export const pricingPage = (c: Context) => {
       <p style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 1rem;">
         <strong>Note:</strong> Materials billed separately at cost. No markup.
       </p>
-    </section>
-    
-    <!-- Monthly Subscription Plans -->
-    <section class="container" style="margin-top: 4rem; padding: 3rem 0; background: linear-gradient(180deg, rgba(139, 69, 19, 0.1) 0%, transparent 100%); border-radius: 20px;">
-      <h2 class="section-title">🦫 Beaver Maintenance Plans</h2>
-      <p class="section-subtitle">Monthly subscription — guaranteed hours, priority scheduling</p>
-      
-      <div class="grid grid-3" style="max-width: 900px; margin: 2rem auto;">
-        <!-- Basic -->
-        <div class="card" style="text-align: center;">
-          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${subscriptionPlans.basic.label}</h3>
-          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${subscriptionPlans.basic.price}<span style="font-size: 1rem; color: #666;">/mo</span></p>
-          <p style="color: #666; margin-bottom: 1.5rem;">${subscriptionPlans.basic.hours} hour per month</p>
-          <ul style="list-style: none; padding: 0; text-align: left;">
-            ${subscriptionPlans.basic.features.map(f => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">✓ ${f}</li>`).join('')}
-          </ul>
-          <a href="/contact?plan=basic" class="btn btn-secondary" style="margin-top: 1.5rem; display: block;">Get Started</a>
-        </div>
-        
-        <!-- Standard -->
-        <div class="card" style="text-align: center; border: 3px solid var(--secondary);">
-          <div style="background: var(--secondary); color: white; padding: 0.5rem; margin: -2rem -2rem 1rem; border-radius: 14px 14px 0 0; font-weight: bold;">BEST VALUE</div>
-          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${subscriptionPlans.standard.label}</h3>
-          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${subscriptionPlans.standard.price}<span style="font-size: 1rem; color: #666;">/mo</span></p>
-          <p style="color: #666; margin-bottom: 1.5rem;">${subscriptionPlans.standard.hours} hours per month</p>
-          <ul style="list-style: none; padding: 0; text-align: left;">
-            ${subscriptionPlans.standard.features.map(f => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">✓ ${f}</li>`).join('')}
-          </ul>
-          <a href="/contact?plan=standard" class="btn btn-primary" style="margin-top: 1.5rem; display: block;">Get Started</a>
-        </div>
-        
-        <!-- Premium -->
-        <div class="card" style="text-align: center;">
-          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${subscriptionPlans.premium.label}</h3>
-          <p style="font-size: 2.5rem; font-weight: bold; color: var(--secondary); margin: 1rem 0;">$${subscriptionPlans.premium.price}<span style="font-size: 1rem; color: #666;">/mo</span></p>
-          <p style="color: #666; margin-bottom: 1.5rem;">${subscriptionPlans.premium.hours} hours per month</p>
-          <ul style="list-style: none; padding: 0; text-align: left;">
-            ${subscriptionPlans.premium.features.map(f => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">✓ ${f}</li>`).join('')}
-          </ul>
-          <a href="/contact?plan=premium" class="btn btn-secondary" style="margin-top: 1.5rem; display: block;">Get Started</a>
-        </div>
-      </div>
-      
-      <div style="max-width: 700px; margin: 2rem auto; padding: 1.5rem; background: #fff; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h4 style="color: var(--primary); margin: 0 0 0.5rem;">How Subscriptions Work</h4>
-        <p style="color: #666; margin: 0; font-size: 0.95rem;">
-          Upload photos of tasks via your portal or Lil Beaver chat. We sort by urgency and schedule your guaranteed hours each month. 
-          Unused time doesn't roll over, but we'll use it for a home checkup to catch issues early!
-        </p>
-      </div>
     </section>
     
     <!-- Large Projects CTA -->
@@ -154,14 +191,18 @@ export const pricingPage = (c: Context) => {
       <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; opacity: 0.8;">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.5rem;">✅</span>
-          <span>Licensed</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <span style="font-size: 1.5rem;">🛡️</span>
-          <span>Insured</span>
+          <span>Licensed & Insured</span>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.5rem;">⭐</span>
+          <span>5-Star Rated</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.5rem;">📸</span>
+          <span>Photo Reports Included</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.5rem;">🏔️</span>
           <span>Local SE Oklahoma</span>
         </div>
       </div>
@@ -169,9 +210,16 @@ export const pricingPage = (c: Context) => {
     
     <!-- Final CTA -->
     <section class="container" style="margin-top: 4rem; text-align: center; padding-bottom: 2rem;">
-      <a href="/contact" class="btn btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem;">Questions? Contact Us →</a>
+      <div style="max-width: 600px; margin: 0 auto; padding: 2rem; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Remote Owner? No Problem.</h3>
+        <p style="color: #666; margin-bottom: 1.5rem;">We handle everything and send you a full report. Your cabin stays in top shape between guests.</p>
+        <a href="/contact" class="btn btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem;">Get Started Today →</a>
+      </div>
     </section>
   `;
   
-  return c.html(layout('Pricing', content, 'pricing'));
+    return c.html(layout('Pricing', content, 'pricing', {
+    description: "Cabin maintenance plans from $199/mo. Hot tub service, winterization, HVAC tune-ups for Hochatown cabins. Handyman rates too.",
+    canonical: "/pricing",
+  }));
 };

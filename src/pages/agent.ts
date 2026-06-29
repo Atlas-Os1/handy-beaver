@@ -315,12 +315,14 @@ export const agentPage = (c: Context) => {
               "2. Brief description of the project<br>" +
               "3. Your general location in SE Oklahoma<br><br>" +
               "Or you can <a href='/contact' style='color: var(--secondary)'>fill out our quote form</a> with photos!";
-          } else if (lower.includes('service')) {
-            response = "We offer several services:<br><br>" +
-              "🪵 <strong>Trim Carpentry</strong> - Crown molding, baseboards, door trim<br>" +
+          } else if (lower.includes('service') || lower.includes('maintenance') || lower.includes('cabin')) {
+            response = "We offer vacation rental maintenance plans for cabins AND home services:<br><br>" +
+              "🏕️ <strong>Cabin Care</strong> - $199/mo - Monthly cabin inspection<br>" +
+              "🏡 <strong>Lodge Keeper</strong> - $299/mo - Bi-weekly checks + hot tub<br>" +
+              "🔑 <strong>Premium Care</strong> - $399/mo - Full oversight + emergency<br><br>" +
+              "🪵 <strong>Trim Carpentry</strong> - Crown molding, baseboards<br>" +
               "🏠 <strong>Flooring</strong> - Install, repair, refinish<br>" +
               "🛠️ <strong>Deck Repair</strong> - Boards, rails, staining<br>" +
-              "🔧 <strong>General Maintenance</strong> - Home repairs<br><br>" +
               "<a href='/services' style='color: var(--secondary)'>View all services & pricing →</a>";
           } else if (lower.includes('schedule') || lower.includes('appointment')) {
             response = "I can help set up a consultation! 📅<br><br>" +
