@@ -1,6 +1,14 @@
 import { Context, MiddlewareHandler } from 'hono';
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 
+const ADMIN_COOKIE_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+interface AdminCookieParts {
+  githubId: string;
+  timestamp: number;
+  signature: string;
+}
+
 // Types
 export interface Admin {
   id: number;
@@ -28,6 +36,13 @@ export interface Session {
   user: Admin | Customer;
 }
 
+const MAGIC_LINK_TTL_SECONDS = 15 * 60;
+
+interface MagicLinkRecord {
+  customer_id: number;
+  expires_at: number;
+}
+
 // Generate secure random token
 export function generateToken(length = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -40,11 +55,122 @@ export function generateToken(length = 32): string {
   return token;
 }
 
+function hexToBytes(hex: string): Uint8Array | null {
+  if (!/^[0-9a-f]+$/i.test(hex) || hex.length % 2 !== 0) {
+    return null;
+  }
+
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = Number.parseInt(hex.slice(i, i + 2), 16);
+  }
+  return bytes;
+}
+
+async function hmacSha256Hex(message: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+  return Array.from(new Uint8Array(signature))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function constantTimeEqual(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  let diff = 0;
+  for (let i = 0; i < left.length; i++) {
+    diff |= left[i] ^ right[i];
+  }
+  return diff === 0;
+}
+
+function parseAdminCookie(token: string): AdminCookieParts | null {
+  const parts = token.split(':');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const [githubId, timestampRaw, signature] = parts;
+  if (!githubId || !timestampRaw || !signature || !/^\d+$/.test(timestampRaw)) {
+    return null;
+  }
+
+  return {
+    githubId,
+    timestamp: Number(timestampRaw),
+    signature,
+  };
+}
+
+export async function createAdminCookieValue(
+  githubId: string,
+  timestamp: number,
+  secret: string
+): Promise<string> {
+  const payload = `${githubId}:${timestamp}`;
+  const signature = await hmacSha256Hex(payload, secret);
+  return `${payload}:${signature}`;
+}
+
+export async function verifyAdminCookieValue(
+  token: string,
+  secret: string | undefined,
+  maxAgeSeconds = ADMIN_COOKIE_TTL_SECONDS
+): Promise<string | null> {
+  if (!secret) {
+    return null;
+  }
+
+  const parsed = parseAdminCookie(token);
+  if (!parsed) {
+    return null;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (parsed.timestamp > now || now - parsed.timestamp > maxAgeSeconds) {
+    return null;
+  }
+
+  const expectedSignature = await hmacSha256Hex(`${parsed.githubId}:${parsed.timestamp}`, secret);
+  const actualBytes = hexToBytes(parsed.signature);
+  const expectedBytes = hexToBytes(expectedSignature);
+
+  if (!actualBytes || !expectedBytes || !constantTimeEqual(actualBytes, expectedBytes)) {
+    return null;
+  }
+
+  return parsed.githubId;
+}
+
+export async function getAdminFromCookie(
+  db: D1Database,
+  token: string,
+  secret: string | undefined
+): Promise<Admin | null> {
+  const githubId = await verifyAdminCookieValue(token, secret);
+  if (!githubId) {
+    return null;
+  }
+
+  return db.prepare(`
+    SELECT * FROM admins WHERE github_id = ?
+  `).bind(githubId).first() as Promise<Admin | null>;
+}
+
 // Magic link auth
 export async function createMagicLink(
   db: D1Database,
   customerId: number,
-  expiresInMinutes = 30
+  expiresInMinutes = MAGIC_LINK_TTL_SECONDS / 60
 ): Promise<string> {
   const token = generateToken(48);
   const expiresAt = Math.floor(Date.now() / 1000) + (expiresInMinutes * 60);
@@ -62,38 +188,47 @@ export async function verifyMagicLink(
   token: string
 ): Promise<Customer | null> {
   const now = Math.floor(Date.now() / 1000);
-  
-  // Find valid token
-  const link = await db.prepare(`
-    SELECT ml.*, c.*
-    FROM magic_links ml
-    JOIN customers c ON ml.customer_id = c.id
-    WHERE ml.token = ? AND ml.expires_at > ? AND ml.used_at IS NULL
-  `).bind(token, now).first<any>();
-  
-  if (!link) return null;
-  
-  // Mark as used
-  await db.prepare(`
-    UPDATE magic_links SET used_at = ? WHERE token = ?
-  `).bind(now, token).run();
-  
+
+  // Atomically consume the token only if it is still valid.
+  const consumed = await db.prepare(`
+    DELETE FROM magic_links
+    WHERE token = ? AND expires_at > ?
+    RETURNING customer_id, expires_at
+  `).bind(token, now).first<MagicLinkRecord>();
+
+  if (!consumed) {
+    // Clean up expired or otherwise invalid tokens without allowing replay.
+    await db.prepare(`
+      DELETE FROM magic_links WHERE token = ?
+    `).bind(token).run();
+    return null;
+  }
+
+  const customer = await db.prepare(`
+    SELECT * FROM customers WHERE id = ?
+  `).bind(consumed.customer_id).first<Customer>();
+
+  if (!customer) {
+    return null;
+  }
+
   // Upgrade customer status if still lead
-  if (link.status === 'lead') {
+  if (customer.status === 'lead') {
     await db.prepare(`
       UPDATE customers SET status = 'prospect' WHERE id = ?
-    `).bind(link.customer_id).run();
+    `).bind(customer.id).run();
+    customer.status = 'prospect';
   }
-  
+
   return {
-    id: link.customer_id,
-    email: link.email,
-    name: link.name,
-    phone: link.phone,
-    address: link.address,
-    status: link.status === 'lead' ? 'prospect' : link.status,
-    total_jobs: link.total_jobs || 0,
-    total_spent: link.total_spent || 0,
+    id: customer.id,
+    email: customer.email,
+    name: customer.name,
+    phone: customer.phone,
+    address: customer.address,
+    status: customer.status,
+    total_jobs: customer.total_jobs || 0,
+    total_spent: customer.total_spent || 0,
   };
 }
 
@@ -277,12 +412,18 @@ export const requireAdmin: MiddlewareHandler = async (c, next) => {
   if (!token) {
     return c.redirect('/admin/login');
   }
-  
-  // Verify admin session (stored as github_id:timestamp:signature)
-  const [githubId] = token.split(':');
+
+  const secret = (c.env as { ADMIN_API_KEY?: string }).ADMIN_API_KEY;
+  const githubId = await verifyAdminCookieValue(token, secret);
+
+  if (!githubId) {
+    deleteCookie(c, 'hb_admin');
+    return c.redirect('/admin/login');
+  }
+
   const admin = await c.env.DB.prepare(`
     SELECT * FROM admins WHERE github_id = ?
-  `).bind(githubId).first<Admin>();
+  `).bind(githubId).first() as Promise<Admin | null>;
   
   if (!admin) {
     deleteCookie(c, 'hb_admin');

@@ -8,7 +8,7 @@ import {
   exchangeGitHubCode,
   getGitHubUser,
   findOrCreateAdmin,
-  generateToken,
+  createAdminCookieValue,
 } from '../lib/auth';
 import { siteConfig } from '../../config/site.config';
 
@@ -16,6 +16,7 @@ type Bindings = {
   DB: D1Database;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  ADMIN_API_KEY?: string;
   RESEND_API_KEY?: string;
 };
 
@@ -83,7 +84,7 @@ authRoutes.post('/magic-link', async (c) => {
                 margin: 16px 0;
               ">Sign In to Portal</a>
               <p style="color: #666; font-size: 14px;">
-                This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.
+                This link expires in 15 minutes. If you didn't request this, you can safely ignore this email.
               </p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
               <p style="color: #999; font-size: 12px;">
@@ -181,8 +182,12 @@ authRoutes.get('/github/callback', async (c) => {
   
   // Create admin session cookie
   const now = Math.floor(Date.now() / 1000);
-  const signature = generateToken(16);
-  const sessionValue = `${admin.github_id}:${now}:${signature}`;
+  const adminSecret = c.env.ADMIN_API_KEY;
+  if (!adminSecret) {
+    return c.redirect('/admin/login?error=auth_failed');
+  }
+
+  const sessionValue = await createAdminCookieValue(String(admin.github_id), now, adminSecret);
   
   setCookie(c, 'hb_admin', sessionValue, {
     path: '/',

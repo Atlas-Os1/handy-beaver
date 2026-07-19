@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
+import { getAdminFromCookie } from '../lib/auth';
 
 type Bindings = {
   DB: D1Database;
   IMAGES: R2Bucket;
   GEMINI_API_KEY?: string;
+  ADMIN_API_KEY?: string;
   AI?: any; // Cloudflare Workers AI binding
 };
 
@@ -101,12 +103,16 @@ async function getPortalCustomer(db: D1Database, token: string): Promise<Custome
   return result || null;
 }
 
-async function getAdmin(db: D1Database, token: string): Promise<AdminSession | null> {
-  const [githubId] = token.split(':');
-  const admin = await db.prepare(
-    `SELECT id, role FROM admins WHERE github_id = ?`
-  ).bind(githubId).first<AdminSession>();
-  return admin || null;
+async function getAdmin(db: D1Database, token: string, secret: string | undefined): Promise<AdminSession | null> {
+  const admin = await getAdminFromCookie(db, token, secret);
+  if (!admin) {
+    return null;
+  }
+
+  return {
+    id: admin.id,
+    role: admin.role,
+  };
 }
 
 // Convert ArrayBuffer to base64 in chunks to avoid stack overflow
@@ -127,7 +133,7 @@ visualizeApi.get('/status', async (c) => {
   const adminToken = getCookie(c, 'hb_admin');
 
   if (adminToken) {
-    const admin = await getAdmin(c.env.DB, adminToken);
+    const admin = await getAdmin(c.env.DB, adminToken, c.env.ADMIN_API_KEY);
     if (admin) {
       return c.json({ authorized: true, isAdmin: true, unlimited: true, usedToday: 0, remaining: 999, status: 'admin' });
     }
@@ -160,7 +166,7 @@ visualizeApi.post('/generate', async (c) => {
   let customerStatus = 'guest';
 
   if (adminToken) {
-    const admin = await getAdmin(c.env.DB, adminToken);
+    const admin = await getAdmin(c.env.DB, adminToken, c.env.ADMIN_API_KEY);
     if (admin) { isAdmin = true; customerId = null; }
   }
 
@@ -424,7 +430,7 @@ visualizeApi.post('/quote', async (c) => {
   let isAdmin = false;
 
   if (adminToken) {
-    const admin = await getAdmin(c.env.DB, adminToken);
+    const admin = await getAdmin(c.env.DB, adminToken, c.env.ADMIN_API_KEY);
     if (admin) { isAdmin = true; customerId = null; }
   }
   if (!isAdmin && portalToken) {
@@ -543,7 +549,7 @@ Select 4 to 8 line items. Separate LABOR from MATERIALS. Return ONLY valid JSON:
 visualizeApi.get('/quotes/recent', async (c) => {
   const adminToken = getCookie(c, 'hb_admin');
   if (!adminToken) return c.json({ error: 'Unauthorized' }, 401);
-  const admin = await getAdmin(c.env.DB, adminToken);
+  const admin = await getAdmin(c.env.DB, adminToken, c.env.ADMIN_API_KEY);
   if (!admin) return c.json({ error: 'Unauthorized' }, 401);
   const results = await c.env.DB.prepare(`
     SELECT vq.*, c.name as customer_name, c.email as customer_email
@@ -570,7 +576,7 @@ visualizeApi.get('/history', async (c) => {
   const portalToken = getCookie(c, 'hb_portal');
   const adminToken = getCookie(c, 'hb_admin');
   if (adminToken) {
-    const admin = await getAdmin(c.env.DB, adminToken);
+    const admin = await getAdmin(c.env.DB, adminToken, c.env.ADMIN_API_KEY);
     if (admin) {
       const results = await c.env.DB.prepare(`SELECT vu.*, c.name, c.email FROM visualizer_usage vu LEFT JOIN customers c ON vu.customer_id=c.id ORDER BY vu.created_at DESC LIMIT 20`).all();
       return c.json({ success: true, results: results.results });

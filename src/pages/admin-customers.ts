@@ -1,6 +1,21 @@
 import { Context } from 'hono';
 import { adminLayout } from './admin';
 
+const sanitizeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const statusClass = (value: unknown): string => {
+  const normalized = String(value ?? 'lead').toLowerCase();
+  return ['lead', 'active', 'inactive', 'pending', 'completed', 'sent', 'paid'].includes(normalized)
+    ? normalized
+    : 'lead';
+};
+
 // Customer detail page
 export const adminCustomerDetail = async (c: Context) => {
   const admin = c.get('admin');
@@ -45,7 +60,7 @@ export const adminCustomerDetail = async (c: Context) => {
   };
   
   const statusBadge = (status: string) => 
-    `<span style="background: ${statusColors[status] || '#6b7280'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${status}</span>`;
+    `<span style="background: ${statusColors[statusClass(status)] || '#6b7280'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${sanitizeHtml(status)}</span>`;
   
   const formatDate = (ts: number) => ts ? new Date(ts * 1000).toLocaleDateString() : '-';
   const formatMoney = (amt: number) => amt ? `$${amt.toFixed(2)}` : '-';
@@ -56,11 +71,11 @@ export const adminCustomerDetail = async (c: Context) => {
       <tbody>
         ${bookings.results.map((b: any) => `
           <tr>
-            <td>${b.title}</td>
-            <td>${b.service_type}</td>
+            <td>${sanitizeHtml(b.title)}</td>
+            <td>${sanitizeHtml(b.service_type)}</td>
             <td>${statusBadge(b.status)}</td>
             <td>${formatDate(b.created_at)}</td>
-            <td><a href="/admin/jobs/${b.id}">View</a></td>
+            <td><a href="/admin/jobs/${encodeURIComponent(String(b.id ?? ''))}">View</a></td>
           </tr>
         `).join('')}
       </tbody>
@@ -73,11 +88,11 @@ export const adminCustomerDetail = async (c: Context) => {
       <tbody>
         ${quotes.results.map((q: any) => `
           <tr>
-            <td>#${q.id}</td>
+            <td>${sanitizeHtml(q.id)}</td>
             <td>${formatMoney(q.total)}</td>
             <td>${statusBadge(q.status)}</td>
             <td>${formatDate(q.created_at)}</td>
-            <td><a href="/admin/quotes/${q.id}">View</a></td>
+            <td><a href="/admin/quotes/${encodeURIComponent(String(q.id ?? ''))}">View</a></td>
           </tr>
         `).join('')}
       </tbody>
@@ -90,12 +105,12 @@ export const adminCustomerDetail = async (c: Context) => {
       <tbody>
         ${invoices.results.map((i: any) => `
           <tr>
-            <td>${i.invoice_number || i.id}</td>
+            <td>${sanitizeHtml(i.invoice_number || i.id)}</td>
             <td>${formatMoney(i.total)}</td>
             <td>${formatMoney(i.amount_paid)}</td>
             <td>${statusBadge(i.status)}</td>
             <td>${formatDate(i.due_date)}</td>
-            <td><a href="/admin/invoices/${i.id}">View</a></td>
+            <td><a href="/admin/invoices/${encodeURIComponent(String(i.id ?? ''))}">View</a></td>
           </tr>
         `).join('')}
       </tbody>
@@ -105,18 +120,17 @@ export const adminCustomerDetail = async (c: Context) => {
   const messagesHtml = messages.results?.length ? messages.results.map((m: any) => `
     <div style="margin-bottom: 1rem; padding: 0.75rem; background: ${m.sender === 'customer' ? '#1e3a5f' : '#2d2d2d'}; border-radius: 8px;">
       <div style="font-size: 0.8rem; color: #888; margin-bottom: 0.25rem;">
-        ${m.sender} • ${formatDate(m.created_at)} • via ${m.source || 'unknown'}
+        ${sanitizeHtml(m.sender)} • ${formatDate(m.created_at)} • via ${sanitizeHtml(m.source || 'unknown')}
       </div>
-      <div>${m.content}</div>
+      <div>${sanitizeHtml(m.content)}</div>
     </div>
   `).join('') : '<p style="color: #666;">No messages yet.</p>';
-  
   const content = `
     <div class="customer-detail">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <a href="/admin/customers" style="color: #666; text-decoration: none;">← Back to Customers</a>
-          <h1 style="margin: 0.5rem 0;">${customer.name || 'Unknown'}</h1>
+          <h1 style="margin: 0.5rem 0;">${sanitizeHtml(customer.name || 'Unknown')}</h1>
           ${statusBadge(customer.status || 'lead')}
         </div>
         <div>
@@ -129,15 +143,15 @@ export const adminCustomerDetail = async (c: Context) => {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
           <div>
             <strong>Email:</strong><br>
-            <a href="mailto:${customer.email}">${customer.email}</a>
+            <a href="mailto:${sanitizeHtml(customer.email)}">${sanitizeHtml(customer.email)}</a>
           </div>
           <div>
             <strong>Phone:</strong><br>
-            ${customer.phone ? `<a href="tel:${customer.phone}">${customer.phone}</a>` : '-'}
+            ${customer.phone ? `<a href="tel:${sanitizeHtml(customer.phone)}">${sanitizeHtml(customer.phone)}</a>` : '-'}
           </div>
           <div>
             <strong>Address:</strong><br>
-            ${customer.address || '-'}
+            ${sanitizeHtml(customer.address || '-')}
           </div>
           <div>
             <strong>Customer Since:</strong><br>
@@ -203,6 +217,9 @@ export const adminCustomerDetail = async (c: Context) => {
     </style>
     
     <script>
+      const customerEmail = ${JSON.stringify(String(customer.email ?? ''))};
+      const customerId = ${JSON.stringify(String(customer.id ?? ''))};
+
       function showTab(name) {
         document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -211,34 +228,34 @@ export const adminCustomerDetail = async (c: Context) => {
       }
       
       async function sendMagicLink() {
-        if (!confirm('Send portal login link to ${customer.email}?')) return;
+        if (!confirm('Send portal login link to ' + customerEmail + '?')) return;
         const res = await fetch('/portal/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'email=${encodeURIComponent(customer.email)}'
+          body: 'email=' + encodeURIComponent(customerEmail)
         });
         alert('Magic link sent!');
       }
       
       function editCustomer() {
-        window.location.href = '/admin/customers?edit=${customer.id}';
+        window.location.href = '/admin/customers?edit=' + encodeURIComponent(customerId);
       }
       
       function createJob() {
-        window.location.href = '/admin/jobs?new=1&customer=${customer.id}';
+        window.location.href = '/admin/jobs?new=1&customer=' + encodeURIComponent(customerId);
       }
       
       function createQuote() {
-        window.location.href = '/admin/quotes?new=1&customer=${customer.id}';
+        window.location.href = '/admin/quotes?new=1&customer=' + encodeURIComponent(customerId);
       }
       
       function createInvoice() {
-        window.location.href = '/admin/invoices?new=1&customer=${customer.id}';
+        window.location.href = '/admin/invoices?new=1&customer=' + encodeURIComponent(customerId);
       }
     </script>
   `;
   
-  return c.html(adminLayout(`Customer: ${customer.name}`, content, 'customers', admin));
+  return c.html(adminLayout(`Customer: ${sanitizeHtml(customer.name || 'Unknown')}`, content, 'customers', admin));
 };
 
 export const adminCustomersPage = async (c: Context) => {
@@ -366,35 +383,74 @@ export const adminCustomersPage = async (c: Context) => {
       function renderCustomers(filtered = null) {
         const list = document.getElementById('customer-list');
         const items = filtered || customers;
-        
+        list.replaceChildren();
+
         if (items.length === 0) {
-          list.innerHTML = '<div class="loading">No customers found</div>';
+          const empty = document.createElement('div');
+          empty.className = 'loading';
+          empty.textContent = 'No customers found';
+          list.appendChild(empty);
           return;
         }
-        
-        list.innerHTML = \`
-          <div class="customer-row header">
-            <div>Name</div>
-            <div>Email</div>
-            <div>Phone</div>
-            <div>Status</div>
-            <div>Actions</div>
-          </div>
-          \${items.map(c => \`
-            <div class="customer-row">
-              <div><a href="/admin/customers/\${c.id}" style="color: #fff; text-decoration: none;">\${c.name || 'Unknown'}</a></div>
-              <div style="color: #888;">\${c.email}</div>
-              <div style="color: #888;">\${c.phone || '-'}</div>
-              <div><span class="status-badge status-\${c.status || 'lead'}">\${c.status || 'lead'}</span></div>
-              <div class="customer-actions">
-                <button onclick="viewCustomer(\${c.id})" title="View">👁</button>
-                <button onclick="editCustomerModal(\${c.id})" title="Edit">✏️</button>
-              </div>
-            </div>
-          \`).join('')}
-        \`;
+
+        const header = document.createElement('div');
+        header.className = 'customer-row header';
+        ['Name', 'Email', 'Phone', 'Status', 'Actions'].forEach((label) => {
+          const cell = document.createElement('div');
+          cell.textContent = label;
+          header.appendChild(cell);
+        });
+        list.appendChild(header);
+
+        items.forEach((c) => {
+          const row = document.createElement('div');
+          row.className = 'customer-row';
+
+          const nameCell = document.createElement('div');
+          const nameLink = document.createElement('a');
+          nameLink.href = '/admin/customers/' + encodeURIComponent(String(c.id ?? ''));
+          nameLink.style.color = '#fff';
+          nameLink.style.textDecoration = 'none';
+          nameLink.textContent = c.name || 'Unknown';
+          nameCell.appendChild(nameLink);
+          row.appendChild(nameCell);
+
+          const emailCell = document.createElement('div');
+          emailCell.style.color = '#888';
+          emailCell.textContent = c.email || '';
+          row.appendChild(emailCell);
+
+          const phoneCell = document.createElement('div');
+          phoneCell.style.color = '#888';
+          phoneCell.textContent = c.phone || '-';
+          row.appendChild(phoneCell);
+
+          const statusCell = document.createElement('div');
+          const statusBadge = document.createElement('span');
+          statusBadge.className = 'status-badge status-' + statusClass(c.status);
+          statusBadge.textContent = c.status || 'lead';
+          statusCell.appendChild(statusBadge);
+          row.appendChild(statusCell);
+
+          const actionsCell = document.createElement('div');
+          actionsCell.className = 'customer-actions';
+
+          const viewBtn = document.createElement('button');
+          viewBtn.title = 'View';
+          viewBtn.textContent = '👁';
+          viewBtn.addEventListener('click', () => viewCustomer(c.id));
+
+          const editBtn = document.createElement('button');
+          editBtn.title = 'Edit';
+          editBtn.textContent = '✏️';
+          editBtn.addEventListener('click', () => editCustomerModal(c.id));
+
+          actionsCell.append(viewBtn, editBtn);
+          row.appendChild(actionsCell);
+          list.appendChild(row);
+        });
       }
-      
+
       function updateStats() {
         document.getElementById('stat-total').textContent = customers.length;
         document.getElementById('stat-leads').textContent = customers.filter(c => c.status === 'lead').length;
@@ -466,7 +522,7 @@ export const adminCustomersPage = async (c: Context) => {
       }
       
       function viewCustomer(id) {
-        window.location.href = '/admin/customers/' + id;
+        window.location.href = '/admin/customers/' + encodeURIComponent(String(id ?? ''));
       }
       
       // Initial load

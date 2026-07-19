@@ -6,18 +6,22 @@ export const adminJobsPage = async (c: Context) => {
   const db = c.env.DB;
   const status = c.req.query('status') || '';
   
-  // Get jobs with customer info
+  // Get jobs with customer info (use parameterized query to prevent SQL injection)
   let query = `
     SELECT b.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone, c.address
     FROM bookings b
     JOIN customers c ON b.customer_id = c.id
   `;
+  const params: string[] = [];
   if (status) {
-    query += ` WHERE b.status = '${status}'`;
+    query += ` WHERE b.status = ?`;
+    params.push(status);
   }
   query += ` ORDER BY b.scheduled_date DESC, b.created_at DESC LIMIT 100`;
   
-  const jobs = await db.prepare(query).all<any>();
+  const jobs = status 
+    ? await db.prepare(query).bind(...params).all<any>()
+    : await db.prepare(query).all<any>();
   
   // Get stats
   const stats = await db.prepare(`

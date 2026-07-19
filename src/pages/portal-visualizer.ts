@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import { siteConfig } from '../../config/site.config';
+import { getAdminFromCookie } from '../lib/auth';
 
 const { business, theme } = siteConfig;
 
@@ -142,8 +143,7 @@ export const portalVisualizerPage = async (c: Context) => {
   let isAdmin = false;
 
   if (adminToken) {
-    const [gid] = adminToken.split(':');
-    const adm = await db.prepare(`SELECT id FROM admins WHERE github_id=?`).bind(gid).first<any>();
+    const adm = await getAdminFromCookie(db, adminToken, (c.env as { ADMIN_API_KEY?: string }).ADMIN_API_KEY);
     if (adm) isAdmin = true;
   }
   if (!isAdmin && portalToken) {

@@ -1,6 +1,14 @@
 import { Context } from 'hono';
 import { adminLayout } from './admin';
 
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export async function adminGalleryPage(c: Context) {
   const admin = c.get('admin');
   // Get existing categories and images
@@ -38,7 +46,7 @@ export async function adminGalleryPage(c: Context) {
               <select id="category" name="category" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
                 <option value="">Select category...</option>
                 ${categories.results.map((cat: any) => `
-                  <option value="${cat.id}">${cat.name}</option>
+                  <option value="${escapeHtml(cat.id)}">${escapeHtml(cat.name)}</option>
                 `).join('')}
               </select>
             </div>
@@ -132,11 +140,11 @@ export async function adminGalleryPage(c: Context) {
           <tbody>
             ${categories.results.map((cat: any) => `
               <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 12px; font-size: 24px;">${cat.icon || '📁'}</td>
-                <td style="padding: 12px;">${cat.name}</td>
-                <td style="padding: 12px;">${cat.image_count} items</td>
+                <td style="padding: 12px; font-size: 24px;">${escapeHtml(cat.icon || '📁')}</td>
+                <td style="padding: 12px;">${escapeHtml(cat.name)}</td>
+                <td style="padding: 12px;">${escapeHtml(cat.image_count)} items</td>
                 <td style="padding: 12px; text-align: right;">
-                  <a href="/gallery/${cat.slug}" target="_blank" style="margin-right: 10px;">View</a>
+                  <a href="/gallery/${encodeURIComponent(String(cat.slug ?? ''))}" target="_blank" style="margin-right: 10px;">View</a>
                   <button onclick="deleteCategory(${cat.id})" style="color: red; background: none; border: none; cursor: pointer;">Delete</button>
                 </td>
               </tr>
@@ -153,14 +161,14 @@ export async function adminGalleryPage(c: Context) {
           ${recentImages.results.map((img: any) => `
             <div style="position: relative; border-radius: 12px; overflow: hidden; background: #f5f5f5;">
               ${img.media_type === 'video' ? `
-                <video src="${img.url}" style="width: 100%; height: 150px; object-fit: cover;" muted></video>
+                <video src="${escapeHtml(img.url)}" style="width: 100%; height: 150px; object-fit: cover;" muted></video>
                 <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">🎬 Video</div>
               ` : `
-                <img src="${img.url}" alt="${img.title}" style="width: 100%; height: 150px; object-fit: cover;">
+                <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.title)}" style="width: 100%; height: 150px; object-fit: cover;">
               `}
               <div style="padding: 10px;">
-                <p style="font-weight: 600; margin-bottom: 5px;">${img.title}</p>
-                <p style="font-size: 12px; color: #666;">${img.category_name || 'Uncategorized'}</p>
+                <p style="font-weight: 600; margin-bottom: 5px;">${escapeHtml(img.title)}</p>
+                <p style="font-size: 12px; color: #666;">${escapeHtml(img.category_name || 'Uncategorized')}</p>
                 <button onclick="deleteImage(${img.id})" style="margin-top: 8px; color: red; background: none; border: none; cursor: pointer; font-size: 12px;">🗑️ Delete</button>
               </div>
             </div>
@@ -196,10 +204,22 @@ export async function adminGalleryPage(c: Context) {
       
       function showPreview(file) {
         preview.style.display = 'block';
+        preview.replaceChildren();
+
+        const objectUrl = URL.createObjectURL(file);
         if (file.type.startsWith('video/')) {
-          preview.innerHTML = '<video src="' + URL.createObjectURL(file) + '" style="max-width: 300px; border-radius: 8px;" controls></video>';
+          const video = document.createElement('video');
+          video.src = objectUrl;
+          video.style.maxWidth = '300px';
+          video.style.borderRadius = '8px';
+          video.controls = true;
+          preview.appendChild(video);
         } else {
-          preview.innerHTML = '<img src="' + URL.createObjectURL(file) + '" style="max-width: 300px; border-radius: 8px;">';
+          const img = document.createElement('img');
+          img.src = objectUrl;
+          img.style.maxWidth = '300px';
+          img.style.borderRadius = '8px';
+          preview.appendChild(img);
         }
       }
       
@@ -212,8 +232,7 @@ export async function adminGalleryPage(c: Context) {
       document.getElementById('upload-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const status = document.getElementById('upload-status');
-        status.innerHTML = '<p style="color: #666;">Uploading...</p>';
-        
+        status.textContent = 'Uploading...';
         const formData = new FormData(e.target);
         
         try {
@@ -225,13 +244,13 @@ export async function adminGalleryPage(c: Context) {
           const data = await res.json();
           
           if (data.success) {
-            status.innerHTML = '<p style="color: green;">✅ Uploaded successfully!</p>';
+            status.textContent = '✅ Uploaded successfully!';
             setTimeout(() => location.reload(), 1000);
           } else {
-            status.innerHTML = '<p style="color: red;">❌ ' + (data.error || 'Upload failed') + '</p>';
+            status.textContent = '❌ ' + (data.error || 'Upload failed');
           }
         } catch (err) {
-          status.innerHTML = '<p style="color: red;">❌ Upload failed</p>';
+          status.textContent = '❌ Upload failed';
         }
       });
       

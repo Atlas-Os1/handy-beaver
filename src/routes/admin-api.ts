@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
-import { getCookie } from 'hono/cookie';
+import { getCookie, deleteCookie } from 'hono/cookie';
 import { detectSchedulingConflicts } from './calendar-api';
+import { getAdminFromCookie } from '../lib/auth';
 
 type Bindings = {
   DB: D1Database;
@@ -30,12 +31,10 @@ adminApi.use('*', async (c, next) => {
   }
   
   if (adminCookie) {
-    const [githubId] = adminCookie.split(':');
-    const admin = await c.env.DB.prepare(
-      'SELECT * FROM admins WHERE github_id = ?'
-    ).bind(githubId).first();
+    const admin = await getAdminFromCookie(c.env.DB, adminCookie, c.env.ADMIN_API_KEY);
     
     if (!admin) {
+      deleteCookie(c, 'hb_admin');
       return c.json({ error: 'Invalid session' }, 401);
     }
     
@@ -780,20 +779,24 @@ adminApi.post('/invoices/:id/send', async (c) => {
 
 adminApi.get('/bookings', async (c) => {
   const status = c.req.query('status');
-  
+
   let query = `
     SELECT b.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone
     FROM bookings b
     JOIN customers c ON b.customer_id = c.id
   `;
-  
+
   if (status) {
-    query += ` WHERE b.status = '${status}'`;
+    query += ` WHERE b.status = ?`;
   }
-  
+
   query += ` ORDER BY b.created_at DESC LIMIT 50`;
-  
-  const bookings = await c.env.DB.prepare(query).all();
+
+  const statement = status
+    ? c.env.DB.prepare(query).bind(status)
+    : c.env.DB.prepare(query);
+
+  const bookings = await statement.all();
   return c.json(bookings);
 });
 

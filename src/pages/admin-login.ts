@@ -14,6 +14,7 @@ export const adminLoginPage = async (c: Context) => {
     'token_failed': 'GitHub authentication failed - could not get access token',
     'user_failed': 'GitHub authentication failed - could not get user info',
     'not_authorized': 'You are not authorized as an admin. Contact the site owner.',
+    'auth_failed': 'Admin authentication is temporarily unavailable. Please contact the site owner.',
   };
   
   const content = `

@@ -81,6 +81,7 @@ type Bindings = {
   ENVIRONMENT: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
+  ADMIN_API_KEY?: string;
   RESEND_API_KEY?: string;
   SQUARE_ACCESS_TOKEN?: string;
   GEMINI_API_KEY?: string;
